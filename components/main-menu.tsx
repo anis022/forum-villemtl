@@ -11,9 +11,11 @@ type Labels = {
   forum: string;
   projects: string;
   events: string;
+  council: string;
   forumDesc: string;
   projectsDesc: string;
   eventsDesc: string;
+  councilDesc: string;
 };
 
 /**
@@ -51,6 +53,7 @@ export function MainMenu({ lang, labels }: { lang: Locale; labels: Labels }) {
 
   const items = [
     { href: `/${lang}`, label: labels.forum, desc: labels.forumDesc },
+    { href: `/${lang}/conseils`, label: labels.council, desc: labels.councilDesc },
     { href: `/${lang}/projets`, label: labels.projects, desc: labels.projectsDesc },
     { href: `/${lang}/evenements`, label: labels.events, desc: labels.eventsDesc },
   ];
@@ -92,7 +95,7 @@ export function MainMenu({ lang, labels }: { lang: Locale; labels: Labels }) {
           <p className="mb-4 text-[20px] font-bold leading-[24px] text-[#212529]">
             {labels.sections}
           </p>
-          <ul className="grid gap-x-10 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="grid gap-x-10 gap-y-6 sm:grid-cols-2">
             {items.map((item) => (
               <li key={item.href}>
                 <Link
