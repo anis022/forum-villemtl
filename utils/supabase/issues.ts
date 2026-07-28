@@ -1,9 +1,15 @@
 import { cookies } from "next/headers";
 import { createClient } from "./server";
-import type { Author, Category, Comment, Issue, Status } from "@/utils/issues";
+import type { Author, Category, Comment, Issue, Status, Supporter } from "@/utils/issues";
 export type { Comment };
 
-type ProfileRow = { first_name: string; last_name: string; role: string } | null;
+type ProfileRow = {
+  id: string;
+  first_name: string;
+  last_name: string;
+  role: string;
+  avatar_url: string | null;
+} | null;
 
 type IssueRow = {
   id: string;
@@ -25,12 +31,18 @@ const imageUrl = (path: string | null) =>
     : null;
 
 const toAuthor = (profile: ProfileRow): Author => ({
+  id: profile?.id ?? "",
   firstName: profile?.first_name ?? "",
   lastName: profile?.last_name ?? "",
+  avatarUrl: profile?.avatar_url ?? null,
   isOfficial: profile?.role === "official",
 });
 
-const toIssue = (row: IssueRow, votedIds: Set<string>): Issue => ({
+const toIssue = (
+  row: IssueRow,
+  votedIds: Set<string>,
+  supporters: Map<string, Supporter[]>,
+): Issue => ({
   id: row.id,
   title: row.title,
   body: row.body,
@@ -42,10 +54,49 @@ const toIssue = (row: IssueRow, votedIds: Set<string>): Issue => ({
   author: toAuthor(row.author),
   hasVoted: votedIds.has(row.id),
   imageUrl: imageUrl(row.image_path),
+  supporters: supporters.get(row.id) ?? [],
 });
 
+const PROFILE_FIELDS = "id, first_name, last_name, role, avatar_url";
+
 const ISSUE_SELECT =
-  "id, title, body, category, status, vote_count, comment_count, created_at, image_path, author:profiles!issues_author_id_fkey(first_name, last_name, role)";
+  `id, title, body, category, status, vote_count, comment_count, created_at, image_path, author:profiles!issues_author_id_fkey(${PROFILE_FIELDS})`;
+
+/**
+ * A few backers per issue, for the face pile — fetched for the whole page in
+ * one call. Per-card queries would turn a list render into fifty round trips.
+ */
+async function supportersByIssue(
+  supabase: Awaited<ReturnType<typeof getSupabase>>,
+  issueIds: string[],
+): Promise<Map<string, Supporter[]>> {
+  const grouped = new Map<string, Supporter[]>();
+  if (!issueIds.length) return grouped;
+
+  const { data, error } = await supabase.rpc("issue_supporters", {
+    p_issue_ids: issueIds,
+    p_per_issue: 5,
+  });
+  if (error || !data) return grouped;
+
+  for (const row of data as {
+    issue_id: string;
+    user_id: string;
+    first_name: string;
+    last_name: string;
+    avatar_url: string | null;
+  }[]) {
+    const list = grouped.get(row.issue_id) ?? [];
+    list.push({
+      id: row.user_id,
+      firstName: row.first_name,
+      lastName: row.last_name,
+      avatarUrl: row.avatar_url,
+    });
+    grouped.set(row.issue_id, list);
+  }
+  return grouped;
+}
 
 /**
  * Which of the given issues the signed-in user has already upvoted. Fetched in
@@ -85,8 +136,12 @@ export async function listIssues(sort: "top" | "new" = "top"): Promise<Issue[]> 
   if (error || !data) return [];
 
   const rows = data as unknown as IssueRow[];
-  const voted = await votedIssueIds(supabase, rows.map((r) => r.id));
-  return rows.map((row) => toIssue(row, voted));
+  const ids = rows.map((r) => r.id);
+  const [voted, supporters] = await Promise.all([
+    votedIssueIds(supabase, ids),
+    supportersByIssue(supabase, ids),
+  ]);
+  return rows.map((row) => toIssue(row, voted, supporters));
 }
 
 export async function getIssue(id: string): Promise<Issue | null> {
@@ -96,8 +151,11 @@ export async function getIssue(id: string): Promise<Issue | null> {
   if (error || !data) return null;
 
   const row = data as unknown as IssueRow;
-  const voted = await votedIssueIds(supabase, [row.id]);
-  return toIssue(row, voted);
+  const [voted, supporters] = await Promise.all([
+    votedIssueIds(supabase, [row.id]),
+    supportersByIssue(supabase, [row.id]),
+  ]);
+  return toIssue(row, voted, supporters);
 }
 
 export async function listComments(issueId: string): Promise<Comment[]> {
@@ -106,7 +164,7 @@ export async function listComments(issueId: string): Promise<Comment[]> {
   const { data, error } = await supabase
     .from("comments")
     .select(
-      "id, body, is_official, created_at, author:profiles!comments_author_id_fkey(first_name, last_name, role)",
+      `id, body, is_official, created_at, author:profiles!comments_author_id_fkey(${PROFILE_FIELDS})`,
     )
     .eq("issue_id", issueId)
     // Official replies float to the top; everything else is chronological.

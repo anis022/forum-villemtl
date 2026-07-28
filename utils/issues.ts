@@ -21,9 +21,20 @@ export const STATUS_KEYS = ["open", "answered", "resolved"] as const;
 export type Status = (typeof STATUS_KEYS)[number];
 
 export type Author = {
+  /** Needed for the avatar: the fallback colour is derived from it. */
+  id: string;
   firstName: string;
   lastName: string;
+  avatarUrl: string | null;
   isOfficial: boolean;
+};
+
+/** A person who has backed an issue, shown in the face pile. */
+export type Supporter = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  avatarUrl: string | null;
 };
 
 export type Issue = {
@@ -38,6 +49,8 @@ export type Issue = {
   author: Author;
   hasVoted: boolean;
   imageUrl: string | null;
+  /** A few of the most recent backers; empty until the list query fills it. */
+  supporters: Supporter[];
 };
 
 export type Comment = {

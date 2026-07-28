@@ -208,6 +208,13 @@ const fr = {
     add: "Appuyer ce sujet",
     remove: "Retirer mon appui",
     signInFirst: "Connectez-vous pour appuyer ce sujet",
+    youAndOthers: (others: number) => {
+      if (others <= 0) return "Vous appuyez ce sujet";
+      const s = others > 1 ? "s" : "";
+      return `Vous et ${others} autre${s} personne${s} appuyez ce sujet`;
+    },
+    othersSupport: (n: number) =>
+      n === 1 ? "1 personne appuie ce sujet" : `${n} personnes appuient ce sujet`,
   },
   auth: {
     signIn: "Se connecter",
@@ -447,6 +454,12 @@ const en: Dictionary = {
     add: "Back this topic",
     remove: "Remove my backing",
     signInFirst: "Sign in to back this topic",
+    youAndOthers: (others: number) => {
+      if (others <= 0) return "You back this topic";
+      return `You and ${others} other${others > 1 ? "s" : ""} back this topic`;
+    },
+    othersSupport: (n: number) =>
+      n === 1 ? "1 person backs this topic" : `${n} people back this topic`,
   },
   auth: {
     signIn: "Sign in",
