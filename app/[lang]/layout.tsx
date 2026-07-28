@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Forum — Côte-des-Neiges–Notre-Dame-de-Grâce",
+  title: "Forum CDN-NDG",
   description: "Forum citoyen de l'arrondissement",
 };
 

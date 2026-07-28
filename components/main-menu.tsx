@@ -87,30 +87,33 @@ export function MainMenu({ lang, labels }: { lang: Locale; labels: Labels }) {
         <span className="hidden sm:inline">{labels.menu}</span>
       </button>
 
-      {open && (
-        <div
-          id="main-menu-panel"
-          className="menu-panel absolute left-1/2 top-full z-50 w-[min(1080px,calc(100vw-2rem))] bg-white px-4 py-8 shadow-[0_2px_8px_0_rgba(0,0,0,0.1)]"
-        >
-          <p className="mb-4 text-[20px] font-bold leading-[24px] text-[#212529]">
-            {labels.sections}
-          </p>
-          <ul className="grid gap-x-10 gap-y-6 sm:grid-cols-2">
-            {items.map((item) => (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  aria-current={pathname === item.href ? "page" : undefined}
-                  className="text-[14px] font-bold leading-[20px] text-[#097d6c] hover:underline"
-                >
-                  {item.label}
-                </Link>
-                <p className="mt-1 text-[14px] leading-[20px] text-[#637381]">{item.desc}</p>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      {/* Always rendered so the panel can animate closed as well as open;
+          `display: none` while shut keeps it out of the accessibility tree and
+          out of the tab order. */}
+      <div
+        id="main-menu-panel"
+        data-open={open ? "" : undefined}
+        inert={!open}
+        className="menu-panel absolute left-1/2 top-full z-50 w-[min(1080px,calc(100vw-2rem))] bg-white px-4 py-8 shadow-[0_2px_8px_0_rgba(0,0,0,0.1)]"
+      >
+        <p className="mb-4 text-[20px] font-bold leading-[24px] text-[#212529]">
+          {labels.sections}
+        </p>
+        <ul className="grid gap-x-10 gap-y-6 sm:grid-cols-2">
+          {items.map((item) => (
+            <li key={item.href}>
+              <Link
+                href={item.href}
+                aria-current={pathname === item.href ? "page" : undefined}
+                className="text-[14px] font-bold leading-[20px] text-[#097d6c] hover:underline"
+              >
+                {item.label}
+              </Link>
+              <p className="mt-1 text-[14px] leading-[20px] text-[#637381]">{item.desc}</p>
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }

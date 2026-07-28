@@ -52,9 +52,30 @@ const fr = {
     councilDesc: "Explorez ce qui a été dit lors des séances du conseil, avec liens vers la vidéo.",
   },
   council: {
-    title: "Conseils d'arrondissement",
+    title: "Recherche dans les conseils d'arrondissement",
     intro:
-      "Explorez les interventions des séances du conseil d'arrondissement. Filtrez par sujet, type et période — chaque résultat renvoie au moment exact de la vidéo.",
+      "Posez votre question en toutes lettres. La recherche porte sur la transcription des séances et renvoie les passages correspondants, avec le moment exact dans la vidéo.",
+    searchLabel: "Rechercher dans les séances",
+    searchPlaceholder: "ex. pistes cyclables sur Terrebonne, déneigement, tramway…",
+    searchButton: "Rechercher",
+    examplesLabel: "Essayez par exemple :",
+    examples: ["pistes cyclables", "déneigement", "tramway", "logement", "sécurité routière"],
+    corpusNote: (meetings: number, segments: number) =>
+      `${meetings} séance${meetings > 1 ? "s" : ""} indexée${meetings > 1 ? "s" : ""}, ${segments} passages consultables.`,
+    passageOne: "passage trouvé",
+    passageMany: "passages trouvés",
+    bothMatch: "Mots-clés + sens",
+    lexicalOnly:
+      "Recherche par mots-clés seulement — la recherche par sens est temporairement indisponible.",
+    weakTitle: "Aucun passage ne correspond clairement à votre recherche.",
+    weakBody:
+      "Les passages ci-dessous sont les plus proches trouvés, mais ce sujet ne semble pas avoir été abordé dans les séances indexées. Vérifiez toujours la vidéo.",
+    noResultsTitle: "Aucun passage trouvé",
+    noResultsBody:
+      "Reformulez avec d'autres mots. La recherche ne couvre que les séances déjà indexées.",
+    emptyCorpusTitle: "Aucune séance indexée",
+    emptyCorpusBody:
+      "Les transcriptions n'ont pas encore été traitées. Revenez après l'exécution du pipeline d'ingestion.",
     topic: "Sujet",
     allTopics: "Tous les sujets",
     type: "Type d'intervention",
@@ -93,7 +114,28 @@ const fr = {
     noData:
       "Aucune séance n'a encore été indexée. Les données apparaîtront après l'exécution du pipeline d'ingestion.",
     disclaimer:
-      "Résultats générés automatiquement à partir des transcriptions des séances. Utilisez les liens pour vérifier le contexte.",
+      "Les passages affichés proviennent des sous-titres automatiques de YouTube, qui comportent des erreurs de transcription — notamment sur les noms propres. Ce ne sont pas des verbatim officiels. Consultez toujours la vidéo pour vérifier les propos et leur contexte.",
+  },
+  events: {
+    intro:
+      "Les activités et événements en cours ou à venir dans Côte-des-Neiges–Notre-Dame-de-Grâce, situés sur la carte. Filtrez par district ou par type.",
+    district: "District",
+    allDistricts: "Tous les districts",
+    type: "Type d'activité",
+    allTypes: "Tous les types",
+    eventOne: "événement",
+    eventMany: "événements",
+    noneTitle: "Aucun événement",
+    noneBody: "Aucun événement ne correspond à ces filtres. Essayez un autre district ou type.",
+    details: "Voir la fiche",
+    online: "En ligne",
+    unmapped: "sans lieu sur la carte",
+    free: "Gratuit",
+    emptyTitle: "Aucun événement chargé",
+    emptyBody:
+      "Les données n'ont pas encore été synchronisées. Revenez après l'exécution du script de synchronisation.",
+    source:
+      "Source : données ouvertes de la Ville de Montréal (événements publics), synchronisées quotidiennement. Le district est déterminé à partir des coordonnées, et le nom du lieu retrouvé à partir du parc contenant le point lorsque l'adresse est absente.",
   },
   pages: {
     projectsTitle: "État d'avancement des projets",
@@ -252,9 +294,29 @@ const en: Dictionary = {
     councilDesc: "Explore what was said at council meetings, with links to the video.",
   },
   council: {
-    title: "Borough council meetings",
+    title: "Search borough council meetings",
     intro:
-      "Explore interventions from borough council meetings. Filter by topic, type and period — every result links to the exact moment in the video.",
+      "Ask in plain language. The search runs over meeting transcripts and returns matching passages, each linked to the exact moment in the video.",
+    searchLabel: "Search the meetings",
+    searchPlaceholder: "e.g. bike lanes on Terrebonne, snow removal, tramway…",
+    searchButton: "Search",
+    examplesLabel: "For example:",
+    examples: ["bike lanes", "snow removal", "tramway", "housing", "road safety"],
+    corpusNote: (meetings: number, segments: number) =>
+      `${meetings} meeting${meetings > 1 ? "s" : ""} indexed, ${segments} passages searchable.`,
+    passageOne: "passage found",
+    passageMany: "passages found",
+    bothMatch: "Keywords + meaning",
+    lexicalOnly: "Keyword search only — meaning-based search is temporarily unavailable.",
+    weakTitle: "Nothing clearly matches your search.",
+    weakBody:
+      "The passages below are the closest found, but this topic does not appear to have been discussed in the indexed meetings. Always check the video.",
+    noResultsTitle: "No passages found",
+    noResultsBody:
+      "Try different wording. The search only covers meetings that have been indexed.",
+    emptyCorpusTitle: "No meetings indexed",
+    emptyCorpusBody:
+      "Transcripts have not been processed yet. Check back once the ingestion pipeline has run.",
     topic: "Topic",
     allTopics: "All topics",
     type: "Intervention type",
@@ -293,7 +355,28 @@ const en: Dictionary = {
     noData:
       "No meetings have been indexed yet. Data will appear once the ingestion pipeline has run.",
     disclaimer:
-      "Results are generated automatically from meeting transcripts. Use the links to verify context.",
+      "Passages come from YouTube's automatic captions, which contain transcription errors — particularly on proper nouns. They are not official verbatim records. Always check the video to verify what was said and its context.",
+  },
+  events: {
+    intro:
+      "Activities and events happening now or soon in Côte-des-Neiges–Notre-Dame-de-Grâce, placed on the map. Filter by district or type.",
+    district: "District",
+    allDistricts: "All districts",
+    type: "Activity type",
+    allTypes: "All types",
+    eventOne: "event",
+    eventMany: "events",
+    noneTitle: "No events",
+    noneBody: "No events match these filters. Try another district or type.",
+    details: "View details",
+    online: "Online",
+    unmapped: "with no location on the map",
+    free: "Free",
+    emptyTitle: "No events loaded",
+    emptyBody:
+      "Data has not been synced yet. Check back once the sync script has run.",
+    source:
+      "Source: City of Montréal open data (public events), synced daily. The district is derived from the coordinates, and the venue name resolved from the park containing the point when no address is given.",
   },
   pages: {
     projectsTitle: "Project progress",

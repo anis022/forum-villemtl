@@ -158,22 +158,43 @@ summary:focus,
 /* Mega-menu panel. montreal.ca centres it in the viewport (measured:
    left 484px at a 2048px viewport for a 1080px panel — dead centre) and
    drops it from the bottom edge of the header.
-   The centring translate lives in the keyframes because an animation's
-   transform would otherwise override a separate translate utility. */
+
+   Transitioned rather than keyframed, and driven by `display` through
+   `allow-discrete`, so the panel animates BOTH ways. A keyframe animation can
+   only play on mount; the panel used to vanish instantly on close because
+   React unmounted it before anything could run. Same mechanism as
+   `.auth-dialog` above.
+
+   The centring translate is folded into every transform: a bare
+   `translateY` here would drop the `-50%` and throw the panel off-centre
+   mid-animation. */
 .menu-panel {
-  transform: translateX(-50%);
-  animation: menu-drop 180ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  display: none;
+  opacity: 0;
+  transform: translate(-50%, -6px);
   transform-origin: top center;
+  transition:
+    opacity 150ms ease-in,
+    transform 150ms ease-in,
+    display 150ms allow-discrete;
 }
 
-@keyframes menu-drop {
-  from {
+.menu-panel[data-open] {
+  display: block;
+  opacity: 1;
+  transform: translate(-50%, 0);
+  /* Opening is slightly slower and decelerates; closing snaps away. Matching
+     the two makes the close feel sluggish. */
+  transition:
+    opacity 200ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    transform 200ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    display 200ms allow-discrete;
+}
+
+@starting-style {
+  .menu-panel[data-open] {
     opacity: 0;
-    transform: translate(-50%, -8px);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, 0);
+    transform: translate(-50%, -6px);
   }
 }
 
