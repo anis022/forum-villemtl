@@ -1,6 +1,5 @@
 import { cookies } from "next/headers";
 import { createClient } from "./server";
-import { embedQuery, toVectorLiteral } from "@/utils/embedding";
 import type { CouncilResult, InterventionType, SearchHit, Topic } from "@/utils/council";
 
 async function sb() {
@@ -50,8 +49,15 @@ export async function searchCouncil(
   const trimmed = query.trim();
   if (!trimmed) return { hits: [], semantic: false };
 
+  // Imported here rather than at module scope on purpose. The embedder pulls
+  // in onnxruntime-node, whose native library is absent on some platforms —
+  // notably the deployed Linux function when the lockfile was resolved on
+  // another OS. A static import would make that a module-load failure and take
+  // the whole page down with a 500; loading it inside the try means the
+  // failure lands in the lexical fallback below, which is what it is for.
   let embedding: string | null = null;
   try {
+    const { embedQuery, toVectorLiteral } = await import("@/utils/embedding");
     embedding = toVectorLiteral(await embedQuery(trimmed));
   } catch (err) {
     console.error("[council] embedding indisponible, repli lexical:", err);
