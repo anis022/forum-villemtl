@@ -20,6 +20,45 @@ export type InterventionType = (typeof INTERVENTION_TYPES)[number];
 export type SpeakerRole = "resident" | "councillor" | "mayor" | "staff" | "unknown";
 export type Sentiment = "neg" | "neutral" | "pos";
 
+/**
+ * One transcript window returned by search. `text` is verbatim — nothing is
+ * paraphrased between the recording and the page, so a reader can always check
+ * the wording against the video at `startS`.
+ */
+export type SearchHit = {
+  id: string;
+  meetingTitle: string;
+  meetingDate: string; // ISO (YYYY-MM-DD)
+  youtubeId: string;
+  startS: number;
+  endS: number;
+  text: string;
+  /** Which half of the hybrid search found it — useful for tuning, and shown. */
+  lexicalRank: number | null;
+  semanticRank: number | null;
+  /** Raw cosine similarity. Not comparable across queries — see `margin`. */
+  similarity: number | null;
+  /** Standard deviations above the corpus mean for this query. */
+  margin: number | null;
+};
+
+/*
+ * There is deliberately no relevance gate here.
+ *
+ * An attempt was made using `margin` — how far the best hit stands above the
+ * corpus mean for that query. On 381 segments it looked separable; on 3400 it
+ * collapsed: relevant queries scored a median 3.71, irrelevant ones 3.68, with
+ * "recette de tarte aux pommes" (3.68) beating "déneigement" (3.47). With
+ * enough windows of rambling transcript, some window is always an outlier, so
+ * the margin measures oddity rather than relevance.
+ *
+ * A cross-encoder does separate the two (relevant -1.76..4.02 against
+ * irrelevant -5.20..0.44) at roughly 850 ms per search. Its residual errors
+ * are caption-corruption artifacts — "déneigement" fails to match the
+ * transcript's "déénagement" — so transcript quality, not ranking, is the
+ * binding constraint.
+ */
+
 export type CouncilResult = {
   id: string;
   meetingTitle: string;

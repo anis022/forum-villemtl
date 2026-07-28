@@ -1,0 +1,18 @@
+{
+  "//": "Ingestion scripts run under node --experimental-strip-types, not through Next's bundler, so they import with explicit .ts extensions.",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["esnext"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
+    "strict": true,
+    "noEmit": true,
+    // transformers.js ships browser-typed declarations; the app tsconfig skips
+    // lib checking for the same reason.
+    "skipLibCheck": true,
+    "types": ["node"]
+  },
+  "include": ["**/*.ts"]
+}

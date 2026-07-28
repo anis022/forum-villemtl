@@ -1,0 +1,4 @@
+{
+  "//": "Scoped to scripts/ so ingestion runs as ESM under node --experimental-strip-types without flipping the Next app to type:module.",
+  "type": "module"
+}
