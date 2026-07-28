@@ -45,3 +45,6 @@ next-env.d.ts
 
 # local dev server log
 dev.log
+
+# generated seed, regenerate with npm run sync:events
+events-seed.sql
