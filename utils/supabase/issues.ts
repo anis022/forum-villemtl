@@ -57,10 +57,21 @@ const toIssue = (
   supporters: supporters.get(row.id) ?? [],
 });
 
-const PROFILE_FIELDS = "id, first_name, last_name, role, avatar_url";
+/**
+ * `avatar_url` arrives with migration 0009. Until it is applied, asking for it
+ * fails the whole query and would empty the feed, so the first failure flips
+ * this flag and every later query omits the column. One wasted round trip on
+ * one request, instead of a blank site until someone runs the migration.
+ */
+let hasAvatarColumn = true;
+const profileFields = () =>
+  hasAvatarColumn ? "id, first_name, last_name, role, avatar_url" : "id, first_name, last_name, role";
 
-const ISSUE_SELECT =
-  `id, title, body, category, status, vote_count, comment_count, created_at, image_path, author:profiles!issues_author_id_fkey(${PROFILE_FIELDS})`;
+const missingAvatar = (message: string | undefined) =>
+  Boolean(message && message.includes("avatar_url"));
+
+const issueSelect = () =>
+  `id, title, body, category, status, vote_count, comment_count, created_at, image_path, author:profiles!issues_author_id_fkey(${profileFields()})`;
 
 /**
  * A few backers per issue, for the face pile — fetched for the whole page in
@@ -127,12 +138,18 @@ async function getSupabase() {
 export async function listIssues(sort: "top" | "new" = "top"): Promise<Issue[]> {
   const supabase = await getSupabase();
 
-  const query = supabase.from("issues").select(ISSUE_SELECT).limit(50);
-  const { data, error } =
-    sort === "top"
-      ? await query.order("vote_count", { ascending: false }).order("created_at", { ascending: false })
-      : await query.order("created_at", { ascending: false });
+  const run = async () => {
+    const query = supabase.from("issues").select(issueSelect()).limit(50);
+    return sort === "top"
+      ? query.order("vote_count", { ascending: false }).order("created_at", { ascending: false })
+      : query.order("created_at", { ascending: false });
+  };
 
+  let { data, error } = await run();
+  if (error && missingAvatar(error.message)) {
+    hasAvatarColumn = false;
+    ({ data, error } = await run());
+  }
   if (error || !data) return [];
 
   const rows = data as unknown as IssueRow[];
@@ -147,7 +164,13 @@ export async function listIssues(sort: "top" | "new" = "top"): Promise<Issue[]> 
 export async function getIssue(id: string): Promise<Issue | null> {
   const supabase = await getSupabase();
 
-  const { data, error } = await supabase.from("issues").select(ISSUE_SELECT).eq("id", id).maybeSingle();
+  const run = () => supabase.from("issues").select(issueSelect()).eq("id", id).maybeSingle();
+
+  let { data, error } = await run();
+  if (error && missingAvatar(error.message)) {
+    hasAvatarColumn = false;
+    ({ data, error } = await run());
+  }
   if (error || !data) return null;
 
   const row = data as unknown as IssueRow;
@@ -161,16 +184,22 @@ export async function getIssue(id: string): Promise<Issue | null> {
 export async function listComments(issueId: string): Promise<Comment[]> {
   const supabase = await getSupabase();
 
-  const { data, error } = await supabase
-    .from("comments")
-    .select(
-      `id, body, is_official, created_at, author:profiles!comments_author_id_fkey(${PROFILE_FIELDS})`,
-    )
-    .eq("issue_id", issueId)
-    // Official replies float to the top; everything else is chronological.
-    .order("is_official", { ascending: false })
-    .order("created_at", { ascending: true });
+  const run = () =>
+    supabase
+      .from("comments")
+      .select(
+        `id, body, is_official, created_at, author:profiles!comments_author_id_fkey(${profileFields()})`,
+      )
+      .eq("issue_id", issueId)
+      // Official replies float to the top; everything else is chronological.
+      .order("is_official", { ascending: false })
+      .order("created_at", { ascending: true });
 
+  let { data, error } = await run();
+  if (error && missingAvatar(error.message)) {
+    hasAvatarColumn = false;
+    ({ data, error } = await run());
+  }
   if (error || !data) return [];
 
   return (data as unknown as { id: string; body: string; is_official: boolean; created_at: string; author: ProfileRow }[]).map(

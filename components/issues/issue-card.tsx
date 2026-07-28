@@ -30,10 +30,14 @@ export function IssueCard({
   return (
     <article className={`${CARD} p-4 transition-shadow hover:shadow-[0_2px_8px_0_rgba(0,0,0,0.08)]`}>
       <header className="flex items-center gap-3">
-        <Avatar person={issue.author} size="md" />
+        <Link href={`/${lang}/profil/${issue.author.id}`} className="shrink-0">
+          <Avatar person={issue.author} size="md" />
+        </Link>
         <div className="min-w-0 flex-1">
           <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[15px] font-bold leading-[20px]">
-            {authorName(issue.author, t.issue.anonymousAuthor)}
+            <Link href={`/${lang}/profil/${issue.author.id}`} className="hover:underline">
+              {authorName(issue.author, t.issue.anonymousAuthor)}
+            </Link>
             {issue.author.isOfficial && <OfficialBadge lang={lang} />}
           </p>
           <p className={`text-[13px] leading-[18px] ${MUTED}`}>{formatDate(issue.createdAt, lang)}</p>

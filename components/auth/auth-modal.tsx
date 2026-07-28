@@ -9,7 +9,7 @@ import { createClient } from "@/utils/supabase/client";
 import { getDictionary, type ErrorCode, type Locale } from "@/utils/i18n";
 import { ALERT, BTN_PRIMARY, FIELD, LABEL, LINK } from "@/components/ui/styles";
 
-type View = "signin" | "signup" | "confirm";
+type View = "signin" | "signup" | "confirm" | "forgot" | "sent";
 
 // Shared tokens, so the modal cannot drift from the rest of the site.
 const PRIMARY = `w-full ${BTN_PRIMARY}`;
@@ -116,6 +116,20 @@ export function AuthModal({
       setError("emailInvalid");
       return;
     }
+
+    if (view === "forgot") {
+      setPending(true);
+      // The response is deliberately not inspected for "no such account":
+      // reporting that would turn this form into a way to test whether an
+      // address is registered. Everyone is told the same thing.
+      await createClient().auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/confirm`,
+      });
+      setPending(false);
+      setView("sent");
+      return;
+    }
+
     if (password.length < 8) {
       setError("passwordTooShort");
       return;
@@ -203,13 +217,13 @@ export function AuthModal({
           </div>
 
           <div className="px-6 py-7 md:px-8">
-          {view === "confirm" ? (
+          {view === "confirm" || view === "sent" ? (
             <>
               <h2 id="auth-modal-title" className="text-[24px] font-bold leading-[32px]">
-                {t.auth.checkEmailTitle}
+                {view === "sent" ? t.auth.resetSentTitle : t.auth.checkEmailTitle}
               </h2>
               <p className="mt-3 text-[#637381]">
-                {t.auth.checkEmailBody}
+                {view === "sent" ? t.auth.resetSentBody : t.auth.checkEmailBody}
               </p>
               <button type="button" onClick={() => switchTo("signin")} className={`mt-8 ${PRIMARY}`}>
                 {t.auth.backToSignIn}
@@ -218,10 +232,18 @@ export function AuthModal({
           ) : (
             <>
               <h2 id="auth-modal-title" className="text-[24px] font-bold leading-[32px]">
-                {view === "signin" ? t.auth.signIn : t.auth.signUp}
+                {view === "signin"
+                  ? t.auth.signIn
+                  : view === "forgot"
+                    ? t.auth.forgotTitle
+                    : t.auth.signUp}
               </h2>
               <p className="mt-2 text-[#637381]">
-                {view === "signin" ? t.auth.signInSubtitle : t.auth.signUpSubtitle}
+                {view === "signin"
+                  ? t.auth.signInSubtitle
+                  : view === "forgot"
+                    ? t.auth.forgotSubtitle
+                    : t.auth.signUpSubtitle}
               </p>
 
               <form onSubmit={submit} noValidate className="mt-6">
@@ -270,19 +292,32 @@ export function AuthModal({
                   />
                 </div>
 
-                <div className="mb-5">
-                  <label htmlFor="auth-password" className={LABEL}>
-                    {t.auth.password}
-                  </label>
-                  <input
-                    id="auth-password"
-                    name="password"
-                    type="password"
-                    autoComplete={view === "signin" ? "current-password" : "new-password"}
-                    disabled={pending}
-                    className={FIELD}
-                  />
-                </div>
+                {view !== "forgot" && (
+                  <div className="mb-5">
+                    <div className="flex items-baseline justify-between gap-3">
+                      <label htmlFor="auth-password" className={LABEL}>
+                        {t.auth.password}
+                      </label>
+                      {view === "signin" && (
+                        <button
+                          type="button"
+                          onClick={() => switchTo("forgot")}
+                          className={`${LINK} text-[14px]`}
+                        >
+                          {t.auth.forgotLink}
+                        </button>
+                      )}
+                    </div>
+                    <input
+                      id="auth-password"
+                      name="password"
+                      type="password"
+                      autoComplete={view === "signin" ? "current-password" : "new-password"}
+                      disabled={pending}
+                      className={FIELD}
+                    />
+                  </div>
+                )}
 
                 {view === "signup" && (
                   <div className="mb-5">
@@ -314,19 +349,29 @@ export function AuthModal({
                     ? t.auth.working
                     : view === "signin"
                       ? t.auth.submitSignIn
-                      : t.auth.submitSignUp}
+                      : view === "forgot"
+                        ? t.auth.submitReset
+                        : t.auth.submitSignUp}
                 </button>
               </form>
 
               <p className="mt-6 border-t border-[#ced4da] pt-6 text-center">
-                {view === "signin" ? t.auth.noAccount : t.auth.hasAccount}{" "}
-                <button
-                  type="button"
-                  onClick={() => switchTo(view === "signin" ? "signup" : "signin")}
-                  className={LINK}
-                >
-                  {view === "signin" ? t.auth.signUp : t.auth.signIn}
-                </button>
+                {view === "forgot" ? (
+                  <button type="button" onClick={() => switchTo("signin")} className={LINK}>
+                    {t.auth.backToSignIn}
+                  </button>
+                ) : (
+                  <>
+                    {view === "signin" ? t.auth.noAccount : t.auth.hasAccount}{" "}
+                    <button
+                      type="button"
+                      onClick={() => switchTo(view === "signin" ? "signup" : "signin")}
+                      className={LINK}
+                    >
+                      {view === "signin" ? t.auth.signUp : t.auth.signIn}
+                    </button>
+                  </>
+                )}
               </p>
               </>
             )}

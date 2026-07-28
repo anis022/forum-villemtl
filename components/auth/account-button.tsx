@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Avatar } from "@/components/ui/avatar";
 import { createClient } from "@/utils/supabase/client";
 import type { SessionUser } from "@/utils/supabase/auth";
 import { getDictionary, type Locale } from "@/utils/i18n";
@@ -77,10 +79,15 @@ export function AccountButton({
     const name = [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email;
     return (
       <div className="flex items-center gap-1 md:gap-4">
-        <span className="flex h-10 items-center gap-2 px-1 text-[16px] font-bold leading-[24px] text-[#212529]">
-          <PersonIcon />
+        {/* Your own face in the header, linking to your profile — the standard
+            way in every social product to reach "what have I been up to". */}
+        <Link
+          href={`/${lang}/profil/${user.id}`}
+          className="flex h-10 items-center gap-2 px-1 text-[16px] font-bold leading-[24px] text-[#212529] hover:underline"
+        >
+          <Avatar person={{ ...user, avatarUrl: user.avatarUrl }} size="sm" />
           <span className="hidden max-w-[16ch] truncate lg:inline">{name}</span>
-        </span>
+        </Link>
         <button
           type="button"
           onClick={signOut}

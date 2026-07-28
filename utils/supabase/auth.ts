@@ -6,6 +6,7 @@ export type SessionUser = {
   email: string;
   firstName: string;
   lastName: string;
+  avatarUrl: string | null;
   role: "citizen" | "official";
 };
 
@@ -25,17 +26,29 @@ export async function getSessionUser(): Promise<SessionUser | null> {
 
   if (!user) return null;
 
-  const { data: profile } = await supabase
+  // `avatar_url` lands with migration 0009. Before it is applied the column is
+  // unknown and the query fails, which would blank out the signed-in user's
+  // name in the header — so fall back to the fields that have always existed.
+  let { data: profile } = await supabase
     .from("profiles")
-    .select("first_name, last_name, role")
+    .select("first_name, last_name, role, avatar_url")
     .eq("id", user.id)
     .maybeSingle();
+
+  if (!profile) {
+    ({ data: profile } = await supabase
+      .from("profiles")
+      .select("first_name, last_name, role")
+      .eq("id", user.id)
+      .maybeSingle());
+  }
 
   return {
     id: user.id,
     email: user.email ?? "",
     firstName: profile?.first_name ?? "",
     lastName: profile?.last_name ?? "",
+    avatarUrl: (profile?.avatar_url as string | null) ?? null,
     role: profile?.role === "official" ? "official" : "citizen",
   };
 }

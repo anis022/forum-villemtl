@@ -17,6 +17,7 @@ import { getSessionUser } from "@/utils/supabase/auth";
 import { getIssue, listComments } from "@/utils/supabase/issues";
 import { getDictionary, isLocale } from "@/utils/i18n";
 import { CARD, CONTAINER, MUTED } from "@/components/ui/styles";
+import { Avatar } from "@/components/ui/avatar";
 
 export default async function IssuePage({
   params,
@@ -62,13 +63,21 @@ export default async function IssuePage({
                 {issue.title}
               </h1>
 
-              <div className={`mt-2 flex flex-wrap items-center gap-2 text-[14px] ${MUTED}`}>
-                <span className="inline-flex items-center gap-1.5 font-bold text-[#212529]">
-                  {authorName(issue.author, t.issue.anonymousAuthor)}
-                  {issue.author.isOfficial && <OfficialBadge lang={lang} />}
-                </span>
-                <span aria-hidden="true">·</span>
-                <span>{formatDate(issue.createdAt, lang)}</span>
+              <div className="mt-3 flex items-center gap-2.5">
+                <Link href={`/${lang}/profil/${issue.author.id}`}>
+                  <Avatar person={issue.author} size="md" />
+                </Link>
+                <div className="min-w-0">
+                  <p className="flex flex-wrap items-center gap-x-2 text-[15px] font-bold leading-[20px]">
+                    <Link href={`/${lang}/profil/${issue.author.id}`} className="hover:underline">
+                      {authorName(issue.author, t.issue.anonymousAuthor)}
+                    </Link>
+                    {issue.author.isOfficial && <OfficialBadge lang={lang} />}
+                  </p>
+                  <p className={`text-[13px] leading-[18px] ${MUTED}`}>
+                    {formatDate(issue.createdAt, lang)}
+                  </p>
+                </div>
               </div>
 
               <p className="mt-4 whitespace-pre-wrap break-words text-[17px] leading-[27px]">
@@ -104,28 +113,39 @@ export default async function IssuePage({
                 key={comment.id}
                 className={
                   comment.isOfficial
-                    ? "rounded-[4px] border-l-4 border-[#097d6c] bg-[#e6f4f1] p-5"
-                    : `${CARD} p-5`
+                    ? "flex gap-3 rounded-[4px] border-l-4 border-[#097d6c] bg-[#e6f4f1] p-5"
+                    : `${CARD} flex gap-3 p-5`
                 }
               >
-                <div className="mb-2 flex flex-wrap items-center gap-2 text-[14px]">
-                  <span className="inline-flex items-center gap-1.5 font-bold">
-                    {authorName(comment.author, t.issue.anonymousAuthor)}
+                <Link href={`/${lang}/profil/${comment.author.id}`} className="shrink-0">
+                  <Avatar person={comment.author} size="md" />
+                </Link>
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[14px]">
+                    <Link
+                      href={`/${lang}/profil/${comment.author.id}`}
+                      className="font-bold hover:underline"
+                    >
+                      {authorName(comment.author, t.issue.anonymousAuthor)}
+                    </Link>
                     {comment.author.isOfficial && <OfficialBadge lang={lang} />}
-                  </span>
-                  <span aria-hidden="true" className={MUTED}>
-                    ·
-                  </span>
-                  <span className={MUTED}>{formatDate(comment.createdAt, lang)}</span>
-                </div>
+                    <span aria-hidden="true" className={MUTED}>
+                      ·
+                    </span>
+                    <span className={MUTED}>{formatDate(comment.createdAt, lang)}</span>
+                  </div>
 
-                {comment.isOfficial && (
-                  <p className="mb-2 text-[14px] font-bold text-[#097d6c]">
-                    {t.issue.officialAnswer}
+                  {comment.isOfficial && (
+                    <p className="mt-1 text-[14px] font-bold text-[#097d6c]">
+                      {t.issue.officialAnswer}
+                    </p>
+                  )}
+
+                  <p className="mt-1.5 whitespace-pre-wrap break-words leading-[26px]">
+                    {comment.body}
                   </p>
-                )}
-
-                <p className="whitespace-pre-wrap break-words leading-[26px]">{comment.body}</p>
+                </div>
               </article>
             ))}
           </div>
