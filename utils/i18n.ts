@@ -150,8 +150,11 @@ const fr = {
     welcome: "Bienvenue sur le forum",
     title: "Échangez sur votre quartier et les services municipaux.",
     subtitle:
-      "Signalez un enjeu, soutenez les sujets qui comptent pour vous. Les sujets les plus soutenus sont traités en priorité par les élu·e·s.",
+      "Cherchez si quelqu'un a déjà signalé ce qui vous préoccupe, suivez les dossiers en cours et soutenez les sujets qui comptent pour vous.",
     report: "Signaler un enjeu",
+    ctaTitle: "Un problème dans votre quartier?",
+    ctaBody:
+      "Nid-de-poule, lampadaire brisé, ruelle mal entretenue : décrivez la situation en quelques minutes. Les sujets les plus soutenus par les résident·e·s sont traités en priorité par les élu·e·s.",
     signInPrompt: "Connectez-vous pour publier un sujet ou soutenir un enjeu.",
     topTitle: "Sujets les plus soutenus",
     newTitle: "Sujets récents",
@@ -429,9 +432,12 @@ const en: Dictionary = {
     welcome: "Welcome to the forum",
     title: "Discuss your neighbourhood and city services.",
     subtitle:
-      "Report an issue and back the topics that matter to you. The most-backed topics are prioritized by elected officials.",
+      "Check whether someone has already reported what is bothering you, follow open topics, and support the ones that matter to you.",
     report: "Report an issue",
-    signInPrompt: "Sign in to post a topic or back an issue.",
+    ctaTitle: "Something wrong in your neighbourhood?",
+    ctaBody:
+      "A pothole, a broken streetlight, an alley left untended: describe it in a couple of minutes. The topics residents support most are prioritized by elected officials.",
+    signInPrompt: "Sign in to post a topic or support an issue.",
     topTitle: "Most-backed topics",
     newTitle: "Recent topics",
     sortTop: "Popular",

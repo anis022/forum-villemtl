@@ -61,9 +61,6 @@ export default async function Home({
             {t.home.subtitle}
           </p>
 
-          {/* Searching first, posting second: most arrivals are looking for
-              something, and someone about to report an issue should have had
-              the chance to find it already reported. */}
           <div className="mt-7 max-w-[680px]">
             <ForumSearch
               lang={lang}
@@ -72,28 +69,35 @@ export default async function Home({
               clearLabel={t.home.clearSearch}
             />
           </div>
-
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            {user ? (
-              <Link href={`/${lang}/sujets/nouveau`} className={BTN_PRIMARY}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <path
-                    d="M12 5v14M5 12h14"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                </svg>
-                {t.home.report}
-              </Link>
-            ) : (
-              <p className={`text-[15px] ${MUTED}`}>{t.home.signInPrompt}</p>
-            )}
-          </div>
         </div>
       </div>
 
       <main className={`${CONTAINER} flex-1 py-8 md:py-10`}>
+        {/* The invitation to post sits above the feed rather than inside the
+            hero: by the time someone has scrolled past the search field they
+            have looked for their issue and not found it, which is exactly the
+            moment to offer reporting it. The button lines up over the sort
+            control, so the column of actions reads as one edge. */}
+        <section className="mb-6 flex flex-wrap items-center justify-between gap-x-6 gap-y-4 rounded-[16px] border border-[#cfe4de] bg-[#e9f3f0] p-5 md:p-6">
+          <div className="min-w-0 max-w-[60ch]">
+            <h2 className="text-[18px] font-bold leading-[26px] md:text-[20px] md:leading-[28px]">
+              {t.home.ctaTitle}
+            </h2>
+            <p className={`mt-1.5 text-[15px] leading-[22px] ${MUTED}`}>{t.home.ctaBody}</p>
+          </div>
+
+          {user ? (
+            <Link href={`/${lang}/sujets/nouveau`} className={`${BTN_PRIMARY} shrink-0`}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+              {t.home.report}
+            </Link>
+          ) : (
+            <p className={`shrink-0 text-[15px] font-bold ${MUTED}`}>{t.home.signInPrompt}</p>
+          )}
+        </section>
+
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-[22px] font-bold leading-[30px] md:text-[26px] md:leading-[34px]">
             {sort === "top" ? t.home.topTitle : t.home.newTitle}
