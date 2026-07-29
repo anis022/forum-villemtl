@@ -152,11 +152,11 @@ async function editRights(issueId: string) {
 }
 
 /**
- * Edit a report.
+ * Edit a report: words, category, and the attached photo.
  *
- * The location and the photo are left alone: this exists for correcting words,
- * and silently moving someone else's pin would change what was reported rather
- * than how it reads.
+ * The location stays fixed. A pin is not a detail of the report, it is what
+ * the report points at, and moving it would silently turn one report into
+ * another. Correcting a wrong location means withdrawing and re-filing.
  *
  * When the editor is not the author, `edited_by` records it so the page can say
  * an elected official altered a resident's text. An invisible edit by someone
@@ -183,12 +183,60 @@ export async function updateIssue(
   if (body.length > 5000) return { error: "bodyTooLong", values };
   if (!CATEGORY_KEYS.includes(category)) return { error: "badCategory", values };
 
+  // Read the stored path server-side rather than trusting a hidden field: a
+  // forged one would point the delete below at somebody else's file.
+  const { data: current } = await supabase
+    .from("issues")
+    .select("image_path")
+    .eq("id", issueId)
+    .maybeSingle();
+
+  const image = formData.get("image");
+  const removeImage = formData.get("removeImage") === "1";
+
+  let imagePath: string | null = (current?.image_path as string | null) ?? null;
+  let orphaned: string | null = null;
+
+  if (image instanceof File && image.size > 0) {
+    if (!ALLOWED_IMAGE_TYPES.includes(image.type)) return { error: "imageType", values };
+    if (image.size > MAX_IMAGE_BYTES) return { error: "imageTooBig", values };
+
+    const extension = image.type.split("/")[1].replace("jpeg", "jpg");
+    // Filed under the uploader's uid — the folder prefix is what the storage
+    // policy checks, so an official's replacement lands under their own name.
+    const path = `${user.id}/${crypto.randomUUID()}.${extension}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("issue-images")
+      .upload(path, image, { contentType: image.type });
+    if (uploadError) return { error: "uploadFailed", values };
+
+    orphaned = imagePath;
+    imagePath = path;
+  } else if (removeImage) {
+    orphaned = imagePath;
+    imagePath = null;
+  }
+
   const { error } = await supabase
     .from("issues")
-    .update({ title, body, category, edited_at: new Date().toISOString(), edited_by: user.id })
+    .update({
+      title,
+      body,
+      category,
+      image_path: imagePath,
+      edited_at: new Date().toISOString(),
+      edited_by: user.id,
+    })
     .eq("id", issueId);
 
   if (error) return { error: "publishFailed", values };
+
+  // Only after the row stops pointing at it, so a failed update never leaves a
+  // report referencing a file that has already been deleted.
+  if (orphaned) {
+    await supabase.storage.from("issue-images").remove([orphaned]);
+  }
 
   revalidatePath(`/${locale}/sujets/${issueId}`);
   revalidatePath(`/${locale}`);

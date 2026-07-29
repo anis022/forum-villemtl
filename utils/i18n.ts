@@ -235,7 +235,11 @@ const fr = {
     editSubtitle:
       "Corrigez le titre, la catégorie ou la description. L'historique du sujet indiquera qu'il a été modifié.",
     editLocationNote:
-      "L'endroit et la photo ne sont pas modifiables ici : les changer ferait un autre signalement. Retirez celui-ci et publiez-en un nouveau si l'endroit était erroné.",
+      "L'endroit n'est pas modifiable : l'épingle est ce que le signalement désigne, et la déplacer en ferait un autre. Retirez celui-ci et publiez-en un nouveau si l'endroit était erroné.",
+    removePhoto: "Retirer la photo",
+    photoWillBeRemoved: "La photo sera retirée à l'enregistrement.",
+    undo: "Annuler",
+    replacePhotoHint: "Choisissez un fichier pour remplacer la photo actuelle.",
     editOfficialWarning:
       "Vous modifiez le texte d'une autre personne à titre d'élu·e. La page indiquera publiquement que le sujet a été modifié par un·e élu·e.",
     save: "Enregistrer",
@@ -559,7 +563,11 @@ const en: Dictionary = {
     editSubtitle:
       "Correct the title, category or description. The topic will show that it was edited.",
     editLocationNote:
-      "The location and photo cannot be changed here: changing them would make this a different report. Withdraw this one and post a new one if the location was wrong.",
+      "The location cannot be changed: the pin is what the report points at, and moving it would make this a different report. Withdraw this one and post a new one if the location was wrong.",
+    removePhoto: "Remove the photo",
+    photoWillBeRemoved: "The photo will be removed when you save.",
+    undo: "Undo",
+    replacePhotoHint: "Choose a file to replace the current photo.",
     editOfficialWarning:
       "You are editing someone else's words as an elected official. The page will state publicly that the topic was edited by an official.",
     save: "Save",
