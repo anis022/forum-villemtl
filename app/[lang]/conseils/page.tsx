@@ -8,7 +8,7 @@ import { youtubeDeepLink, formatTimestamp } from "@/utils/council";
 import { CARD, CONTAINER, HERO_BAND, MUTED } from "@/components/ui/styles";
 
 const INPUT =
-  "w-full rounded-[4px] border-[0.8px] border-[#637381] bg-white px-4 py-[13px] text-[16px] leading-[24px] text-[#212529] placeholder:text-[#8a949e] focus:border-[#097d6c] focus:outline-none";
+  "w-full rounded-[12px] border border-[#dde5e1] bg-white px-4 py-[13px] text-[16px] leading-[24px] text-[#212529] placeholder:text-[#8a949e] focus:border-[#097d6c] focus:outline-none";
 
 export default async function CouncilPage({
   params,
@@ -66,7 +66,7 @@ export default async function CouncilPage({
               />
               <button
                 type="submit"
-                className="shrink-0 rounded-[4px] border-[0.8px] border-[#097d6c] bg-[#097d6c] px-6 py-[13px] text-[16px] font-bold leading-[24px] text-white hover:bg-[#075f53]"
+                className="shrink-0 rounded-full border border-[#097d6c] bg-[#097d6c] px-6 py-[13px] text-[16px] font-bold leading-[24px] text-white hover:bg-[#075f53]"
               >
                 {t.council.searchButton}
               </button>
@@ -127,7 +127,7 @@ export default async function CouncilPage({
                       </span>
                       <span className={MUTED}>{formatTimestamp(h.startS)}</span>
                       {h.lexicalRank !== null && h.semanticRank !== null && (
-                        <span className="rounded-[4px] bg-[#e6f4f1] px-2 py-1 font-bold text-[#097d6c]">
+                        <span className="rounded-full bg-[#e2f0ec] px-2.5 py-1 font-bold text-[#097d6c]">
                           {t.council.bothMatch}
                         </span>
                       )}

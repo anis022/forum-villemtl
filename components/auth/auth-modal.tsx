@@ -207,7 +207,7 @@ export function AuthModal({
         }}
       >
         <div
-          className="auth-panel-shell w-[min(28rem,100%)] overflow-hidden rounded-[4px] bg-white shadow-2xl"
+          className="auth-panel-shell w-[min(28rem,100%)] overflow-hidden rounded-[18px] bg-white shadow-2xl"
           style={{ height }}
         >
           <div ref={panelRef} key={view} className="auth-panel">

@@ -131,7 +131,7 @@ export default async function IssuePage({
                 key={comment.id}
                 className={
                   comment.isOfficial
-                    ? "flex gap-3 rounded-[4px] border-l-4 border-[#097d6c] bg-[#e6f4f1] p-5"
+                    ? "flex gap-3 rounded-[16px] border-l-4 border-[#097d6c] bg-[#e2f0ec] p-5"
                     : `${CARD} flex gap-3 p-5`
                 }
               >

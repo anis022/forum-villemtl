@@ -96,20 +96,23 @@ summary:focus,
 
 /* The ring is a box-shadow, so it traces whatever radius the element already
    has — and anything left at 0 got a hard-cornered rectangle around it while
-   its neighbours got rounded ones. Give every control a floor in the base
-   layer, below Tailwind's utilities, so `rounded-full` and friends still win
-   wherever a component asks for something specific.
+   its neighbours got rounded ones. Give every focusable element a floor in the
+   base layer, below Tailwind's utilities, so `rounded-full` and friends still
+   win wherever a component asks for something specific.
 
-   Anchors are excluded: an inline link inside a paragraph should not grow
-   corners, and its ring hugging the text is the expected shape. */
+   Anchors are included. Most links on this site are controls — a post title,
+   a back link, a sort toggle — and excluding them was why square rings kept
+   showing up. On an inline link inside a paragraph a radius changes nothing
+   but the shape of the ring, which is the point. */
 @layer base {
+  a,
   button,
   input,
   select,
   textarea,
   summary,
   [role="button"],
-  [tabindex]:not(a) {
+  [tabindex] {
     border-radius: 10px;
   }
 }

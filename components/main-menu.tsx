@@ -66,8 +66,8 @@ export function MainMenu({ lang, labels }: { lang: Locale; labels: Labels }) {
         aria-expanded={open}
         aria-controls="main-menu-panel"
         aria-label={labels.menu}
-        className={`flex h-10 items-center gap-2 rounded-[4px] px-2 text-[16px] font-bold leading-[24px] transition-colors md:gap-3 md:px-3 ${
-          open ? "text-[#097d6c]" : "text-[#212529] hover:text-[#097d6c]"
+        className={`flex h-10 items-center gap-2 rounded-full px-3 text-[16px] font-bold leading-[24px] transition-colors md:gap-3 ${
+          open ? "text-[#097d6c]" : "text-[#16241f] hover:text-[#097d6c]"
         }`}
       >
         <svg

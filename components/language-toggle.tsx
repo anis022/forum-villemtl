@@ -27,7 +27,7 @@ export function LanguageToggle({ lang, label }: { lang: Locale; label: string })
       type="button"
       onClick={switchTo}
       lang={other}
-      className="rounded-[4px] px-2 py-0.5 text-[14px] font-bold leading-[20px] text-white hover:underline"
+      className="rounded-full px-2.5 py-0.5 text-[14px] font-bold leading-[20px] text-white hover:underline"
     >
       {label}
     </button>

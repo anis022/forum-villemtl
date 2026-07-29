@@ -25,7 +25,7 @@ export function HeaderSearchButton({ lang, label }: { lang: Locale; label: strin
       type="button"
       onClick={activate}
       aria-label={label}
-      className="flex h-10 items-center gap-2 rounded-[4px] px-2 text-[16px] font-bold leading-[24px] text-[#212529] hover:text-[#097d6c] md:px-3"
+      className="flex h-10 items-center gap-2 rounded-full px-3 text-[16px] font-bold leading-[24px] text-[#16241f] transition-colors hover:text-[#097d6c] md:px-3"
     >
       <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" fill="none" className="shrink-0">
         <circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" strokeWidth="1.7" />
