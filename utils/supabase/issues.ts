@@ -21,6 +21,10 @@ type IssueRow = {
   comment_count: number;
   created_at: string;
   image_path: string | null;
+  lat: number | null;
+  lon: number | null;
+  edited_at: string | null;
+  edited_by: string | null;
   author: ProfileRow;
 };
 
@@ -55,6 +59,10 @@ const toIssue = (
   hasVoted: votedIds.has(row.id),
   imageUrl: imageUrl(row.image_path),
   supporters: supporters.get(row.id) ?? [],
+  lat: row.lat === null ? null : Number(row.lat),
+  lon: row.lon === null ? null : Number(row.lon),
+  editedAt: row.edited_at,
+  editedById: row.edited_by,
 });
 
 /**
@@ -71,7 +79,7 @@ const missingAvatar = (message: string | undefined) =>
   Boolean(message && message.includes("avatar_url"));
 
 const issueSelect = () =>
-  `id, title, body, category, status, vote_count, comment_count, created_at, image_path, author:profiles!issues_author_id_fkey(${profileFields()})`;
+  `id, title, body, category, status, vote_count, comment_count, created_at, image_path, lat, lon, edited_at, edited_by, author:profiles!issues_author_id_fkey(${profileFields()})`;
 
 /**
  * A few backers per issue, for the face pile — fetched for the whole page in

@@ -221,6 +221,19 @@ summary:focus,
   }
 }
 
+/* Leaflet paints its panes at z-index 400 and its controls at 1000, both far
+   above the sticky masthead at 50 — so scrolling a map under the header made
+   the tiles and zoom buttons ride over it.
+
+   Isolating the map root scopes every one of those values to the map itself,
+   which then sits at 0 like any ordinary block. Raising the header's z-index
+   past 1000 would have worked too, and left the site with a stacking order
+   nobody could reason about later. */
+.leaflet-container {
+  isolation: isolate;
+  z-index: 0;
+}
+
 .search-spinner {
   animation: spin 700ms linear infinite;
 }

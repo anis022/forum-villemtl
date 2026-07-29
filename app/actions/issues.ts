@@ -17,8 +17,21 @@ import { DEFAULT_LOCALE, isLocale, type ErrorCode, type Locale } from "@/utils/i
  */
 export type ActionState = {
   error: ErrorCode | null;
-  values?: { title?: string; body?: string; category?: string };
+  values?: {
+    title?: string;
+    body?: string;
+    category?: string;
+    lat?: number | null;
+    lon?: number | null;
+  };
 };
+
+/**
+ * The borough, with padding. A pin outside it is refused: a report the
+ * arrondissement cannot act on helps nobody, and the map would stretch to fit
+ * a point nobody meant to place.
+ */
+const BOROUGH = { minLat: 45.4495, maxLat: 45.5095, minLon: -73.665, maxLon: -73.598 };
 
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
@@ -52,13 +65,33 @@ export async function createIssue(
   const body = String(formData.get("body") ?? "").trim();
   const category = String(formData.get("category") ?? "general") as Category;
   const image = formData.get("image");
-  const values = { title, body, category };
+
+  const rawLat = String(formData.get("lat") ?? "").trim();
+  const rawLon = String(formData.get("lon") ?? "").trim();
+  const lat = rawLat === "" ? null : Number(rawLat);
+  const lon = rawLon === "" ? null : Number(rawLon);
+
+  const values = { title, body, category, lat, lon };
 
   if (title.length < 5) return { error: "titleTooShort", values };
   if (title.length > 150) return { error: "titleTooLong", values };
   if (body.length < 20) return { error: "bodyTooShort", values };
   if (body.length > 5000) return { error: "bodyTooLong", values };
   if (!CATEGORY_KEYS.includes(category)) return { error: "badCategory", values };
+
+  // Re-validated here, not only in the picker: the browser can post anything.
+  if (lat === null || lon === null) return { error: "locationRequired", values };
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+    return { error: "locationRequired", values };
+  }
+  if (
+    lat < BOROUGH.minLat ||
+    lat > BOROUGH.maxLat ||
+    lon < BOROUGH.minLon ||
+    lon > BOROUGH.maxLon
+  ) {
+    return { error: "locationOutside", values };
+  }
 
   // Uploaded before the insert so a storage failure doesn't leave a published
   // issue pointing at a file that was never stored.
@@ -81,7 +114,7 @@ export async function createIssue(
 
   const { data, error } = await supabase
     .from("issues")
-    .insert({ author_id: user.id, title, body, category, image_path: imagePath })
+    .insert({ author_id: user.id, title, body, category, image_path: imagePath, lat, lon })
     .select("id")
     .single();
 
@@ -89,6 +122,91 @@ export async function createIssue(
 
   revalidatePath(`/${locale}`);
   redirect(`/${locale}/sujets/${data.id}`);
+}
+
+/**
+ * Who is allowed to change or withdraw a given report.
+ *
+ * RLS enforces this independently; deciding it here as well is what lets the
+ * page render the right controls and return a usable message instead of an
+ * opaque policy error.
+ */
+async function editRights(issueId: string) {
+  const { supabase, user } = await requireUser();
+  if (!user) return { supabase, user: null, allowed: false, isOfficial: false, authorId: null };
+
+  const [{ data: issue }, { data: profile }] = await Promise.all([
+    supabase.from("issues").select("author_id").eq("id", issueId).maybeSingle(),
+    supabase.from("profiles").select("role").eq("id", user.id).maybeSingle(),
+  ]);
+
+  const isOfficial = profile?.role === "official";
+  const authorId = (issue?.author_id as string | undefined) ?? null;
+  return {
+    supabase,
+    user,
+    isOfficial,
+    authorId,
+    allowed: Boolean(authorId) && (authorId === user.id || isOfficial),
+  };
+}
+
+/**
+ * Edit a report.
+ *
+ * The location and the photo are left alone: this exists for correcting words,
+ * and silently moving someone else's pin would change what was reported rather
+ * than how it reads.
+ *
+ * When the editor is not the author, `edited_by` records it so the page can say
+ * an elected official altered a resident's text. An invisible edit by someone
+ * with authority is indistinguishable from censorship.
+ */
+export async function updateIssue(
+  issueId: string,
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const { supabase, user, allowed } = await editRights(issueId);
+  if (!user) return { error: "notSignedIn" };
+  if (!allowed) return { error: "notAuthorized" };
+
+  const locale = localeFrom(formData);
+  const title = String(formData.get("title") ?? "").trim();
+  const body = String(formData.get("body") ?? "").trim();
+  const category = String(formData.get("category") ?? "general") as Category;
+  const values = { title, body, category };
+
+  if (title.length < 5) return { error: "titleTooShort", values };
+  if (title.length > 150) return { error: "titleTooLong", values };
+  if (body.length < 20) return { error: "bodyTooShort", values };
+  if (body.length > 5000) return { error: "bodyTooLong", values };
+  if (!CATEGORY_KEYS.includes(category)) return { error: "badCategory", values };
+
+  const { error } = await supabase
+    .from("issues")
+    .update({ title, body, category, edited_at: new Date().toISOString(), edited_by: user.id })
+    .eq("id", issueId);
+
+  if (error) return { error: "publishFailed", values };
+
+  revalidatePath(`/${locale}/sujets/${issueId}`);
+  revalidatePath(`/${locale}`);
+  redirect(`/${locale}/sujets/${issueId}`);
+}
+
+/** Withdraw a report. Comments and votes cascade with it. */
+export async function deleteIssue(issueId: string, formData: FormData): Promise<ActionState> {
+  const { supabase, user, allowed } = await editRights(issueId);
+  if (!user) return { error: "notSignedIn" };
+  if (!allowed) return { error: "notAuthorized" };
+
+  const locale = localeFrom(formData);
+  const { error } = await supabase.from("issues").delete().eq("id", issueId);
+  if (error) return { error: "notAuthorized" };
+
+  revalidatePath(`/${locale}`);
+  redirect(`/${locale}`);
 }
 
 export async function addComment(

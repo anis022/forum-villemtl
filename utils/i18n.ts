@@ -29,7 +29,9 @@ export type ErrorCode =
   | "emailInvalid"
   | "passwordTooShort"
   | "passwordMismatch"
-  | "badCredentials";
+  | "badCredentials"
+  | "locationRequired"
+  | "locationOutside";
 
 const fr = {
   header: {
@@ -158,8 +160,18 @@ const fr = {
     signInPrompt: "Connectez-vous pour publier un sujet ou soutenir un enjeu.",
     topTitle: "Sujets les plus soutenus",
     newTitle: "Sujets récents",
+    mapTitle: "Signalements sur la carte",
     sortTop: "Populaires",
     sortNew: "Récents",
+    viewList: "Liste",
+    viewMap: "Carte",
+    mapAll: "Tous",
+    mapOpen: "Non résolus",
+    mapSettled: "Résolus",
+    mapLocated: "sur la carte",
+    mapUnlocated: "sans emplacement",
+    mapEmpty: "Aucun signalement n'a encore d'emplacement sur la carte.",
+    mapOpenIssue: "Voir le sujet",
     emptyTitle: "Aucun sujet pour le moment",
     emptyBody: "Soyez la première personne à signaler un enjeu dans votre quartier.",
     searchPlaceholder: "Que cherchez-vous?",
@@ -182,6 +194,14 @@ const fr = {
     fieldBodyHint: "Au moins 20 caractères.",
     fieldBodyPlaceholder:
       "Décrivez la situation, l'endroit précis et son impact sur le quartier.",
+    fieldLocation: "Endroit",
+    locationHint: "Cliquez sur la carte pour indiquer où se trouve le problème.",
+    locationChosen: "Endroit indiqué",
+    locationUseMine: "Utiliser ma position",
+    locationLocating: "Localisation…",
+    locationOutside: "Cet endroit est hors de l'arrondissement.",
+    locationDenied: "Position indisponible. Cliquez sur la carte à la place.",
+    locationClear: "Effacer",
     fieldPhoto: "Photo",
     fieldPhotoOptional: "(facultatif)",
     fieldPhotoHint: "JPEG, PNG ou WebP, 5 Mo maximum.",
@@ -209,6 +229,28 @@ const fr = {
     photoAlt: "Photo jointe",
     share: "Partager",
     copied: "Lien copié",
+    backToIssue: "← Retour au sujet",
+    edit: "Modifier",
+    editTitle: "Modifier le sujet",
+    editSubtitle:
+      "Corrigez le titre, la catégorie ou la description. L'historique du sujet indiquera qu'il a été modifié.",
+    editLocationNote:
+      "L'endroit et la photo ne sont pas modifiables ici : les changer ferait un autre signalement. Retirez celui-ci et publiez-en un nouveau si l'endroit était erroné.",
+    editOfficialWarning:
+      "Vous modifiez le texte d'une autre personne à titre d'élu·e. La page indiquera publiquement que le sujet a été modifié par un·e élu·e.",
+    save: "Enregistrer",
+    saving: "Enregistrement…",
+    cancelEdit: "Annuler",
+    editedByAuthor: (date: string) => `modifié le ${date}`,
+    editedByOfficial: (date: string) => `modifié par un·e élu·e le ${date}`,
+    withdraw: "Retirer",
+    withdrawing: "Retrait…",
+    withdrawConfirmTitle: "Retirer ce sujet?",
+    withdrawConfirmBody:
+      "Le sujet, ses réponses et ses soutiens seront supprimés définitivement. Cette action est irréversible.",
+    withdrawConfirmYes: "Retirer définitivement",
+    withdrawOfficialNote:
+      "Ce sujet a été publié par une autre personne. Vous agissez ici à titre d'élu·e.",
   },
   profile: {
     topics: "Sujets",
@@ -310,6 +352,9 @@ const fr = {
     passwordTooShort: "Le mot de passe doit contenir au moins 8 caractères.",
     passwordMismatch: "Les mots de passe ne correspondent pas.",
     badCredentials: "Courriel ou mot de passe invalide.",
+    locationRequired: "Indiquez l'endroit sur la carte en cliquant dessus.",
+    locationOutside:
+      "Cet endroit est hors de Côte-des-Neiges–Notre-Dame-de-Grâce. Choisissez un point dans l'arrondissement.",
   },
 };
 
@@ -440,6 +485,16 @@ const en: Dictionary = {
     signInPrompt: "Sign in to post a topic or support an issue.",
     topTitle: "Most-backed topics",
     newTitle: "Recent topics",
+    mapTitle: "Reports on the map",
+    viewList: "List",
+    viewMap: "Map",
+    mapAll: "All",
+    mapOpen: "Unresolved",
+    mapSettled: "Resolved",
+    mapLocated: "on the map",
+    mapUnlocated: "without a location",
+    mapEmpty: "No report has a location on the map yet.",
+    mapOpenIssue: "Open the topic",
     sortTop: "Popular",
     sortNew: "Recent",
     emptyTitle: "No topics yet",
@@ -464,6 +519,14 @@ const en: Dictionary = {
     fieldBodyHint: "At least 20 characters.",
     fieldBodyPlaceholder:
       "Describe the situation, the exact location and its impact on the neighbourhood.",
+    fieldLocation: "Location",
+    locationHint: "Click the map to show where the problem is.",
+    locationChosen: "Location set",
+    locationUseMine: "Use my location",
+    locationLocating: "Locating…",
+    locationOutside: "That spot is outside the borough.",
+    locationDenied: "Location unavailable. Click the map instead.",
+    locationClear: "Clear",
     fieldPhoto: "Photo",
     fieldPhotoOptional: "(optional)",
     fieldPhotoHint: "JPEG, PNG or WebP, 5 MB maximum.",
@@ -490,6 +553,28 @@ const en: Dictionary = {
     photoAlt: "Attached photo",
     share: "Share",
     copied: "Link copied",
+    backToIssue: "← Back to the topic",
+    edit: "Edit",
+    editTitle: "Edit the topic",
+    editSubtitle:
+      "Correct the title, category or description. The topic will show that it was edited.",
+    editLocationNote:
+      "The location and photo cannot be changed here: changing them would make this a different report. Withdraw this one and post a new one if the location was wrong.",
+    editOfficialWarning:
+      "You are editing someone else's words as an elected official. The page will state publicly that the topic was edited by an official.",
+    save: "Save",
+    saving: "Saving…",
+    cancelEdit: "Cancel",
+    editedByAuthor: (date: string) => `edited on ${date}`,
+    editedByOfficial: (date: string) => `edited by an official on ${date}`,
+    withdraw: "Withdraw",
+    withdrawing: "Withdrawing…",
+    withdrawConfirmTitle: "Withdraw this topic?",
+    withdrawConfirmBody:
+      "The topic, its replies and its support will be deleted permanently. This cannot be undone.",
+    withdrawConfirmYes: "Withdraw permanently",
+    withdrawOfficialNote:
+      "This topic was posted by someone else. You are acting here as an elected official.",
   },
   profile: {
     topics: "Topics",
@@ -590,6 +675,9 @@ const en: Dictionary = {
     passwordTooShort: "The password must be at least 8 characters.",
     passwordMismatch: "The passwords do not match.",
     badCredentials: "Invalid email or password.",
+    locationRequired: "Point out the spot by clicking the map.",
+    locationOutside:
+      "That spot is outside Côte-des-Neiges–Notre-Dame-de-Grâce. Pick a point inside the borough.",
   },
 };
 

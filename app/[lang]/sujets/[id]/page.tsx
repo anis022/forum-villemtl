@@ -16,6 +16,8 @@ import {
 } from "@/components/issues/issue-meta";
 import { getSessionUser } from "@/utils/supabase/auth";
 import { getIssue, listComments } from "@/utils/supabase/issues";
+import { editedByOther } from "@/utils/issues";
+import { IssueActions } from "@/components/issues/issue-actions";
 import { getDictionary, isLocale } from "@/utils/i18n";
 import { CARD, CONTAINER, MUTED } from "@/components/ui/styles";
 import { Avatar } from "@/components/ui/avatar";
@@ -34,6 +36,7 @@ export default async function IssuePage({
 
   const comments = await listComments(id);
   const isOfficial = user?.role === "official";
+  const isAuthor = Boolean(user) && user!.id === issue.author.id;
 
   return (
     <div className="flex min-h-screen flex-col bg-white text-[#212529]">
@@ -59,6 +62,19 @@ export default async function IssuePage({
                 </p>
                 <p className={`mt-0.5 text-[13px] leading-[18px] ${MUTED}`}>
                   {formatDate(issue.createdAt, lang)}
+                  {issue.editedAt && (
+                    <>
+                      {" · "}
+                      {/* An edit by someone other than the author is named as
+                          such. A silent change by an official would be
+                          indistinguishable from censorship. */}
+                      <span className={editedByOther(issue) ? "font-bold text-[#b8660a]" : ""}>
+                        {editedByOther(issue)
+                          ? t.issue.editedByOfficial(formatDate(issue.editedAt, lang))
+                          : t.issue.editedByAuthor(formatDate(issue.editedAt, lang))}
+                      </span>
+                    </>
+                  )}
                 </p>
               </div>
               <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
@@ -114,6 +130,23 @@ export default async function IssuePage({
             </div>
 
             {isOfficial && <StatusControls issueId={issue.id} status={issue.status} lang={lang} />}
+
+            <IssueActions
+              issueId={issue.id}
+              lang={lang}
+              canEdit={isAuthor || isOfficial}
+              actingAsOfficial={!isAuthor && isOfficial}
+              labels={{
+                edit: t.issue.edit,
+                withdraw: t.issue.withdraw,
+                withdrawing: t.issue.withdrawing,
+                confirmTitle: t.issue.withdrawConfirmTitle,
+                confirmBody: t.issue.withdrawConfirmBody,
+                confirmYes: t.issue.withdrawConfirmYes,
+                cancel: t.issue.cancelEdit,
+                officialNote: t.issue.withdrawOfficialNote,
+              }}
+            />
           </div>
         </article>
 

@@ -5,6 +5,7 @@ import { createIssue, type ActionState } from "@/app/actions/issues";
 import { CATEGORY_KEYS } from "@/utils/issues";
 import { getDictionary, type Locale } from "@/utils/i18n";
 import { ALERT, BTN_PRIMARY, CARD, FIELD, LABEL, MUTED } from "@/components/ui/styles";
+import { LocationPicker } from "./location-picker";
 
 const initial: ActionState = { error: null };
 
@@ -69,6 +70,24 @@ export function NewIssueForm({ lang }: { lang: Locale }) {
           className={`${FIELD} resize-y`}
         />
         <p className={`mt-1 text-[14px] ${MUTED}`}>{t.issue.fieldBodyHint}</p>
+      </div>
+
+      <div className="mb-5">
+        <span className={LABEL}>{t.issue.fieldLocation}</span>
+        <LocationPicker
+          disabled={pending}
+          defaultLat={state.values?.lat}
+          defaultLon={state.values?.lon}
+          labels={{
+            hint: t.issue.locationHint,
+            chosen: t.issue.locationChosen,
+            locate: t.issue.locationUseMine,
+            locating: t.issue.locationLocating,
+            outside: t.issue.locationOutside,
+            denied: t.issue.locationDenied,
+            clear: t.issue.locationClear,
+          }}
+        />
       </div>
 
       <div className="mb-5">

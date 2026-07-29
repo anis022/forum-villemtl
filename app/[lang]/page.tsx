@@ -5,6 +5,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { IssueCard } from "@/components/issues/issue-card";
 import { ForumSearch } from "@/components/forum-search";
 import { IssueList } from "@/components/issues/issue-list";
+import { IssueMap } from "@/components/issues/issue-map";
 import { getSessionUser } from "@/utils/supabase/auth";
 import { listIssues } from "@/utils/supabase/issues";
 import { getDictionary, isLocale } from "@/utils/i18n";
@@ -23,13 +24,14 @@ export default async function Home({
   searchParams,
 }: {
   params: Promise<{ lang: string }>;
-  searchParams: Promise<{ tri?: string; q?: string }>;
+  searchParams: Promise<{ tri?: string; q?: string; vue?: string }>;
 }) {
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
 
-  const { tri, q } = await searchParams;
+  const { tri, q, vue } = await searchParams;
   const sort = tri === "recents" ? "new" : "top";
+  const mapView = vue === "carte";
   const t = getDictionary(lang);
 
   const [user, allIssues] = await Promise.all([getSessionUser(), listIssues(sort)]);
@@ -100,30 +102,73 @@ export default async function Home({
 
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-[22px] font-bold leading-[30px] md:text-[26px] md:leading-[34px]">
-            {sort === "top" ? t.home.topTitle : t.home.newTitle}
+            {mapView ? t.home.mapTitle : sort === "top" ? t.home.topTitle : t.home.newTitle}
           </h2>
 
-          {/* A segmented control rather than two loose buttons: these are two
-              views of one list, and they should read as one switch. */}
-          <div className="inline-flex rounded-full border border-[#dde5e1] bg-white p-1">
-            <Link
-              href={`/${lang}`}
-              aria-current={sort === "top" ? "true" : undefined}
-              className={`rounded-full px-4 py-1.5 text-[14px] font-bold transition-colors ${
-                sort === "top" ? "bg-[#097d6c] text-white" : "text-[#5d6b66] hover:text-[#16241f]"
-              }`}
-            >
-              {t.home.sortTop}
-            </Link>
-            <Link
-              href={`/${lang}?tri=recents`}
-              aria-current={sort === "new" ? "true" : undefined}
-              className={`rounded-full px-4 py-1.5 text-[14px] font-bold transition-colors ${
-                sort === "new" ? "bg-[#097d6c] text-white" : "text-[#5d6b66] hover:text-[#16241f]"
-              }`}
-            >
-              {t.home.sortNew}
-            </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Sorting only means something in a list. On a map every pin is
+                on screen at once, so the control is hidden rather than left
+                there doing nothing. */}
+            {!mapView && (
+              <div className="inline-flex rounded-full border border-[#dde5e1] bg-white p-1">
+                <Link
+                  href={`/${lang}`}
+                  aria-current={sort === "top" ? "true" : undefined}
+                  className={`rounded-full px-4 py-1.5 text-[14px] font-bold transition-colors ${
+                    sort === "top" ? "bg-[#097d6c] text-white" : "text-[#5d6b66] hover:text-[#16241f]"
+                  }`}
+                >
+                  {t.home.sortTop}
+                </Link>
+                <Link
+                  href={`/${lang}?tri=recents`}
+                  aria-current={sort === "new" ? "true" : undefined}
+                  className={`rounded-full px-4 py-1.5 text-[14px] font-bold transition-colors ${
+                    sort === "new" ? "bg-[#097d6c] text-white" : "text-[#5d6b66] hover:text-[#16241f]"
+                  }`}
+                >
+                  {t.home.sortNew}
+                </Link>
+              </div>
+            )}
+
+            <div className="inline-flex rounded-full border border-[#dde5e1] bg-white p-1">
+              <Link
+                href={`/${lang}${sort === "new" ? "?tri=recents" : ""}`}
+                aria-current={!mapView ? "true" : undefined}
+                className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[14px] font-bold transition-colors ${
+                  !mapView ? "bg-[#16241f] text-white" : "text-[#5d6b66] hover:text-[#16241f]"
+                }`}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path
+                    d="M4 6.5h16M4 12h16M4 17.5h16"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                {t.home.viewList}
+              </Link>
+              <Link
+                href={`/${lang}?vue=carte`}
+                aria-current={mapView ? "true" : undefined}
+                className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[14px] font-bold transition-colors ${
+                  mapView ? "bg-[#16241f] text-white" : "text-[#5d6b66] hover:text-[#16241f]"
+                }`}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path
+                    d="M12 2.6c-3.3 0-6 2.7-6 6 0 4.4 6 12.3 6 12.3s6-7.9 6-12.3c0-3.3-2.7-6-6-6z"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinejoin="round"
+                  />
+                  <circle cx="12" cy="8.6" r="2.1" stroke="currentColor" strokeWidth="1.7" />
+                </svg>
+                {t.home.viewMap}
+              </Link>
+            </div>
           </div>
         </div>
 
@@ -133,6 +178,24 @@ export default async function Home({
           </p>
         )}
 
+        {mapView ? (
+          <div className="mt-4">
+            <IssueMap
+              issues={issues}
+              lang={lang}
+              labels={{
+                statuses: t.statuses,
+                showAll: t.home.mapAll,
+                onlyOpen: t.home.mapOpen,
+                onlySettled: t.home.mapSettled,
+                located: t.home.mapLocated,
+                unlocated: t.home.mapUnlocated,
+                empty: t.home.mapEmpty,
+                open: t.home.mapOpenIssue,
+              }}
+            />
+          </div>
+        ) : (
         <IssueList query={`${sort}:${query}`}>
         <div className="mt-4 space-y-4">
           {issues.length === 0 ? (
@@ -157,6 +220,7 @@ export default async function Home({
           )}
         </div>
         </IssueList>
+        )}
       </main>
       <SiteFooter lang={lang} />
     </div>
