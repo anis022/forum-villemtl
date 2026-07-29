@@ -61,9 +61,19 @@ export default async function Home({
             {t.home.subtitle}
           </p>
 
-          {/* The call to action belongs with the pitch that just argued for
-              it, not stranded between the section heading and the first post. */}
-          <div className="mt-7 flex flex-wrap items-center gap-3">
+          {/* Searching first, posting second: most arrivals are looking for
+              something, and someone about to report an issue should have had
+              the chance to find it already reported. */}
+          <div className="mt-7 max-w-[680px]">
+            <ForumSearch
+              lang={lang}
+              defaultValue={q ?? ""}
+              placeholder={t.home.searchPlaceholder}
+              clearLabel={t.home.clearSearch}
+            />
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center gap-3">
             {user ? (
               <Link href={`/${lang}/sujets/nouveau`} className={BTN_PRIMARY}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -79,15 +89,6 @@ export default async function Home({
             ) : (
               <p className={`text-[15px] ${MUTED}`}>{t.home.signInPrompt}</p>
             )}
-          </div>
-
-          <div className="mt-6 max-w-[680px]">
-            <ForumSearch
-              lang={lang}
-              defaultValue={q ?? ""}
-              placeholder={t.home.searchPlaceholder}
-              clearLabel={t.home.clearSearch}
-            />
           </div>
         </div>
       </div>
