@@ -27,11 +27,23 @@ async function sb() {
 
 export async function getProfile(id: string): Promise<PublicProfile | null> {
   const supabase = await sb();
-  const { data } = await supabase
+
+  // `avatar_url` arrives with migration 0009. Asking for a column that does not
+  // exist fails the query, and the page would read that as "no such person" and
+  // return a 404 — so fall back to the fields that have always been there.
+  let { data } = await supabase
     .from("profiles")
     .select("id, first_name, last_name, avatar_url, role, created_at")
     .eq("id", id)
     .maybeSingle();
+
+  if (!data) {
+    ({ data } = await supabase
+      .from("profiles")
+      .select("id, first_name, last_name, role, created_at")
+      .eq("id", id)
+      .maybeSingle());
+  }
 
   if (!data) return null;
   return {

@@ -14,9 +14,11 @@ export type UploadLabels = {
 };
 
 /**
- * Picking a photo submits immediately — an upload behind a second "save" button
- * is a step nobody expects on a profile picture. The preview swaps in from the
- * chosen file so the change is visible before the round trip finishes.
+ * The avatar itself is the control: a camera badge sits on its corner, which
+ * is the gesture people already know from every profile they have. Picking a
+ * file uploads it straight away — an upload waiting behind a separate save
+ * button is a step nobody expects on a profile picture — and the preview swaps
+ * in from the chosen file so the change is visible before the round trip ends.
  */
 export function AvatarUpload({
   person,
@@ -31,6 +33,7 @@ export function AvatarUpload({
   const [pending, startTransition] = useTransition();
 
   const shown: AvatarPerson = preview ? { ...person, avatarUrl: preview } : person;
+  const hasPhoto = Boolean(person.avatarUrl || preview);
 
   function onPick(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -59,35 +62,56 @@ export function AvatarUpload({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-4">
-      <span className={pending ? "opacity-60 transition-opacity" : "transition-opacity"}>
+    <div className="relative">
+      <span className={pending ? "block opacity-50 transition-opacity" : "block transition-opacity"}>
         <Avatar person={shown} size="lg" />
       </span>
 
-      <div className="min-w-0">
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            disabled={pending}
-            className="h-9 rounded-[4px] border-[0.8px] border-[#097d6c] bg-[#097d6c] px-4 text-[14px] font-bold text-white transition-colors hover:bg-[#075f53] disabled:opacity-60"
-          >
-            {pending ? labels.saving : labels.change}
-          </button>
-          {(person.avatarUrl || preview) && (
-            <button
-              type="button"
-              onClick={onRemove}
-              disabled={pending}
-              className="h-9 rounded-[4px] border-[0.8px] border-[#ced4da] px-4 text-[14px] font-bold text-[#637381] transition-colors hover:border-[#637381] hover:text-[#212529] disabled:opacity-60"
-            >
-              {labels.remove}
-            </button>
-          )}
-        </div>
-        <p className="mt-2 text-[13px] leading-[18px] text-[#637381]">{labels.hint}</p>
-        {error && <p className="mt-1 text-[13px] font-bold text-[#a4231f]">{labels.errors[error]}</p>}
-      </div>
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        disabled={pending}
+        aria-label={labels.change}
+        title={labels.change}
+        className="absolute -bottom-0.5 -right-0.5 inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-[#097d6c] text-white shadow-[0_1px_4px_rgba(22,36,31,0.25)] transition-transform hover:scale-105 active:scale-95 disabled:opacity-60"
+      >
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path
+            d="M4 8.5h3l1.5-2.2h7L17 8.5h3v10H4v-10z"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinejoin="round"
+          />
+          <circle cx="12" cy="13" r="3.2" stroke="currentColor" strokeWidth="1.7" />
+        </svg>
+      </button>
+
+      {/* Removal is secondary and rare, so it stays out of the badge and only
+          appears once there is actually a photo to remove. */}
+      {hasPhoto && !pending && (
+        <button
+          type="button"
+          onClick={onRemove}
+          className="absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap text-[12px] font-bold text-[#5d6b66] underline transition-colors hover:text-[#c0392f]"
+        >
+          {labels.remove}
+        </button>
+      )}
+
+      {pending && (
+        <p className="absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap text-[12px] font-bold text-[#5d6b66]">
+          {labels.saving}
+        </p>
+      )}
+
+      {error && (
+        <p
+          role="alert"
+          className="absolute left-1/2 top-full mt-2 w-max max-w-[16rem] -translate-x-1/2 rounded-[10px] bg-[#fdeceb] px-3 py-1.5 text-[12px] font-bold text-[#a4231f]"
+        >
+          {labels.errors[error]}
+        </p>
+      )}
 
       <input
         ref={inputRef}

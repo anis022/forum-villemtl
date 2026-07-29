@@ -44,8 +44,13 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - image files
+     * - static assets: images, fonts, icons
+     *
+     * Fonts have to be listed here. Without them, /fonts/Montreal-Web-*.woff2
+     * gets locale-prefixed into /fr/fonts/... and 404s, so the brand face
+     * silently never loads and everything falls back to the system stack —
+     * with `font-display: swap` there is no error, just the wrong typeface.
      */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff|woff2|ttf|otf)$).*)",
   ],
 };

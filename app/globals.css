@@ -94,6 +94,26 @@ summary:focus,
     0 0 0 4px #0079c4;
 }
 
+/* The ring is a box-shadow, so it traces whatever radius the element already
+   has — and anything left at 0 got a hard-cornered rectangle around it while
+   its neighbours got rounded ones. Give every control a floor in the base
+   layer, below Tailwind's utilities, so `rounded-full` and friends still win
+   wherever a component asks for something specific.
+
+   Anchors are excluded: an inline link inside a paragraph should not grow
+   corners, and its ring hugging the text is the expected shape. */
+@layer base {
+  button,
+  input,
+  select,
+  textarea,
+  summary,
+  [role="button"],
+  [tabindex]:not(a) {
+    border-radius: 10px;
+  }
+}
+
 /* Auth dialog: fade in the blurred overlay, lift the panel.
    `allow-discrete` + `@starting-style` let the native <dialog> animate
    in and out of the top layer instead of popping. */

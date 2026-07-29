@@ -1,41 +1,70 @@
-// Single source of truth for control styling, so every form on the site
+// Single source of truth for control styling, so every surface on the site
 // renders identically.
 //
-// Values are measured off montreal.ca, not approximated:
-//   text #212529 · muted #637381 · primary #097d6c · border #ced4da
-//   hero band #f8f9fa · page white · borders 0.8px · radius 4px
-//   controls 40px tall, padding 9px 16px, 16px/24px body, buttons 700 weight
+// The palette stays anchored on the borough's own teal (#097d6c) — this is a
+// civic site and that colour is its identity. Everything around it is warmed:
+// the neutrals carry a green bias so text sits in the same world as the accent
+// instead of floating in default grey, and the rosette red is reserved for
+// backing a neighbour, so support reads warm rather than administrative.
+//
+//   ink #16241f · muted #5d6b66 · line #dde5e1 · wash #f2f6f4
+//   accent #097d6c · accent soft #e2f0ec · rose #d94f45
+//
+// Corners are generous on purpose. A 4px radius reads as a government form; a
+// 16px card reads as somewhere people talk to each other.
 
-// montreal.ca's `.container`: max-width 1200px with 16px side padding.
+export const INK = "#16241f";
+export const MUTED_HEX = "#5d6b66";
+export const LINE = "#dde5e1";
+export const ACCENT = "#097d6c";
+export const ACCENT_SOFT = "#e2f0ec";
+export const ROSE = "#d94f45";
+
+/** montreal.ca's `.container`: max-width 1200px with 16px side padding. */
 export const CONTAINER = "mx-auto w-full max-w-[1200px] px-4";
 
-export const LABEL = "mb-2 block text-[16px] font-bold text-[#212529]";
+/** Narrower measure for reading: long body text past ~70 characters tires. */
+export const READABLE = "mx-auto w-full max-w-[720px]";
+
+export const LABEL = "mb-2 block text-[15px] font-bold text-[#16241f]";
 
 // No `outline-none`: the global :focus-visible ring is the keyboard indicator.
 export const FIELD =
-  "w-full rounded-[4px] border-[0.8px] border-[#637381] bg-white px-4 py-[11px] text-[16px] leading-[24px] text-[#212529] focus:border-[#097d6c] disabled:bg-[#f8f9fa]";
+  "w-full rounded-[12px] border border-[#dde5e1] bg-white px-4 py-[12px] text-[16px] leading-[24px] text-[#16241f] placeholder:text-[#93a19c] transition-colors focus:border-[#097d6c] disabled:bg-[#f2f6f4]";
 
 export const BTN_PRIMARY =
-  "inline-flex items-center justify-center rounded-[4px] border-[0.8px] border-[#097d6c] bg-[#097d6c] px-4 py-[9px] text-[16px] font-bold leading-[20px] text-white hover:bg-[#075f53] hover:border-[#075f53] disabled:cursor-not-allowed disabled:opacity-60";
+  "inline-flex items-center justify-center gap-2 rounded-full border border-[#097d6c] bg-[#097d6c] px-5 py-[10px] text-[15px] font-bold leading-[22px] text-white transition-all hover:bg-[#075f53] hover:border-[#075f53] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60";
 
 export const BTN_SECONDARY =
-  "inline-flex items-center justify-center rounded-[4px] border-[0.8px] border-[#ced4da] bg-white px-4 py-[9px] text-[16px] font-bold leading-[20px] text-[#097d6c] hover:bg-[#f8f9fa] disabled:cursor-not-allowed disabled:opacity-60";
+  "inline-flex items-center justify-center gap-2 rounded-full border border-[#dde5e1] bg-white px-5 py-[10px] text-[15px] font-bold leading-[22px] text-[#097d6c] transition-all hover:border-[#097d6c] hover:bg-[#e2f0ec] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60";
 
-/** Small bordered button, as used under "Les plus recherchés". */
+/** Quiet button for row actions — comment, share. Reads as a control on hover. */
+export const BTN_GHOST =
+  "inline-flex items-center justify-center gap-2 rounded-full px-3.5 py-2 text-[14px] font-bold leading-[20px] text-[#5d6b66] transition-colors hover:bg-[#f2f6f4] hover:text-[#16241f]";
+
 export const CHIP =
-  "inline-flex items-center rounded-[4px] border-[0.8px] border-[#ced4da] bg-white px-4 py-[9px] text-[14px] font-bold leading-[20px] text-[#097d6c] hover:bg-[#f8f9fa]";
+  "inline-flex items-center rounded-full border border-[#dde5e1] bg-white px-4 py-2 text-[14px] font-bold leading-[20px] text-[#097d6c] transition-colors hover:border-[#097d6c] hover:bg-[#e2f0ec]";
 
 /** Selected state of a CHIP — filled, matching the primary button. */
 export const CHIP_ACTIVE =
-  "inline-flex items-center rounded-[4px] border-[0.8px] border-[#097d6c] bg-[#097d6c] px-4 py-[9px] text-[14px] font-bold leading-[20px] text-white hover:bg-[#075f53] hover:border-[#075f53]";
+  "inline-flex items-center rounded-full border border-[#097d6c] bg-[#097d6c] px-4 py-2 text-[14px] font-bold leading-[20px] text-white transition-colors hover:bg-[#075f53] hover:border-[#075f53]";
 
 export const LINK = "font-bold text-[#097d6c] underline hover:text-[#075f53]";
 
 export const ALERT =
-  "rounded-[4px] border-[0.8px] border-[#f1c9c7] bg-[#fdeceb] px-4 py-3 text-[16px] text-[#a4231f]";
+  "rounded-[12px] border border-[#f3ccc8] bg-[#fdeceb] px-4 py-3 text-[15px] text-[#a4231f]";
 
-export const CARD = "rounded-[4px] border-[0.8px] border-[#ced4da] bg-white";
+/**
+ * The card. A hairline border plus a whisper of shadow, rather than the heavy
+ * 0.8px grey box: on a feed of thirty posts the border is what you notice, and
+ * it should not be.
+ */
+export const CARD =
+  "rounded-[16px] border border-[#dde5e1] bg-white shadow-[0_1px_2px_rgba(22,36,31,0.04)]";
 
-export const MUTED = "text-[#637381]";
+/** Same card, raised on hover — used where the whole card is a target. */
+export const CARD_INTERACTIVE = `${CARD} transition-shadow hover:shadow-[0_4px_16px_rgba(22,36,31,0.08)]`;
 
-export const HERO_BAND = "bg-[#f8f9fa]";
+export const MUTED = "text-[#5d6b66]";
+
+export const HERO_BAND = "bg-[#f2f6f4]";

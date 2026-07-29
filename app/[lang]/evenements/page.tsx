@@ -56,6 +56,7 @@ export default async function EventsPage({
               online: t.events.online,
               unmapped: t.events.unmapped,
               free: t.events.free,
+              showAll: t.events.showAll,
             }}
           />
         )}

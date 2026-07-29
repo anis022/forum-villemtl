@@ -130,6 +130,7 @@ const fr = {
     details: "Voir la fiche",
     online: "En ligne",
     unmapped: "sans lieu sur la carte",
+    showAll: "Tout afficher",
     free: "Gratuit",
     emptyTitle: "Aucun événement chargé",
     emptyBody:
@@ -203,6 +204,8 @@ const fr = {
     close: "Clore le sujet",
     reopen: "Rouvrir le sujet",
     photoAlt: "Photo jointe",
+    share: "Partager",
+    copied: "Lien copié",
   },
   profile: {
     topics: "Sujets",
@@ -407,6 +410,7 @@ const en: Dictionary = {
     details: "View details",
     online: "Online",
     unmapped: "with no location on the map",
+    showAll: "Show all",
     free: "Free",
     emptyTitle: "No events loaded",
     emptyBody:
@@ -478,6 +482,8 @@ const en: Dictionary = {
     close: "Close topic",
     reopen: "Reopen topic",
     photoAlt: "Attached photo",
+    share: "Share",
+    copied: "Link copied",
   },
   profile: {
     topics: "Topics",

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { VoteButton } from "@/components/issues/vote-button";
+import { ShareButton } from "@/components/issues/share-button";
 import { CommentForm } from "@/components/issues/comment-form";
 import { StatusControls } from "@/components/issues/status-controls";
 import {
@@ -44,20 +45,23 @@ export default async function IssuePage({
         </Link>
 
         <article className={`${CARD} mt-4 p-4 md:p-6`}>
-          <div className="mb-3 flex flex-wrap items-center gap-2">
-            <CategoryTag category={issue.category} lang={lang} />
-            <StatusTag status={issue.status} lang={lang} />
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <StatusTag status={issue.status} lang={lang} />
+              <span className={`text-[13px] font-bold ${MUTED}`}>
+                <CategoryTag category={issue.category} lang={lang} />
+              </span>
+            </div>
+            {/* Share belongs at the corner, away from the actions that change
+                the issue's state. */}
+            <ShareButton
+              path={`/${lang}/sujets/${issue.id}`}
+              title={issue.title}
+              lang={lang}
+            />
           </div>
 
           <div className="flex gap-3 md:gap-5">
-            <VoteButton
-              issueId={issue.id}
-              voteCount={issue.voteCount}
-              hasVoted={issue.hasVoted}
-              canVote={Boolean(user)}
-              lang={lang}
-            />
-
             <div className="min-w-0 flex-1">
               <h1 className="text-[24px] font-bold leading-[32px] break-words md:text-[32px] md:leading-[40px]">
                 {issue.title}
@@ -93,6 +97,21 @@ export default async function IssuePage({
                   className="mt-5 h-auto w-full rounded-[4px] border border-[#ced4da]"
                 />
               )}
+
+              <div className="mt-5 flex items-center gap-1.5 border-t border-[#eef2f0] pt-4">
+                <VoteButton
+                  issueId={issue.id}
+                  voteCount={issue.voteCount}
+                  hasVoted={issue.hasVoted}
+                  canVote={Boolean(user)}
+                  lang={lang}
+                />
+                <span className={`text-[14px] ${MUTED}`}>
+                  {issue.hasVoted
+                    ? t.vote.youAndOthers(issue.voteCount - 1)
+                    : t.vote.othersSupport(issue.voteCount)}
+                </span>
+              </div>
             </div>
           </div>
 
