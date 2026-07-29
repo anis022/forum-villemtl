@@ -46,7 +46,7 @@ const fr = {
     projects: "État d'avancement des projets",
     events: "Carte des événements dans l'arrondissement",
     council: "Recherche dans les conseils d'arrondissement",
-    forumDesc: "Discutez des enjeux de votre quartier et appuyez les sujets prioritaires.",
+    forumDesc: "Discutez des enjeux de votre quartier et soutenez les sujets prioritaires.",
     projectsDesc: "Suivez l'avancement des chantiers et des projets en cours.",
     eventsDesc: "Repérez les activités et les événements à venir près de chez vous.",
     councilDesc: "Explorez ce qui a été dit lors des séances du conseil, avec liens vers la vidéo.",
@@ -85,7 +85,7 @@ const fr = {
     types: {
       complaint: "Plaintes",
       question: "Questions",
-      support: "Appuis",
+      support: "Soutiens",
       info: "Informations",
       response: "Réponses",
     },
@@ -150,10 +150,10 @@ const fr = {
     welcome: "Bienvenue sur le forum",
     title: "Échangez sur votre quartier et les services municipaux.",
     subtitle:
-      "Signalez un enjeu, appuyez les sujets qui comptent pour vous. Les sujets les plus appuyés sont traités en priorité par les élu·e·s.",
+      "Signalez un enjeu, soutenez les sujets qui comptent pour vous. Les sujets les plus soutenus sont traités en priorité par les élu·e·s.",
     report: "Signaler un enjeu",
-    signInPrompt: "Connectez-vous pour publier un sujet ou appuyer un enjeu.",
-    topTitle: "Sujets les plus appuyés",
+    signInPrompt: "Connectez-vous pour publier un sujet ou soutenir un enjeu.",
+    topTitle: "Sujets les plus soutenus",
     newTitle: "Sujets récents",
     sortTop: "Populaires",
     sortNew: "Récents",
@@ -170,7 +170,7 @@ const fr = {
     back: "← Retour au forum",
     newTitle: "Signaler un enjeu",
     newSubtitle:
-      "Décrivez la situation le plus précisément possible. Les autres citoyen·ne·s pourront appuyer votre sujet et les élu·e·s pourront y répondre.",
+      "Décrivez la situation le plus précisément possible. Les autres citoyen·ne·s pourront soutenir votre sujet et les élu·e·s pourront y répondre.",
     fieldTitle: "Titre du sujet",
     fieldTitleHint: "Entre 5 et 150 caractères.",
     fieldTitlePlaceholder: "Ex. : Nids-de-poule sur la rue Sherbrooke",
@@ -210,7 +210,7 @@ const fr = {
   profile: {
     topics: "Sujets",
     replies: "Réponses",
-    backings: "Appuis",
+    backings: "Soutiens",
     changePhoto: "Changer la photo",
     removePhoto: "Retirer",
     photoHint: "JPEG, PNG ou WebP, 5 Mo maximum.",
@@ -220,25 +220,25 @@ const fr = {
     joined: (date: string) => `Membre depuis le ${date}`,
     emptyTitle: "Rien pour le moment",
     emptyBodySelf:
-      "Publiez un sujet, répondez ou appuyez un enjeu : votre activité apparaîtra ici.",
+      "Publiez un sujet, répondez ou soutenez un enjeu : votre activité apparaîtra ici.",
     emptyBodyOther: "Cette personne n'a pas encore participé au forum.",
     verbs: {
       issue: "a publié",
       comment: "a répondu dans",
-      vote: "a appuyé",
+      vote: "a soutenu",
     },
   },
   vote: {
-    add: "Appuyer ce sujet",
-    remove: "Retirer mon appui",
-    signInFirst: "Connectez-vous pour appuyer ce sujet",
+    add: "Soutenir ce sujet",
+    remove: "Retirer mon soutien",
+    signInFirst: "Connectez-vous pour soutenir ce sujet",
     youAndOthers: (others: number) => {
-      if (others <= 0) return "Vous appuyez ce sujet";
+      if (others <= 0) return "Vous soutenez ce sujet";
       const s = others > 1 ? "s" : "";
-      return `Vous et ${others} autre${s} personne${s} appuyez ce sujet`;
+      return `Vous et ${others} autre${s} personne${s} soutenez ce sujet`;
     },
     othersSupport: (n: number) =>
-      n === 1 ? "1 personne appuie ce sujet" : `${n} personnes appuient ce sujet`,
+      n === 1 ? "1 personne soutient ce sujet" : `${n} personnes soutiennent ce sujet`,
   },
   auth: {
     signIn: "Se connecter",
@@ -488,7 +488,7 @@ const en: Dictionary = {
   profile: {
     topics: "Topics",
     replies: "Replies",
-    backings: "Backings",
+    backings: "Support",
     changePhoto: "Change photo",
     removePhoto: "Remove",
     photoHint: "JPEG, PNG or WebP, 5 MB maximum.",
@@ -503,19 +503,19 @@ const en: Dictionary = {
     verbs: {
       issue: "posted",
       comment: "replied in",
-      vote: "backed",
+      vote: "supported",
     },
   },
   vote: {
-    add: "Back this topic",
-    remove: "Remove my backing",
-    signInFirst: "Sign in to back this topic",
+    add: "Support this topic",
+    remove: "Remove my support",
+    signInFirst: "Sign in to support this topic",
     youAndOthers: (others: number) => {
-      if (others <= 0) return "You back this topic";
-      return `You and ${others} other${others > 1 ? "s" : ""} back this topic`;
+      if (others <= 0) return "You support this topic";
+      return `You and ${others} other${others > 1 ? "s" : ""} support this topic`;
     },
     othersSupport: (n: number) =>
-      n === 1 ? "1 person backs this topic" : `${n} people back this topic`,
+      n === 1 ? "1 person supports this topic" : `${n} people support this topic`,
   },
   auth: {
     signIn: "Sign in",

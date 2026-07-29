@@ -14,12 +14,15 @@ export function formatDate(iso: string, lang: Locale) {
 }
 
 /**
- * The category sits inline with the date, so it reads as part of the byline
- * rather than as a second badge competing with the status pill.
+ * Category and status sit side by side, but they answer different questions —
+ * what this is about, and where it stands — so they must not look alike. The
+ * category is an outline pill; status is filled and carries a dot.
  */
 export function CategoryTag({ category, lang }: { category: Category; lang: Locale }) {
   return (
-    <span className="font-bold text-[#5d6b66]">{getDictionary(lang).categories[category]}</span>
+    <span className="inline-flex items-center rounded-full border border-[#dde5e1] px-2.5 py-1 text-[12px] font-bold text-[#5d6b66]">
+      {getDictionary(lang).categories[category]}
+    </span>
   );
 }
 

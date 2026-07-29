@@ -44,10 +44,11 @@ export default async function Home({
     : allIssues;
 
   return (
-    <div className="flex min-h-screen flex-col bg-white text-[#212529]">
+    // The feed sits on a tint, not on white: cards need a ground to read as
+    // cards, and a page of white boxes on white is what made this look flat.
+    <div className="flex min-h-screen flex-col bg-[#f8faf9] text-[#16241f]">
       <SiteHeader user={user} lang={lang} />
 
-      {/* Grey heading band, as on montreal.ca */}
       <div className={HERO_BAND}>
         <div className={`${CONTAINER} py-8 md:py-12`}>
           <p className="text-[18px] font-bold leading-[26px] md:text-[20px] md:leading-[28px]">
@@ -60,7 +61,27 @@ export default async function Home({
             {t.home.subtitle}
           </p>
 
-          <div className="mt-8 max-w-[680px]">
+          {/* The call to action belongs with the pitch that just argued for
+              it, not stranded between the section heading and the first post. */}
+          <div className="mt-7 flex flex-wrap items-center gap-3">
+            {user ? (
+              <Link href={`/${lang}/sujets/nouveau`} className={BTN_PRIMARY}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path
+                    d="M12 5v14M5 12h14"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                {t.home.report}
+              </Link>
+            ) : (
+              <p className={`text-[15px] ${MUTED}`}>{t.home.signInPrompt}</p>
+            )}
+          </div>
+
+          <div className="mt-6 max-w-[680px]">
             <ForumSearch
               lang={lang}
               defaultValue={q ?? ""}
@@ -71,43 +92,38 @@ export default async function Home({
         </div>
       </div>
 
-      <main className={`${CONTAINER} flex-1 py-8 md:py-12`}>
-        <div className="flex flex-wrap items-end justify-between gap-3 border-b-[0.8px] border-[#ced4da] pb-4">
-          <h2 className="text-[24px] font-bold leading-[32px] md:text-[32px] md:leading-[40px]">
+      <main className={`${CONTAINER} flex-1 py-8 md:py-10`}>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-[22px] font-bold leading-[30px] md:text-[26px] md:leading-[34px]">
             {sort === "top" ? t.home.topTitle : t.home.newTitle}
           </h2>
 
-          {/* montreal.ca's button pair: filled teal for the active choice,
-              bordered white for the other. No underlines, no colour-only cue. */}
-          <div className="flex items-center gap-2">
+          {/* A segmented control rather than two loose buttons: these are two
+              views of one list, and they should read as one switch. */}
+          <div className="inline-flex rounded-full border border-[#dde5e1] bg-white p-1">
             <Link
               href={`/${lang}`}
               aria-current={sort === "top" ? "true" : undefined}
-              className={sort === "top" ? CHIP_ACTIVE : CHIP}
+              className={`rounded-full px-4 py-1.5 text-[14px] font-bold transition-colors ${
+                sort === "top" ? "bg-[#097d6c] text-white" : "text-[#5d6b66] hover:text-[#16241f]"
+              }`}
             >
               {t.home.sortTop}
             </Link>
             <Link
               href={`/${lang}?tri=recents`}
               aria-current={sort === "new" ? "true" : undefined}
-              className={sort === "new" ? CHIP_ACTIVE : CHIP}
+              className={`rounded-full px-4 py-1.5 text-[14px] font-bold transition-colors ${
+                sort === "new" ? "bg-[#097d6c] text-white" : "text-[#5d6b66] hover:text-[#16241f]"
+              }`}
             >
               {t.home.sortNew}
             </Link>
           </div>
         </div>
 
-        {user && (
-          <div className="mt-6">
-            <Link href={`/${lang}/sujets/nouveau`} className={BTN_PRIMARY}>
-              {t.home.report}
-            </Link>
-          </div>
-        )}
-        {!user && <p className={`mt-6 ${MUTED}`}>{t.home.signInPrompt}</p>}
-
         {query && (
-          <p className={`mt-6 text-[14px] ${MUTED}`} aria-live="polite">
+          <p className={`mt-4 text-[14px] ${MUTED}`} aria-live="polite">
             {issues.length} {issues.length === 1 ? t.home.resultOne : t.home.resultMany}
           </p>
         )}

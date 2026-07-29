@@ -44,78 +44,77 @@ export default async function IssuePage({
           {t.issue.back}
         </Link>
 
-        <article className={`${CARD} mt-4 p-4 md:p-6`}>
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <StatusTag status={issue.status} lang={lang} />
-              <span className={`text-[13px] font-bold ${MUTED}`}>
+        <article className={`${CARD} mt-4 overflow-hidden`}>
+          <div className="p-4 md:p-6">
+            <div className="flex items-start gap-3">
+              <Link href={`/${lang}/profil/${issue.author.id}`} className="shrink-0">
+                <Avatar person={issue.author} size="md" />
+              </Link>
+              <div className="min-w-0 flex-1">
+                <p className="flex flex-wrap items-center gap-x-2 text-[15px] font-bold leading-[20px]">
+                  <Link href={`/${lang}/profil/${issue.author.id}`} className="hover:underline">
+                    {authorName(issue.author, t.issue.anonymousAuthor)}
+                  </Link>
+                  {issue.author.isOfficial && <OfficialBadge lang={lang} />}
+                </p>
+                <p className={`mt-0.5 text-[13px] leading-[18px] ${MUTED}`}>
+                  {formatDate(issue.createdAt, lang)}
+                </p>
+              </div>
+              <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
                 <CategoryTag category={issue.category} lang={lang} />
+                <StatusTag status={issue.status} lang={lang} />
+              </div>
+            </div>
+
+            <h1 className="mt-4 text-[24px] font-bold leading-[32px] break-words md:text-[30px] md:leading-[38px]">
+              {issue.title}
+            </h1>
+
+            <p className="mt-3 max-w-[68ch] whitespace-pre-wrap break-words text-[17px] leading-[27px]">
+              {issue.body}
+            </p>
+          </div>
+
+          {/* Full bleed: the photo is what the report is about. */}
+          {issue.imageUrl && (
+            <div className="border-y border-[#eef2f0] bg-[#f2f6f4]">
+              <Image
+                src={issue.imageUrl}
+                alt={`${t.issue.photoAlt} : ${issue.title}`}
+                width={1600}
+                height={1000}
+                className="max-h-[620px] w-full object-contain"
+              />
+            </div>
+          )}
+
+          <div className="p-4 md:p-6">
+            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-2 border-t border-[#eef2f0] pt-4">
+              <VoteButton
+                issueId={issue.id}
+                voteCount={issue.voteCount}
+                hasVoted={issue.hasVoted}
+                canVote={Boolean(user)}
+                lang={lang}
+              />
+              <span className={`text-[14px] ${MUTED}`}>
+                {issue.hasVoted
+                  ? t.vote.youAndOthers(issue.voteCount - 1)
+                  : t.vote.othersSupport(issue.voteCount)}
               </span>
+              {/* Bottom right, at the far end of the action row: sharing is the
+                  one control here that changes nothing. */}
+              <ShareButton
+                path={`/${lang}/sujets/${issue.id}`}
+                title={issue.title}
+                lang={lang}
+                className="ml-auto"
+              />
             </div>
-            {/* Share belongs at the corner, away from the actions that change
-                the issue's state. */}
-            <ShareButton
-              path={`/${lang}/sujets/${issue.id}`}
-              title={issue.title}
-              lang={lang}
-            />
+
+            {isOfficial && <StatusControls issueId={issue.id} status={issue.status} lang={lang} />}
           </div>
-
-          <div className="flex gap-3 md:gap-5">
-            <div className="min-w-0 flex-1">
-              <h1 className="text-[24px] font-bold leading-[32px] break-words md:text-[32px] md:leading-[40px]">
-                {issue.title}
-              </h1>
-
-              <div className="mt-3 flex items-center gap-2.5">
-                <Link href={`/${lang}/profil/${issue.author.id}`}>
-                  <Avatar person={issue.author} size="md" />
-                </Link>
-                <div className="min-w-0">
-                  <p className="flex flex-wrap items-center gap-x-2 text-[15px] font-bold leading-[20px]">
-                    <Link href={`/${lang}/profil/${issue.author.id}`} className="hover:underline">
-                      {authorName(issue.author, t.issue.anonymousAuthor)}
-                    </Link>
-                    {issue.author.isOfficial && <OfficialBadge lang={lang} />}
-                  </p>
-                  <p className={`text-[13px] leading-[18px] ${MUTED}`}>
-                    {formatDate(issue.createdAt, lang)}
-                  </p>
-                </div>
-              </div>
-
-              <p className="mt-4 whitespace-pre-wrap break-words text-[17px] leading-[27px]">
-                {issue.body}
-              </p>
-
-              {issue.imageUrl && (
-                <Image
-                  src={issue.imageUrl}
-                  alt={`${t.issue.photoAlt} : ${issue.title}`}
-                  width={1200}
-                  height={800}
-                  className="mt-5 h-auto w-full rounded-[4px] border border-[#ced4da]"
-                />
-              )}
-
-              <div className="mt-5 flex items-center gap-1.5 border-t border-[#eef2f0] pt-4">
-                <VoteButton
-                  issueId={issue.id}
-                  voteCount={issue.voteCount}
-                  hasVoted={issue.hasVoted}
-                  canVote={Boolean(user)}
-                  lang={lang}
-                />
-                <span className={`text-[14px] ${MUTED}`}>
-                  {issue.hasVoted
-                    ? t.vote.youAndOthers(issue.voteCount - 1)
-                    : t.vote.othersSupport(issue.voteCount)}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {isOfficial && <StatusControls issueId={issue.id} status={issue.status} lang={lang} />}
         </article>
 
         <section className="mt-10">
