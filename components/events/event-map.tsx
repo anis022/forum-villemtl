@@ -13,6 +13,7 @@ import {
   type District,
 } from "@/utils/events";
 import { CARD, MUTED } from "@/components/ui/styles";
+import { TILE_OPTIONS, TILE_URL } from "@/utils/map";
 
 export type MapLabels = {
   allDistricts: string;
@@ -94,13 +95,7 @@ export function EventMap({
       map.setMinZoom(12);
       L.control.zoom({ position: "bottomright" }).addTo(map);
 
-      // The lighter Carto basemap: the default OSM tiles are saturated enough
-      // that coloured pins disappear into the street colours.
-      L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
-        attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        maxZoom: 19,
-      }).addTo(map);
+      L.tileLayer(TILE_URL, TILE_OPTIONS).addTo(map);
 
       mapRef.current = map;
       layerRef.current = L.layerGroup().addTo(map);

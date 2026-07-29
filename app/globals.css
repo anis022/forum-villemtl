@@ -232,6 +232,42 @@ summary:focus,
 .leaflet-container {
   isolation: isolate;
   z-index: 0;
+  /* Leaflet ships its own font stack; without this the map labels are the only
+     text on the page not set in the city typeface. */
+  font-family: inherit;
+  background: #eef2f0;
+}
+
+/* Pull the basemap into the site's palette: drop most of the remaining colour,
+   rotate the leftover grey-blue toward the green-biased neutrals used
+   everywhere else, and lift it slightly so the pins sit clearly on top.
+   Applied to the tile layer alone, so markers, popups and controls keep their
+   real colours. */
+.map-tiles {
+  filter: saturate(0.55) hue-rotate(-12deg) brightness(1.04) contrast(0.94);
+}
+
+/* Leaflet's default popup is a white box with a hard 12px radius and a tight
+   shadow. Bring it onto the same system as the cards. */
+.leaflet-popup-content-wrapper {
+  border-radius: 14px;
+  box-shadow: 0 4px 16px rgba(22, 36, 31, 0.14);
+}
+
+.leaflet-popup-content {
+  margin: 12px 14px;
+  line-height: 20px;
+}
+
+.leaflet-control-zoom a {
+  border-radius: 10px !important;
+  color: #16241f;
+}
+
+.leaflet-control-attribution {
+  background: rgb(255 255 255 / 0.75);
+  border-radius: 8px 0 0 0;
+  font-size: 10px;
 }
 
 .search-spinner {

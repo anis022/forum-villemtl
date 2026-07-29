@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import "leaflet/dist/leaflet.css";
 import type { Map as LeafletMap, Marker } from "leaflet";
 import { BOROUGH_BOUNDS, BOROUGH_CENTER, BOROUGH_ZOOM } from "@/utils/issues";
+import { TILE_OPTIONS, TILE_URL } from "@/utils/map";
 
 export type PickerLabels = {
   hint: string;
@@ -67,11 +68,7 @@ export function LocationPicker({
       map.setMinZoom(13);
       L.control.zoom({ position: "bottomright" }).addTo(map);
 
-      L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
-        attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        maxZoom: 19,
-      }).addTo(map);
+      L.tileLayer(TILE_URL, TILE_OPTIONS).addTo(map);
 
       const drop = (lat: number, lon: number) => {
         if (!inside(lat, lon)) {
