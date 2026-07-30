@@ -38,23 +38,8 @@ export const STATUS_MAP_COLORS: Record<Status, string> = {
   resolved: "#097d6c",
 };
 
-/** The borough, with padding — used to fence every map on the site. */
-export const BOROUGH_BOUNDS: [[number, number], [number, number]] = [
-  [45.4495, -73.665],
-  [45.5095, -73.598],
-];
-
-/**
- * Opening view, set explicitly rather than by fitting the bounds.
- *
- * `fitBounds` zooms out until both dimensions fit, so in a wide, short frame
- * the height wins and the map opens on half the island — Dorval to Brossard —
- * with the borough a smudge in the middle. A fixed centre and zoom keeps the
- * neighbourhood filling the frame at any aspect ratio; `setMaxBounds` still
- * stops anyone wandering off it.
- */
-export const BOROUGH_CENTER: [number, number] = [45.4795, -73.6315];
-export const BOROUGH_ZOOM = 14;
+// The borough geometry lives in utils/map.ts — it is shared with the events
+// map, and two copies of a boundary is one too many.
 
 export type Author = {
   /** Needed for the avatar: the fallback colour is derived from it. */

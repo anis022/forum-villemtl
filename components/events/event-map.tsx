@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import "leaflet/dist/leaflet.css";
 import type { Map as LeafletMap, LayerGroup } from "leaflet";
 import {
-  BOROUGH_BOUNDS,
   DISTRICTS,
   DISTRICT_COLORS,
   formatDateRange,
@@ -13,7 +12,15 @@ import {
   type District,
 } from "@/utils/events";
 import { CARD, MUTED } from "@/components/ui/styles";
-import { TILE_OPTIONS, TILE_URL } from "@/utils/map";
+import {
+  BOROUGH_BOUNDS,
+  BOROUGH_CENTER,
+  BOROUGH_ZOOM,
+  MAP_OPTIONS,
+  TILE_OPTIONS,
+  TILE_URL,
+  addBoroughOutline,
+} from "@/utils/map";
 
 export type MapLabels = {
   allDistricts: string;
@@ -84,21 +91,26 @@ export function EventMap({
       const L = await import("leaflet");
       if (cancelled || !containerRef.current || mapRef.current) return;
 
-      const map = L.map(containerRef.current, {
-        scrollWheelZoom: false,
-        zoomControl: false,
-      });
-      map.fitBounds(BOROUGH_BOUNDS, { padding: [16, 16] });
+      const map = L.map(containerRef.current, MAP_OPTIONS);
+      // Stored before anything else async can run. React invokes effects twice
+      // in development; a map the cleanup cannot find leaks its container, and
+      // the second run then fails on an already-initialised element.
+      mapRef.current = map;
+
+      // The view has to come first: Leaflet refuses to accept a layer before
+      // it knows where it is looking.
+      map.setView(BOROUGH_CENTER, BOROUGH_ZOOM);
       // Keep the reader inside the borough — this map is not about the rest of
       // the island, and panning away from it only ever loses people.
       map.setMaxBounds(L.latLngBounds(BOROUGH_BOUNDS).pad(0.3));
-      map.setMinZoom(12);
+      map.setMinZoom(13);
       L.control.zoom({ position: "bottomright" }).addTo(map);
 
       L.tileLayer(TILE_URL, TILE_OPTIONS).addTo(map);
-
-      mapRef.current = map;
       layerRef.current = L.layerGroup().addTo(map);
+      // Not awaited: the outline is decoration, and blocking on it would hold
+      // up the pins behind a network round trip.
+      void addBoroughOutline(L, map);
     })();
 
     return () => {

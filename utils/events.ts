@@ -49,14 +49,7 @@ export function isMappable(e: BoroughEvent): boolean {
   return e.lat !== null && e.lon !== null && e.setting !== "online";
 }
 
-/**
- * The borough, with a little padding. Used to frame the map on load so it
- * opens on CDN-NDG rather than on all of Montréal.
- */
-export const BOROUGH_BOUNDS: [[number, number], [number, number]] = [
-  [45.4495, -73.6650],
-  [45.5095, -73.5980],
-];
+// The borough geometry lives in utils/map.ts, shared with the reports map.
 
 /** A colour per district, so the pins read as a set rather than a rainbow. */
 export const DISTRICT_COLORS: Record<District, string> = {

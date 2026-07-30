@@ -5,9 +5,6 @@ import Link from "next/link";
 import "leaflet/dist/leaflet.css";
 import type { Map as LeafletMap, LayerGroup } from "leaflet";
 import {
-  BOROUGH_BOUNDS,
-  BOROUGH_CENTER,
-  BOROUGH_ZOOM,
   STATUS_MAP_COLORS,
   isLocated,
   isSettled,
@@ -15,7 +12,15 @@ import {
   type Status,
 } from "@/utils/issues";
 import { CARD, MUTED } from "@/components/ui/styles";
-import { TILE_OPTIONS, TILE_URL } from "@/utils/map";
+import {
+  BOROUGH_BOUNDS,
+  BOROUGH_CENTER,
+  BOROUGH_ZOOM,
+  MAP_OPTIONS,
+  TILE_OPTIONS,
+  TILE_URL,
+  addBoroughOutline,
+} from "@/utils/map";
 
 export type IssueMapLabels = {
   statuses: Record<Status, string>;
@@ -76,16 +81,22 @@ export function IssueMap({
       const L = await import("leaflet");
       if (cancelled || !containerRef.current || mapRef.current) return;
 
-      const map = L.map(containerRef.current, { scrollWheelZoom: false, zoomControl: false });
+      const map = L.map(containerRef.current, MAP_OPTIONS);
+      // Stored before anything else async can run. React invokes effects twice
+      // in development; a map the cleanup cannot find leaks its container, and
+      // the second run then fails on an already-initialised element.
+      mapRef.current = map;
+
+      // The view has to come first: Leaflet refuses to accept a layer before
+      // it knows where it is looking.
       map.setView(BOROUGH_CENTER, BOROUGH_ZOOM);
       map.setMaxBounds(L.latLngBounds(BOROUGH_BOUNDS).pad(0.3));
       map.setMinZoom(13);
       L.control.zoom({ position: "bottomright" }).addTo(map);
 
       L.tileLayer(TILE_URL, TILE_OPTIONS).addTo(map);
-
-      mapRef.current = map;
       layerRef.current = L.layerGroup().addTo(map);
+      void addBoroughOutline(L, map);
     })();
 
     return () => {

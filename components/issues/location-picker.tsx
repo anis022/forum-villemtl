@@ -3,8 +3,15 @@
 import { useEffect, useRef, useState } from "react";
 import "leaflet/dist/leaflet.css";
 import type { Map as LeafletMap, Marker } from "leaflet";
-import { BOROUGH_BOUNDS, BOROUGH_CENTER, BOROUGH_ZOOM } from "@/utils/issues";
-import { TILE_OPTIONS, TILE_URL } from "@/utils/map";
+import {
+  BOROUGH_BOUNDS,
+  BOROUGH_CENTER,
+  BOROUGH_ZOOM,
+  MAP_OPTIONS,
+  TILE_OPTIONS,
+  TILE_URL,
+  addBoroughOutline,
+} from "@/utils/map";
 
 export type PickerLabels = {
   hint: string;
@@ -62,13 +69,19 @@ export function LocationPicker({
       const L = await import("leaflet");
       if (cancelled || !containerRef.current || mapRef.current) return;
 
-      const map = L.map(containerRef.current, { scrollWheelZoom: false, zoomControl: false });
+      const map = L.map(containerRef.current, MAP_OPTIONS);
+      // Stored before anything else async can run — see the note in issue-map.
+      mapRef.current = map;
+
       map.setView(BOROUGH_CENTER, BOROUGH_ZOOM);
       map.setMaxBounds(L.latLngBounds(BOROUGH_BOUNDS).pad(0.25));
       map.setMinZoom(13);
       L.control.zoom({ position: "bottomright" }).addTo(map);
 
       L.tileLayer(TILE_URL, TILE_OPTIONS).addTo(map);
+      // Shows the picker's own rule: inside the outline is where a pin is
+      // accepted, so the fence is visible before anyone hits it.
+      void addBoroughOutline(L, map);
 
       const drop = (lat: number, lon: number) => {
         if (!inside(lat, lon)) {
@@ -92,8 +105,6 @@ export function LocationPicker({
         markerRef.current = L.marker([point.lat, point.lon], { icon: pinIcon(L) }).addTo(map);
         map.setView([point.lat, point.lon], 15);
       }
-
-      mapRef.current = map;
     })();
 
     return () => {

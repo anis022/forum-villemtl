@@ -46,11 +46,11 @@ export const config = {
      * - favicon.ico (favicon file)
      * - static assets: images, fonts, icons
      *
-     * Fonts have to be listed here. Without them, /fonts/Montreal-Web-*.woff2
-     * gets locale-prefixed into /fr/fonts/... and 404s, so the brand face
-     * silently never loads and everything falls back to the system stack —
-     * with `font-display: swap` there is no error, just the wrong typeface.
+     * Every static extension the site serves has to be listed. Anything left
+     * out gets a locale prefix — /fonts/… became /fr/fonts/… and 404'd, taking
+     * the brand typeface down silently, and /cdn-ndg.geojson did the same to
+     * the borough outline. When adding an asset type to public/, add it here.
      */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff|woff2|ttf|otf)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff|woff2|ttf|otf|json|geojson|txt|xml)$).*)",
   ],
 };
