@@ -149,14 +149,18 @@ export default async function ProfilePage({
                   )}
                 </h1>
                 {/* An elected person who has not signed up has no join date to
-                    show, and their function is the more useful line anyway. */}
+                    show, and their function is the more useful line anyway.
+                    The mayor gets no second clause: "Mairesse d'arrondissement"
+                    already names the scope, and following it with "ensemble de
+                    l'arrondissement" says the same word back. */}
                 <p className={`mt-1 text-[14px] ${MUTED}`}>
                   {official
-                    ? `${t.officials.roles[official.role]} · ${
-                        official.district
-                          ? t.officials.district(official.district)
-                          : t.officials.wholeBorough
-                      }`
+                    ? [
+                        t.officials.roles[official.role],
+                        official.district && t.officials.district(official.district),
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")
                     : t.profile.joined(fmtDay(profile.joinedAt))}
                 </p>
               </div>

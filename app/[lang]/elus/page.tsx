@@ -63,11 +63,13 @@ export default async function OfficialsPage({ params }: { params: Promise<{ lang
                   <p className="mt-1 text-[14px] font-bold leading-[20px] text-[#097d6c]">
                     {t.officials.roles[person.role]}
                   </p>
-                  <p className={`mt-0.5 text-[14px] leading-[20px] ${MUTED}`}>
-                    {person.district
-                      ? t.officials.district(person.district)
-                      : t.officials.wholeBorough}
-                  </p>
+                  {/* Only when there is one. A borough mayor has no district,
+                      and her title already says the scope. */}
+                  {person.district && (
+                    <p className={`mt-0.5 text-[14px] leading-[20px] ${MUTED}`}>
+                      {t.officials.district(person.district)}
+                    </p>
+                  )}
                 </div>
               </Link>
             </li>
