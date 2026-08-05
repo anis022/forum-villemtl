@@ -32,7 +32,10 @@ const CHUNK = 100;
 
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  // Supabase renamed these: a project issues `sb_secret_…` keys now, where it
+  // used to issue a JWT called `service_role`. Either is accepted so the name
+  // on the Vercel side can match whichever the dashboard is calling it.
+  const key = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
   if (!secret || !key || !url) {
@@ -42,8 +45,10 @@ export async function GET(request: Request) {
     return Response.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  // The service role bypasses RLS, which is the point: nothing else may write
-  // this table, and no browser ever holds this key.
+  // This key bypasses RLS, which is the point: nothing else may write this
+  // table, and no browser ever holds it. It is read from the environment on
+  // every request rather than at module scope, so rotating it in Vercel takes
+  // effect on the next deploy without anything here needing to change.
   const supabase = createClient(url, key, { auth: { persistSession: false } });
 
   let rows;
