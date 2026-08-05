@@ -31,6 +31,7 @@ export function SiteFooter({ lang }: { lang: Locale }) {
       heading: t.nav.sections,
       links: [
         { href: `/${lang}`, label: t.nav.forum },
+        { href: `/${lang}/elus`, label: t.nav.officials },
         { href: `/${lang}/projets`, label: t.nav.projects },
         { href: `/${lang}/evenements`, label: t.nav.events },
       ],
@@ -55,12 +56,16 @@ export function SiteFooter({ lang }: { lang: Locale }) {
           {columns.map((column) => (
             <div key={column.heading} className="border-t border-white/40 pt-4">
               <p className="text-[16px] font-bold leading-[24px]">{column.heading}</p>
-              <ul className="mt-3 space-y-2">
+              {/* Every footer link is a 40px row rather than a 20px line of
+                  text. Stacked one per line on a phone these are the smallest
+                  targets on the site, and the rows carry the spacing that the
+                  list used to get from `space-y`. */}
+              <ul className="mt-1 space-y-0.5">
                 {column.links.map((link) => (
                   <li key={link.href + link.label}>
                     <Link
                       href={link.href}
-                      className="text-[14px] leading-[20px] text-white hover:underline"
+                      className="inline-flex min-h-[40px] items-center text-[14px] leading-[20px] text-white hover:underline"
                     >
                       {link.label}
                     </Link>
@@ -72,16 +77,23 @@ export function SiteFooter({ lang }: { lang: Locale }) {
 
           <div className="border-t border-white/40 pt-4">
             <p className="text-[16px] font-bold leading-[24px]">{t.footer.borough}</p>
-            <ul className="mt-3 space-y-2">
+            <ul className="mt-1 space-y-0.5">
               <li>
                 <a
                   href="https://montreal.ca"
-                  className="inline-flex items-center gap-1 text-[14px] leading-[20px] text-white hover:underline"
+                  className="inline-flex min-h-[40px] items-center gap-1 text-[14px] leading-[20px] text-white hover:underline"
                   target="_blank"
                   rel="noreferrer"
                 >
                   montreal.ca
-                  <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" fill="none">
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 12 12"
+                    aria-hidden="true"
+                    fill="none"
+                    className="shrink-0"
+                  >
                     <path
                       d="M4.5 1.5H10.5V7.5M10.5 1.5L5 7M8 8.5v2h-6.5V4h2"
                       stroke="currentColor"
@@ -98,14 +110,14 @@ export function SiteFooter({ lang }: { lang: Locale }) {
 
           <div className="border-t border-white/40 pt-4">
             <p className="text-[16px] font-bold leading-[24px]">{t.footer.follow}</p>
-            <ul className="mt-3 space-y-2">
+            <ul className="mt-1 space-y-0.5">
               {SOCIALS.map(({ label, href, Icon }) => (
                 <li key={label}>
                   <a
                     href={href}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-2 text-[14px] leading-[20px] text-white hover:underline"
+                    className="inline-flex min-h-[40px] items-center gap-2 text-[14px] leading-[20px] text-white hover:underline"
                   >
                     <Icon />
                     {label}

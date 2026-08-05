@@ -4,9 +4,10 @@ import type { Issue } from "@/utils/issues";
 import { getDictionary, type Locale } from "@/utils/i18n";
 import { CARD_INTERACTIVE, MUTED } from "@/components/ui/styles";
 import { Avatar, FacePile } from "@/components/ui/avatar";
+import { TranslateButton, Translated, TranslationProvider } from "@/components/translate";
 import { VoteButton } from "./vote-button";
 import { ShareButton } from "./share-button";
-import { CategoryTag, OfficialBadge, StatusTag, authorName, formatDate } from "./issue-meta";
+import { CategoryTag, OfficialBadge, StatusTag, authorName, formatDateShort } from "./issue-meta";
 
 /**
  * A post, not a ticket.
@@ -29,26 +30,39 @@ export function IssueCard({
   const href = `/${lang}/sujets/${issue.id}`;
 
   return (
+    // The provider spans the whole card because the words and the control that
+    // swaps them sit at opposite ends of it.
+    <TranslationProvider kind="issue" id={issue.id} lang={lang}>
     <article className={`${CARD_INTERACTIVE} overflow-hidden`}>
-      <div className="p-4 sm:p-5">
-        <header className="flex items-start gap-3">
+      <div className="p-3.5 sm:p-5">
+        {/* Category and status hold the top right corner at every width — they
+            are how you triage a feed at a glance, and moving them around by
+            breakpoint would mean hunting for them. What gives instead is the
+            author block: the name is one truncated line and the date is short,
+            so a long name shortens itself rather than pushing the pills off a
+            320px screen. */}
+        <header className="flex items-start gap-2.5 sm:gap-3">
           <Link href={`/${lang}/profil/${issue.author.id}`} className="shrink-0">
             <Avatar person={issue.author} size="md" />
           </Link>
 
           <div className="min-w-0 flex-1">
-            <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[15px] font-bold leading-[20px]">
-              <Link href={`/${lang}/profil/${issue.author.id}`} className="hover:underline">
+            <p className="flex min-w-0 items-center gap-1.5 text-[15px] font-bold leading-[20px]">
+              <Link href={`/${lang}/profil/${issue.author.id}`} className="truncate hover:underline">
                 {authorName(issue.author, t.issue.anonymousAuthor)}
               </Link>
               {issue.author.isOfficial && <OfficialBadge lang={lang} />}
             </p>
-            <p className={`mt-0.5 text-[13px] leading-[18px] ${MUTED}`}>
-              {formatDate(issue.createdAt, lang)}
+            <p className={`mt-0.5 truncate text-[13px] leading-[18px] ${MUTED}`}>
+              {formatDateShort(issue.createdAt, lang)}
             </p>
           </div>
 
-          <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+          {/* Stacked on a phone, side by side once there is room. Sitting in a
+              row the pair ate 130 of the 242 pixels a 320px card has to spend,
+              which left the author's name about four characters — the corner is
+              the right place for them, a whole row of it is not. */}
+          <div className="flex shrink-0 flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-1.5">
             <CategoryTag category={issue.category} lang={lang} />
             <StatusTag status={issue.status} lang={lang} />
           </div>
@@ -56,9 +70,11 @@ export function IssueCard({
 
         <Link href={href} className="group mt-3 block">
           <h3 className="text-[19px] font-bold leading-[27px] break-words group-hover:text-[#097d6c]">
-            {issue.title}
+            <Translated field="title">{issue.title}</Translated>
           </h3>
-          <p className={`mt-1.5 line-clamp-3 text-[15px] leading-[23px] ${MUTED}`}>{issue.body}</p>
+          <p className={`mt-1.5 line-clamp-3 text-[15px] leading-[23px] ${MUTED}`}>
+            <Translated field="body">{issue.body}</Translated>
+          </p>
         </Link>
       </div>
 
@@ -77,7 +93,7 @@ export function IssueCard({
         </Link>
       )}
 
-      <div className="p-4 sm:p-5">
+      <div className="p-3.5 sm:p-5">
         {/* Who is already behind this, before asking the reader to join them. */}
         {issue.supporters.length > 0 && (
           <div className="mb-3.5 flex items-center gap-2">
@@ -117,11 +133,15 @@ export function IssueCard({
             </span>
           </Link>
 
-          {/* Pushed to the far end of the row: sharing is the one action that
-              does not change anything, so it sits apart from the two that do. */}
-          <ShareButton path={href} title={issue.title} lang={lang} className="ml-auto" />
+          {/* The far end of the row is for the two actions that change nothing
+              about the post — translating it for yourself, and passing it on.
+              Translate sits to the left of share: it acts on what you are
+              reading, share acts on where it goes next. */}
+          <TranslateButton className="ml-auto" />
+          <ShareButton path={href} title={issue.title} lang={lang} />
         </footer>
       </div>
     </article>
+    </TranslationProvider>
   );
 }

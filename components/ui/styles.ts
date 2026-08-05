@@ -38,16 +38,31 @@ export const BTN_PRIMARY =
 export const BTN_SECONDARY =
   "inline-flex items-center justify-center gap-2 rounded-full border border-[#dde5e1] bg-white px-5 py-[10px] text-[15px] font-bold leading-[22px] text-[#097d6c] transition-all hover:border-[#097d6c] hover:bg-[#e2f0ec] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60";
 
+/**
+ * Radius for controls that have no shell of their own — header nav items, text
+ * buttons, links. The focus ring is a box-shadow tracing whatever radius the
+ * element has, so a `rounded-full` menu item gets a pill ring drawn around a
+ * button that was never there. Only things that actually look like buttons —
+ * filled, bordered or hover-filled — earn a pill ring; everything else gets
+ * corners just round enough to match the page.
+ */
+export const BARE_CONTROL = "rounded-[8px]";
+
 /** Quiet button for row actions — comment, share. Reads as a control on hover. */
 export const BTN_GHOST =
   "inline-flex items-center justify-center gap-2 rounded-full px-3.5 py-2 text-[14px] font-bold leading-[20px] text-[#5d6b66] transition-colors hover:bg-[#f2f6f4] hover:text-[#16241f]";
 
+/**
+ * `py-2.5` rather than `py-2`: a 20px line plus 16px of padding is a 36px
+ * target, and chips are a phone control. 40px is the floor, so it belongs in
+ * the token instead of being patched back on at each call site.
+ */
 export const CHIP =
-  "inline-flex items-center rounded-full border border-[#dde5e1] bg-white px-4 py-2 text-[14px] font-bold leading-[20px] text-[#097d6c] transition-colors hover:border-[#097d6c] hover:bg-[#e2f0ec]";
+  "inline-flex items-center rounded-full border border-[#dde5e1] bg-white px-4 py-2.5 text-[14px] font-bold leading-[20px] text-[#097d6c] transition-colors hover:border-[#097d6c] hover:bg-[#e2f0ec]";
 
 /** Selected state of a CHIP — filled, matching the primary button. */
 export const CHIP_ACTIVE =
-  "inline-flex items-center rounded-full border border-[#097d6c] bg-[#097d6c] px-4 py-2 text-[14px] font-bold leading-[20px] text-white transition-colors hover:bg-[#075f53] hover:border-[#075f53]";
+  "inline-flex items-center rounded-full border border-[#097d6c] bg-[#097d6c] px-4 py-2.5 text-[14px] font-bold leading-[20px] text-white transition-colors hover:bg-[#075f53] hover:border-[#075f53]";
 
 export const LINK = "font-bold text-[#097d6c] underline hover:text-[#075f53]";
 
@@ -66,5 +81,15 @@ export const CARD =
 export const CARD_INTERACTIVE = `${CARD} transition-shadow hover:shadow-[0_4px_16px_rgba(22,36,31,0.08)]`;
 
 export const MUTED = "text-[#5d6b66]";
+
+/**
+ * The rule a threaded reply hangs off. A shade darker than `line` (#dde5e1),
+ * because this one has a different job: a card border only ever sits on white,
+ * while a thread line has to stay legible over the accent-soft tint of an
+ * official answer as well — and unlike a border it is carrying meaning, not
+ * just an edge. Still quiet enough that a thread of thirty replies does not
+ * read as a table.
+ */
+export const THREAD_LINE = "border-[#cbd9d4]";
 
 export const HERO_BAND = "bg-[#f2f6f4]";

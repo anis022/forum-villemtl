@@ -14,13 +14,30 @@ export function formatDate(iso: string, lang: Locale) {
 }
 
 /**
+ * Feed form: "29 juil. 2026". In a card the date shares one line with a name,
+ * a badge and two pills, and the written-out month is what tipped that row over
+ * the edge of a small phone. The page for a single report has room for the long
+ * form and uses it.
+ */
+export function formatDateShort(iso: string, lang: Locale) {
+  return new Intl.DateTimeFormat(dateLocale(lang), {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(iso));
+}
+
+/**
  * Category and status sit side by side, but they answer different questions —
  * what this is about, and where it stands — so they must not look alike. The
  * category is an outline pill; status is filled and carries a dot.
  */
 export function CategoryTag({ category, lang }: { category: Category; lang: Locale }) {
   return (
-    <span className="inline-flex items-center rounded-full border border-[#dde5e1] px-2.5 py-1 text-[12px] font-bold text-[#5d6b66]">
+    /* A shade tighter on phones. These two pills sit in the corner of a card
+       whose other half is a person's name, and at full size they left that name
+       too little room to be worth reading. */
+    <span className="inline-flex max-w-[11ch] items-center truncate rounded-full border border-[#dde5e1] px-2 py-0.5 text-[11px] font-bold text-[#5d6b66] sm:max-w-none sm:px-2.5 sm:py-1 sm:text-[12px]">
       {getDictionary(lang).categories[category]}
     </span>
   );
@@ -40,9 +57,9 @@ export function StatusTag({ status, lang }: { status: Status; lang: Locale }) {
   const style = STATUS_STYLES[status];
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-bold ${style.pill}`}
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold sm:gap-1.5 sm:px-2.5 sm:py-1 sm:text-[12px] ${style.pill}`}
     >
-      <span aria-hidden="true" className={`h-1.5 w-1.5 rounded-full ${style.dot}`} />
+      <span aria-hidden="true" className={`h-1.5 w-1.5 shrink-0 rounded-full ${style.dot}`} />
       {getDictionary(lang).statuses[status]}
     </span>
   );

@@ -13,13 +13,11 @@ import {
 } from "@/utils/issues";
 import { CARD, MUTED } from "@/components/ui/styles";
 import {
-  BOROUGH_BOUNDS,
-  BOROUGH_CENTER,
-  BOROUGH_ZOOM,
   MAP_OPTIONS,
   TILE_OPTIONS,
   TILE_URL,
   addBoroughOutline,
+  frameBorough,
 } from "@/utils/map";
 
 export type IssueMapLabels = {
@@ -89,9 +87,7 @@ export function IssueMap({
 
       // The view has to come first: Leaflet refuses to accept a layer before
       // it knows where it is looking.
-      map.setView(BOROUGH_CENTER, BOROUGH_ZOOM);
-      map.setMaxBounds(L.latLngBounds(BOROUGH_BOUNDS).pad(0.3));
-      map.setMinZoom(13);
+      frameBorough(L, map);
       L.control.zoom({ position: "bottomright" }).addTo(map);
 
       L.tileLayer(TILE_URL, TILE_OPTIONS).addTo(map);
@@ -126,6 +122,10 @@ export function IssueMap({
           `<strong style="font-size:14px">${escapeHtml(issue.title)}</strong>` +
             `<br><span style="color:#5d6b66">${escapeHtml(labels.statuses[issue.status])} · ${issue.voteCount}</span>` +
             `<br><a href="/${lang}/sujets/${issue.id}" style="color:#097d6c;font-weight:700">${escapeHtml(labels.open)}</a>`,
+          // Leaflet's default popup is 300px wide, which is wider than the map
+          // frame itself on a small phone — autoPan then has nowhere to put it
+          // and it opens clipped. Measured off the frame instead.
+          { maxWidth: Math.min(300, (containerRef.current?.clientWidth ?? 300) - 32) },
         );
         marker.on("mouseover", () => setActive(issue.id));
         marker.on("mouseout", () => setActive(null));
@@ -140,7 +140,7 @@ export function IssueMap({
 
   return (
     <div>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
         <Chip active={filter === "all"} onClick={() => setFilter("all")}>
           {labels.showAll}
         </Chip>
@@ -151,15 +151,21 @@ export function IssueMap({
           {labels.onlySettled}
         </Chip>
 
+        {/* The count and the thing being counted stay together: a line that
+            breaks after the number reads as if it belonged to the sentence
+            above. The trailing clause is left breakable on purpose — pinning it
+            too would set the width of the whole row. */}
         <p className={`text-[14px] ${MUTED}`}>
-          <span className="font-bold text-[#16241f] tabular-nums">{shown.length}</span>{" "}
-          {labels.located}
+          <span className="whitespace-nowrap">
+            <span className="font-bold text-[#16241f] tabular-nums">{shown.length}</span>{" "}
+            {labels.located}
+          </span>
           {unlocated > 0 ? ` · ${unlocated} ${labels.unlocated}` : ""}
         </p>
       </div>
 
       {located.length === 0 ? (
-        <div className={`${CARD} mt-4 p-10 text-center`}>
+        <div className={`${CARD} mt-4 p-6 text-center sm:p-10`}>
           <p className={MUTED}>{labels.empty}</p>
         </div>
       ) : (
@@ -167,10 +173,14 @@ export function IssueMap({
           <div
             ref={containerRef}
             role="application"
-            className="h-[420px] w-full overflow-hidden rounded-[16px] border border-[#dde5e1] md:h-[600px]"
+            className="h-[320px] w-full overflow-hidden rounded-[16px] border border-[#dde5e1] sm:h-[420px] md:h-[600px]"
           />
 
-          <ul className="max-h-[600px] space-y-2 overflow-y-auto pr-1">
+          {/* The list is a scroller only when it sits beside the map and has to
+              match its height. Stacked underneath on a phone, a nested scroller
+              swallows the drag: you try to scroll the page, the list moves
+              instead, and the page appears stuck. */}
+          <ul className="space-y-2 lg:max-h-[600px] lg:overflow-y-auto lg:pr-1">
             {shown.map((issue) => (
               <li key={issue.id}>
                 <Link
@@ -245,7 +255,7 @@ function Chip({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-[14px] font-bold leading-[20px] transition-colors ${
+      className={`inline-flex min-h-[40px] max-w-full items-center gap-2 rounded-full border px-3.5 py-2 text-[14px] font-bold leading-[20px] transition-colors ${
         active
           ? "border-[#097d6c] bg-[#097d6c] text-white"
           : "border-[#dde5e1] bg-white text-[#5d6b66] hover:border-[#097d6c] hover:text-[#16241f]"
@@ -254,7 +264,7 @@ function Chip({
       {dot && (
         <span
           aria-hidden="true"
-          className="h-2.5 w-2.5 rounded-full"
+          className="h-2.5 w-2.5 shrink-0 rounded-full"
           style={{ background: active ? "#ffffff" : dot }}
         />
       )}

@@ -4,46 +4,101 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { IssueCard } from "@/components/issues/issue-card";
 import { ForumSearch } from "@/components/forum-search";
+import { CategoryChips, TOP_CATEGORIES } from "@/components/issues/category-chips";
 import { IssueList } from "@/components/issues/issue-list";
 import { IssueMap } from "@/components/issues/issue-map";
 import { getSessionUser } from "@/utils/supabase/auth";
-import { listIssues } from "@/utils/supabase/issues";
+import { categoryCounts, FEED_PAGE, listIssues } from "@/utils/supabase/issues";
+import { CATEGORY_KEYS, type Category } from "@/utils/issues";
 import { getDictionary, isLocale } from "@/utils/i18n";
-import {
-  BTN_PRIMARY,
-  CARD,
-  CHIP,
-  CHIP_ACTIVE,
-  CONTAINER,
-  HERO_BAND,
-  MUTED,
-} from "@/components/ui/styles";
+import { BTN_PRIMARY, BTN_SECONDARY, CARD, CONTAINER, HERO_BAND, MUTED } from "@/components/ui/styles";
 
 export default async function Home({
   params,
   searchParams,
 }: {
   params: Promise<{ lang: string }>;
-  searchParams: Promise<{ tri?: string; q?: string; vue?: string }>;
+  searchParams: Promise<{
+    tri?: string;
+    q?: string;
+    vue?: string;
+    n?: string;
+    cat?: string;
+    recherche?: string;
+  }>;
 }) {
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
 
-  const { tri, q, vue } = await searchParams;
+  const { tri, q, vue, n, cat, recherche } = await searchParams;
   const sort = tri === "recents" ? "new" : "top";
   const mapView = vue === "carte";
   const t = getDictionary(lang);
+  const query = (q ?? "").trim();
 
-  const [user, allIssues] = await Promise.all([getSessionUser(), listIssues(sort)]);
+  // Checked against the known keys rather than trusted: it arrives from the
+  // address bar, and anything else is simply not a filter.
+  const category: Category | null =
+    cat && (CATEGORY_KEYS as readonly string[]).includes(cat) ? (cat as Category) : null;
 
-  const query = (q ?? "").trim().toLowerCase();
-  const issues = query
-    ? allIssues.filter(
-        (issue) =>
-          issue.title.toLowerCase().includes(query) ||
-          issue.body.toLowerCase().includes(query),
-      )
-    : allIssues;
+  /**
+   * How much of the feed to render, carried in the URL so "show more" survives
+   * a reload, a share and the back button — and so the whole page stays server
+   * rendered. Clamped because it arrives from the address bar: without a
+   * ceiling, `?n=100000` is a request to render the entire forum into one
+   * response, which is a denial of service anyone could type.
+   */
+  const shown = Math.min(Math.max(Number(n) || FEED_PAGE, FEED_PAGE), FEED_PAGE * 12);
+
+  const [user, feed, counts] = await Promise.all([
+    getSessionUser(),
+    listIssues(sort, { limit: shown, search: query, category }),
+    categoryCounts(),
+  ]);
+  const { issues, hasMore } = feed;
+
+  /**
+   * A feed URL that keeps whatever the reader already set, overriding only what
+   * is passed. Every control on this page — paging, the chips — is one of these,
+   * so none of them silently drops another's state.
+   */
+  const feedHref = (
+    override: { tri?: string | null; vue?: string | null; cat?: Category | null; n?: number } = {},
+  ) => {
+    // `"key" in override` rather than `??`: passing null is how a control
+    // clears a parameter, and `??` would read that as "leave it alone".
+    const nextTri = "tri" in override ? override.tri : tri;
+    const nextVue = "vue" in override ? override.vue : vue;
+    const nextCat = "cat" in override ? override.cat : category;
+
+    const next = new URLSearchParams();
+    if (nextTri) next.set("tri", nextTri);
+    if (q) next.set("q", q);
+    if (nextVue) next.set("vue", nextVue);
+    if (nextCat) next.set("cat", nextCat);
+    // `n` never carries over on its own: changing sort, view or category starts
+    // the feed at the top again rather than on page four of a list that no
+    // longer exists.
+    if (override.n) next.set("n", String(override.n));
+
+    const search = next.toString();
+    return search ? `/${lang}?${search}` : `/${lang}`;
+  };
+
+  /**
+   * The chips: busiest categories first, empty ones left out — a category
+   * nobody has used is not a way in — and the active one kept on screen even
+   * when it did not make the cut, so the filter is never invisible.
+   */
+  const chips = counts
+    .filter(({ count }) => count > 0)
+    .filter((entry, index) => index < TOP_CATEGORIES || entry.category === category)
+    .map(({ category: key, count }) => ({
+      key,
+      count,
+      label: t.categories[key],
+      href: feedHref({ cat: key === category ? null : key }),
+    }));
 
   return (
     // The feed sits on a tint, not on white: cards need a ground to read as
@@ -63,14 +118,28 @@ export default async function Home({
             {t.home.subtitle}
           </p>
 
-          <div className="mt-7 max-w-[680px]">
-            <ForumSearch
-              lang={lang}
-              defaultValue={q ?? ""}
-              placeholder={t.home.searchPlaceholder}
-              clearLabel={t.home.clearSearch}
-            />
-          </div>
+          {/* The search field is folded away until the masthead's "Recherche"
+              asks for it, and the row it used to hold now carries the
+              categories people actually browse. Looking for one specific thing
+              is the rarer errand; browsing is what most visits are. */}
+          <ForumSearch
+            lang={lang}
+            defaultValue={q ?? ""}
+            startOpen={Boolean(recherche)}
+            keep={{ tri, vue, cat: category ?? undefined }}
+            placeholder={t.home.searchPlaceholder}
+            clearLabel={t.home.clearSearch}
+            closeLabel={t.home.closeSearch}
+          />
+
+          <CategoryChips
+            label={t.home.browseLabel}
+            allLabel={t.home.allCategories}
+            allHref={feedHref({ cat: null })}
+            total={counts.reduce((sum, entry) => sum + entry.count, 0)}
+            items={chips}
+            active={category}
+          />
         </div>
       </div>
 
@@ -96,34 +165,54 @@ export default async function Home({
               {t.home.report}
             </Link>
           ) : (
-            <p className={`shrink-0 text-[15px] font-bold ${MUTED}`}>{t.home.signInPrompt}</p>
+            /* Not `shrink-0`: this is a full sentence, and refusing to shrink
+               made it run off the side of a phone. It takes the whole width
+               below the heading and wraps like the prose it is. */
+            <p className={`min-w-0 max-w-full text-[15px] font-bold ${MUTED}`}>
+              {t.home.signInPrompt}
+            </p>
           )}
         </section>
 
         <div className="flex flex-wrap items-center justify-between gap-3">
+          {/* The category is named here as well as on the chip: once the hero
+              has scrolled away, this heading is the only thing left saying why
+              the feed is short. */}
           <h2 className="text-[22px] font-bold leading-[30px] md:text-[26px] md:leading-[34px]">
             {mapView ? t.home.mapTitle : sort === "top" ? t.home.topTitle : t.home.newTitle}
+            {category && <span className={MUTED}> · {t.categories[category]}</span>}
           </h2>
 
-          <div className="flex flex-wrap items-center gap-2">
+          {/* The two toggles stay side by side at every width. They are one
+              decision — what you are looking at, and in what order — and
+              stacking them on a phone read as two unrelated widgets and cost a
+              whole row of the feed.
+
+              On a phone they own the row under the title and push apart, so the
+              view switch sits on the right edge where the eye already goes for
+              it; beside the title on a wider screen they close back up. */}
+          <div className="flex w-full flex-nowrap items-center justify-end gap-1.5 sm:w-auto sm:gap-2">
             {/* Sorting only means something in a list. On a map every pin is
                 on screen at once, so the control is hidden rather than left
                 there doing nothing. */}
             {!mapView && (
-              <div className="inline-flex rounded-full border border-[#dde5e1] bg-white p-1">
+              /* `mr-auto` rather than `justify-between` on the row: on the map
+                 view this control is not rendered at all, and space-between
+                 would drop the lone view switch back to the left edge. */
+              <div className="mr-auto inline-flex shrink-0 rounded-full border border-[#dde5e1] bg-white p-0.5 sm:mr-0 sm:p-1">
                 <Link
-                  href={`/${lang}`}
+                  href={feedHref({ tri: null })}
                   aria-current={sort === "top" ? "true" : undefined}
-                  className={`rounded-full px-4 py-1.5 text-[14px] font-bold transition-colors ${
+                  className={`rounded-full px-2.5 py-1.5 text-[13px] font-bold transition-colors sm:px-4 sm:text-[14px] ${
                     sort === "top" ? "bg-[#097d6c] text-white" : "text-[#5d6b66] hover:text-[#16241f]"
                   }`}
                 >
                   {t.home.sortTop}
                 </Link>
                 <Link
-                  href={`/${lang}?tri=recents`}
+                  href={feedHref({ tri: "recents" })}
                   aria-current={sort === "new" ? "true" : undefined}
-                  className={`rounded-full px-4 py-1.5 text-[14px] font-bold transition-colors ${
+                  className={`rounded-full px-2.5 py-1.5 text-[13px] font-bold transition-colors sm:px-4 sm:text-[14px] ${
                     sort === "new" ? "bg-[#097d6c] text-white" : "text-[#5d6b66] hover:text-[#16241f]"
                   }`}
                 >
@@ -132,15 +221,22 @@ export default async function Home({
               </div>
             )}
 
-            <div className="inline-flex rounded-full border border-[#dde5e1] bg-white p-1">
+            <div className="inline-flex shrink-0 rounded-full border border-[#dde5e1] bg-white p-0.5 sm:p-1">
               <Link
-                href={`/${lang}${sort === "new" ? "?tri=recents" : ""}`}
+                href={feedHref({ vue: null })}
                 aria-current={!mapView ? "true" : undefined}
-                className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[14px] font-bold transition-colors ${
+                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[13px] font-bold transition-colors sm:px-3.5 sm:text-[14px] ${
                   !mapView ? "bg-[#16241f] text-white" : "text-[#5d6b66] hover:text-[#16241f]"
                 }`}
               >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  aria-hidden="true"
+                  className="hidden shrink-0 min-[360px]:block"
+                >
                   <path
                     d="M4 6.5h16M4 12h16M4 17.5h16"
                     stroke="currentColor"
@@ -151,13 +247,20 @@ export default async function Home({
                 {t.home.viewList}
               </Link>
               <Link
-                href={`/${lang}?vue=carte`}
+                href={feedHref({ vue: "carte" })}
                 aria-current={mapView ? "true" : undefined}
-                className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[14px] font-bold transition-colors ${
+                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[13px] font-bold transition-colors sm:px-3.5 sm:text-[14px] ${
                   mapView ? "bg-[#16241f] text-white" : "text-[#5d6b66] hover:text-[#16241f]"
                 }`}
               >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  aria-hidden="true"
+                  className="hidden shrink-0 min-[360px]:block"
+                >
                   <path
                     d="M12 2.6c-3.3 0-6 2.7-6 6 0 4.4 6 12.3 6 12.3s6-7.9 6-12.3c0-3.3-2.7-6-6-6z"
                     stroke="currentColor"
@@ -196,10 +299,10 @@ export default async function Home({
             />
           </div>
         ) : (
-        <IssueList query={`${sort}:${query}`}>
+        <IssueList query={`${sort}:${category ?? ""}:${query}`}>
         <div className="mt-4 space-y-4">
           {issues.length === 0 ? (
-            <div className={`${CARD} p-10 text-center`}>
+            <div className={`${CARD} p-6 text-center sm:p-10`}>
               <p className="text-[20px] font-bold leading-[28px]">
                 {query ? t.home.noResultsTitle : t.home.emptyTitle}
               </p>
@@ -219,6 +322,20 @@ export default async function Home({
             ))
           )}
         </div>
+
+        {/* A link, not a button: paging belongs in the URL, so it works before
+            the JavaScript arrives, survives a reload and can be shared.
+            `scroll={false}` keeps the reader where they were rather than
+            throwing them back to the masthead for having asked for more. */}
+        {hasMore && (
+          <Link
+            href={feedHref({ n: shown + FEED_PAGE })}
+            scroll={false}
+            className={`${BTN_SECONDARY} mt-4 w-full`}
+          >
+            {t.home.showMore}
+          </Link>
+        )}
         </IssueList>
         )}
       </main>

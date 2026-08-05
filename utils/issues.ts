@@ -83,9 +83,9 @@ export type Issue = {
   editedById: string | null;
 };
 
-/** True when a report was altered by someone other than the person who wrote it. */
-export const editedByOther = (issue: Issue) =>
-  issue.editedById !== null && issue.editedById !== issue.author.id;
+/** True when a post was altered by someone other than the person who wrote it. */
+export const editedByOther = (post: { editedById: string | null; author: Author }) =>
+  post.editedById !== null && post.editedById !== post.author.id;
 
 /** Reports that can actually be drawn. */
 export const isLocated = (issue: Issue) => issue.lat !== null && issue.lon !== null;
@@ -96,4 +96,27 @@ export type Comment = {
   isOfficial: boolean;
   createdAt: string;
   author: Author;
+  /** The comment this one answers, or null for a reply to the report itself. */
+  parentId: string | null;
+  /** 0 at the top of a thread. Capped in the database — see migration 0014. */
+  depth: number;
+  editedAt: string | null;
+  /**
+   * Who last edited. Compare with `author.id`, the same way reports do: when
+   * they differ, someone with authority rewrote a resident's words, and the
+   * thread has to say so.
+   */
+  editedById: string | null;
 };
+
+/** A comment with the exchange hanging off it. */
+export type CommentNode = Comment & { replies: CommentNode[] };
+
+/**
+ * How far a thread is allowed to step right before replies stop indenting and
+ * carry on at the same level. Nesting is what shows who is answering whom, and
+ * it is also what eats a phone screen: past three steps a 320px column has more
+ * margin than message. Deeper replies still sit under the comment they answer,
+ * they just stop moving sideways.
+ */
+export const MAX_INDENT = 3;

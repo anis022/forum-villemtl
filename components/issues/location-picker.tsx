@@ -5,12 +5,11 @@ import "leaflet/dist/leaflet.css";
 import type { Map as LeafletMap, Marker } from "leaflet";
 import {
   BOROUGH_BOUNDS,
-  BOROUGH_CENTER,
-  BOROUGH_ZOOM,
   MAP_OPTIONS,
   TILE_OPTIONS,
   TILE_URL,
   addBoroughOutline,
+  frameBorough,
 } from "@/utils/map";
 
 export type PickerLabels = {
@@ -73,9 +72,7 @@ export function LocationPicker({
       // Stored before anything else async can run — see the note in issue-map.
       mapRef.current = map;
 
-      map.setView(BOROUGH_CENTER, BOROUGH_ZOOM);
-      map.setMaxBounds(L.latLngBounds(BOROUGH_BOUNDS).pad(0.25));
-      map.setMinZoom(13);
+      frameBorough(L, map, 0.25);
       L.control.zoom({ position: "bottomright" }).addTo(map);
 
       L.tileLayer(TILE_URL, TILE_OPTIONS).addTo(map);

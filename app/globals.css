@@ -18,8 +18,18 @@
 }
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* The page background, not white: every screen sits on #f8faf9, so the
+     document itself has to be that colour. Anything the content does not paint
+     — the strip revealed by an overscroll, the area below a short page — then
+     matches the page instead of flashing a different surface. */
+  --background: #f8faf9;
+  --foreground: #16241f;
+
+  /* This site is light-only. Declaring it stops mobile browsers (Chrome's
+     auto-dark theme on Android in particular) from inventing a dark version of
+     a palette that was never designed for one, and stops form controls and
+     scrollbars from rendering dark against white cards. */
+  color-scheme: light;
 
   /* Design tokens read off montreal.ca */
   --vdm-green: #097d6c;
@@ -36,20 +46,38 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* There is deliberately no `prefers-color-scheme: dark` block. The starter
+   shipped one that flipped the background to #0a0a0a, and since the site has no
+   dark theme — white cards, #16241f text, teal accent — a phone in dark mode
+   got a black page behind light content: dragging sideways or overscrolling
+   revealed black bars, and the layout read as if it had come loose from the
+   screen. A dark theme is a whole palette, not one variable. */
+
+html,
+body {
+  background: var(--background);
+  /* The page never scrolls sideways. `clip` rather than `hidden`: hidden turns
+     the element into a scroll container and would break the sticky masthead,
+     clip just refuses the overflow. Paired with overscroll-behavior so a swipe
+     that runs out of room inside a map or a scroller does not rubber-band the
+     whole document and expose the area beyond it. */
+  overflow-x: clip;
+  overscroll-behavior-x: none;
+  max-width: 100%;
 }
 
 body {
-  background: var(--background);
   color: var(--foreground);
   /* Same stack montreal.ca declares. */
   font-family: "Montreal", Helvetica, Arial, sans-serif;
   font-size: 16px;
   line-height: 24px;
+  /* Phones inflate text in landscape unless told not to; the type scale is
+     already tuned for small screens. */
+  -webkit-text-size-adjust: 100%;
+  /* Resident-written content carries long URLs and unbroken words. Without
+     this one comment can push a card wider than the screen. */
+  overflow-wrap: break-word;
 }
 
 /* Keeps focused/anchored elements clear of the sticky masthead.
@@ -57,7 +85,18 @@ body {
    (32px utility bar + the white nav, which is sized by the logo). If the logo
    height changes, update this. */
 :root {
-  --masthead-h: 125px;
+  /* The masthead is not one height: the logo steps up at `md`, and a phone
+     carries a 97px bar where a desktop carries 125px. Reserving the desktop
+     figure on a phone pushed anchored content a whole card's worth of empty
+     space down the screen. Measured, not guessed — if the logo height in
+     SiteHeader changes, re-measure both. */
+  --masthead-h: 97px;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --masthead-h: 125px;
+  }
 }
 
 html {
@@ -103,7 +142,12 @@ summary:focus,
    Anchors are included. Most links on this site are controls — a post title,
    a back link, a sort toggle — and excluding them was why square rings kept
    showing up. On an inline link inside a paragraph a radius changes nothing
-   but the shape of the ring, which is the point. */
+   but the shape of the ring, which is the point.
+
+   The floor is deliberately small. A link is not a button, and a ring with
+   button-sized corners around a line of text claims a shell that isn't drawn;
+   6px reads as "this is a target" without pretending. Anything that really is
+   a button says so in its own class and keeps its pill. */
 @layer base {
   a,
   button,
@@ -113,7 +157,7 @@ summary:focus,
   summary,
   [role="button"],
   [tabindex] {
-    border-radius: 10px;
+    border-radius: 6px;
   }
 }
 
@@ -221,6 +265,43 @@ summary:focus,
   }
 }
 
+/* The forum's search field, folded away until the masthead's "Recherche" asks
+   for it. Driven by `display` through `allow-discrete`, like `.menu-panel`
+   above, so it animates shut as well as open — and so that while folded it is
+   genuinely gone: out of the flow, out of the tab order, out of the
+   accessibility tree, with no height held in reserve.
+
+   Unlike the mega-menu this one is in normal flow, so opening it pushes the
+   categories below it down. That shift is the point — it is what tells you the
+   field arrived — and the slide down covers it. */
+.search-panel {
+  display: none;
+  opacity: 0;
+  transform: translateY(-6px);
+  transition:
+    opacity 150ms ease-in,
+    transform 150ms ease-in,
+    display 150ms allow-discrete;
+}
+
+.search-panel[data-open] {
+  display: block;
+  opacity: 1;
+  transform: translateY(0);
+  /* Opening decelerates and takes its time; closing snaps away. */
+  transition:
+    opacity 200ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    transform 200ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    display 200ms allow-discrete;
+}
+
+@starting-style {
+  .search-panel[data-open] {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
 /* Leaflet paints its panes at z-index 400 and its controls at 1000, both far
    above the sticky masthead at 50 — so scrolling a map under the header made
    the tiles and zoom buttons ride over it.
@@ -317,6 +398,7 @@ summary:focus,
 @media (prefers-reduced-motion: reduce) {
   #page-root,
   .menu-panel,
+  .search-panel,
   .search-spinner,
   .result-item,
   .auth-dialog,

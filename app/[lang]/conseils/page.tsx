@@ -5,10 +5,16 @@ import { getSessionUser } from "@/utils/supabase/auth";
 import { getDictionary, isLocale, dateLocale } from "@/utils/i18n";
 import { searchCouncil, corpusStats } from "@/utils/supabase/council";
 import { youtubeDeepLink, formatTimestamp } from "@/utils/council";
-import { CARD, CONTAINER, HERO_BAND, MUTED } from "@/components/ui/styles";
-
-const INPUT =
-  "w-full rounded-[12px] border border-[#dde5e1] bg-white px-4 py-[13px] text-[16px] leading-[24px] text-[#212529] placeholder:text-[#8a949e] focus:border-[#097d6c] focus:outline-none";
+import {
+  BARE_CONTROL,
+  BTN_PRIMARY,
+  CARD,
+  CHIP,
+  CONTAINER,
+  FIELD,
+  HERO_BAND,
+  MUTED,
+} from "@/components/ui/styles";
 
 export default async function CouncilPage({
   params,
@@ -37,12 +43,15 @@ export default async function CouncilPage({
     }).format(new Date(iso + "T00:00:00"));
 
   return (
-    <div className="flex min-h-screen flex-col bg-white text-[#212529]">
+    <div className="flex min-h-screen flex-col bg-[#f8faf9] text-[#16241f]">
       <SiteHeader user={user} lang={lang} />
 
       <div className={HERO_BAND}>
         <div className={`${CONTAINER} py-8 md:py-12`}>
-          <h1 className="text-[28px] font-bold leading-[36px] md:text-[40px] md:leading-[56px]">
+          {/* The title steps down to 26px below the `sm` breakpoint: at 28px the
+              single word "d'arrondissement" already runs the full width of a
+              320px screen, so the heading has nothing left to give. */}
+          <h1 className="text-[26px] font-bold leading-[34px] break-words sm:text-[28px] sm:leading-[36px] md:text-[40px] md:leading-[56px]">
             {t.council.title}
           </h1>
           <p className={`mt-3 max-w-[760px] text-[16px] leading-[24px] ${MUTED}`}>
@@ -56,18 +65,22 @@ export default async function CouncilPage({
               {t.council.searchLabel}
             </label>
             <div className="flex flex-col gap-2 sm:flex-row">
+              {/* `min-w-0` because a text input refuses to shrink below the
+                  intrinsic width of its `size` attribute inside a flex row,
+                  which would push the button off the side of the field. */}
               <input
                 id="q"
                 name="q"
                 type="search"
                 defaultValue={query}
                 placeholder={t.council.searchPlaceholder}
-                className={INPUT}
+                className={`${FIELD} min-w-0`}
               />
-              <button
-                type="submit"
-                className="shrink-0 rounded-full border border-[#097d6c] bg-[#097d6c] px-6 py-[13px] text-[16px] font-bold leading-[24px] text-white hover:bg-[#075f53]"
-              >
+              {/* Stacked and full width on a phone, where a pill sitting beside
+                  the field would leave neither enough room to be legible;
+                  `self-stretch` then matches the field's height once they sit
+                  side by side. */}
+              <button type="submit" className={`${BTN_PRIMARY} shrink-0 sm:self-stretch`}>
                 {t.council.searchButton}
               </button>
             </div>
@@ -77,7 +90,7 @@ export default async function CouncilPage({
 
       <main className={`${CONTAINER} flex-1 py-8 md:py-10`}>
         {stats.segments === 0 ? (
-          <div className={`${CARD} p-10 text-center`}>
+          <div className={`${CARD} p-6 text-center md:p-10`}>
             <p className="text-[20px] font-bold leading-[28px]">{t.council.emptyCorpusTitle}</p>
             <p className={`mt-2 ${MUTED}`}>{t.council.emptyCorpusBody}</p>
           </div>
@@ -90,10 +103,8 @@ export default async function CouncilPage({
             <ul className="mt-3 flex flex-wrap gap-2">
               {t.council.examples.map((ex) => (
                 <li key={ex}>
-                  <a
-                    href={`/${lang}/conseils?q=${encodeURIComponent(ex)}`}
-                    className="inline-block rounded-full border-[0.8px] border-[#ced4da] px-4 py-2 text-[14px] hover:border-[#097d6c] hover:text-[#097d6c]"
-                  >
+                  {/* The 40px thumb floor lives in CHIP itself now. */}
+                  <a href={`/${lang}/conseils?q=${encodeURIComponent(ex)}`} className={CHIP}>
                     {ex}
                   </a>
                 </li>
@@ -101,18 +112,20 @@ export default async function CouncilPage({
             </ul>
           </div>
         ) : hits.length === 0 ? (
-          <div className={`${CARD} p-10 text-center`}>
+          <div className={`${CARD} p-6 text-center md:p-10`}>
             <p className="text-[20px] font-bold leading-[28px]">{t.council.noResultsTitle}</p>
             <p className={`mt-2 ${MUTED}`}>{t.council.noResultsBody}</p>
           </div>
         ) : (
           <>
-            <div className="border-b-[0.8px] border-[#ced4da] pb-4">
+            <div className="border-b border-[#dde5e1] pb-4">
               <p className="text-[20px] font-bold leading-[28px] md:text-[24px]">
                 {hits.length} {hits.length === 1 ? t.council.passageOne : t.council.passageMany}
               </p>
               {!semantic && (
-                <p className="mt-1 text-[14px] text-[#a4231f]">{t.council.lexicalOnly}</p>
+                <p className="mt-1 text-[14px] leading-[20px] text-[#a4231f]">
+                  {t.council.lexicalOnly}
+                </p>
               )}
             </div>
 
@@ -120,12 +133,15 @@ export default async function CouncilPage({
               {hits.map((h) => (
                 <li key={h.id}>
                   <article className={`${CARD} p-4`}>
-                    <div className="mb-2 flex flex-wrap items-center gap-2 text-[13px]">
-                      <span className={MUTED}>{fmtDate(h.meetingDate)}</span>
-                      <span aria-hidden="true" className={MUTED}>
-                        ·
+                    <div className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-[13px]">
+                      {/* Date and moment are one unit: allowed to wrap between
+                          them, the separator ends up stranded at the edge of a
+                          line. Together they stay well inside a 320px card. */}
+                      <span className={`${MUTED} whitespace-nowrap`}>
+                        {fmtDate(h.meetingDate)}
+                        <span aria-hidden="true"> · </span>
+                        {formatTimestamp(h.startS)}
                       </span>
-                      <span className={MUTED}>{formatTimestamp(h.startS)}</span>
                       {h.lexicalRank !== null && h.semanticRank !== null && (
                         <span className="rounded-full bg-[#e2f0ec] px-2.5 py-1 font-bold text-[#097d6c]">
                           {t.council.bothMatch}
@@ -134,15 +150,25 @@ export default async function CouncilPage({
                     </div>
 
                     {/* Verbatim. Nothing between the recording and the reader. */}
-                    <p className="text-[16px] leading-[26px]">{h.text}</p>
+                    <p className="text-[16px] leading-[26px] break-words">{h.text}</p>
 
+                    {/* The link carries its own 44px box and pulls back by the
+                        padding that creates it, so it stays flush with the
+                        passage while still being a thumb-sized target. */}
                     <a
                       href={youtubeDeepLink(h.youtubeId, h.startS)}
                       target="_blank"
                       rel="noreferrer"
-                      className="mt-3 inline-flex items-center gap-1.5 text-[14px] font-bold text-[#097d6c] hover:underline"
+                      className={`${BARE_CONTROL} -mx-2 mt-1 inline-flex min-h-[44px] items-center gap-1.5 px-2 text-[14px] font-bold text-[#097d6c] hover:underline`}
                     >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                        aria-hidden="true"
+                        className="shrink-0"
+                      >
                         <path d="M10 8l6 4-6 4V8z" />
                         <path
                           d="M3 6.5A2.5 2.5 0 0 1 5.5 4h13A2.5 2.5 0 0 1 21 6.5v11a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5v-11z"

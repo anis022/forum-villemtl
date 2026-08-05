@@ -19,7 +19,7 @@ export default async function EventsPage({
   const [user, events] = await Promise.all([getSessionUser(), listEvents()]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-white text-[#212529]">
+    <div className="flex min-h-screen flex-col bg-[#f8faf9] text-[#16241f]">
       <SiteHeader user={user} lang={lang} />
 
       <div className={HERO_BAND}>
@@ -35,7 +35,9 @@ export default async function EventsPage({
 
       <main className={`${CONTAINER} flex-1 py-8 md:py-10`}>
         {events.length === 0 ? (
-          <div className={`${CARD} p-10 text-center`}>
+          // 40px of padding on each side of a 320px screen leaves the message a
+          // column barely wider than one word.
+          <div className={`${CARD} p-6 text-center sm:p-10`}>
             <p className="text-[20px] font-bold leading-[28px]">{t.events.emptyTitle}</p>
             <p className={`mt-2 ${MUTED}`}>{t.events.emptyBody}</p>
           </div>
@@ -57,6 +59,7 @@ export default async function EventsPage({
               unmapped: t.events.unmapped,
               free: t.events.free,
               showAll: t.events.showAll,
+              showMore: t.events.showMore,
             }}
           />
         )}

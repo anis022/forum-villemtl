@@ -27,7 +27,9 @@ export function LanguageToggle({ lang, label }: { lang: Locale; label: string })
       type="button"
       onClick={switchTo}
       lang={other}
-      className="rounded-full px-2.5 py-0.5 text-[14px] font-bold leading-[20px] text-white hover:underline"
+      /* No radius of its own: an underlined word in the utility bar is a link,
+         not a button, so it takes the small base-layer floor for its ring. */
+      className="px-2.5 py-0.5 text-[14px] font-bold leading-[20px] text-white hover:underline"
     >
       {label}
     </button>

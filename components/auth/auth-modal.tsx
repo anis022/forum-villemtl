@@ -198,7 +198,10 @@ export function AuthModal({
         onClose();
       }}
       aria-labelledby="auth-modal-title"
-      className="auth-dialog m-0 h-dvh max-h-none w-screen max-w-none bg-transparent p-0 text-[#212529]"
+      /* `w-full` rather than `w-screen`: 100vw counts the classic scrollbar, so
+         on a desktop with one the dialog would be a dozen pixels wider than the
+         viewport it is meant to cover. */
+      className="auth-dialog m-0 h-dvh max-h-none w-full max-w-none bg-transparent p-0 text-[#212529]"
     >
       <div
         className="auth-overlay fixed inset-0 flex items-center justify-center p-4"
@@ -206,17 +209,28 @@ export function AuthModal({
           if (event.target === event.currentTarget) onClose();
         }}
       >
+        {/* The sign-up view is taller than a 320x568 screen, and taller still
+            than what is left of any phone once the keyboard is up. The shell is
+            capped to the viewport less the overlay's padding and the panel
+            scrolls inside it; `scrollHeight` is unaffected by the cap, so the
+            height animation between views still measures the full content. */}
         <div
-          className="auth-panel-shell w-[min(28rem,100%)] overflow-hidden rounded-[18px] bg-white shadow-2xl"
+          className="auth-panel-shell max-h-[calc(100dvh-2rem)] w-[min(28rem,100%)] overflow-hidden rounded-[18px] bg-white shadow-2xl"
           style={{ height }}
         >
-          <div ref={panelRef} key={view} className="auth-panel">
+          <div
+            ref={panelRef}
+            key={view}
+            className="auth-panel max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain"
+          >
           {/* Brand bar, echoing the site header. */}
-          <div className="flex items-center justify-center border-b border-[#ced4da] px-6 py-5 md:px-8">
+          <div className="flex items-center justify-center border-b border-[#ced4da] px-5 py-4 sm:px-6 sm:py-5 md:px-8">
             <Image src="/logo-montreal.png" alt="Ville de Montréal" width={112} height={40} />
           </div>
 
-          <div className="px-6 py-7 md:px-8">
+          {/* Tighter gutters on a phone: at 320px the panel is 288px wide, and
+              24px of padding a side leaves the fields visibly cramped. */}
+          <div className="px-5 py-6 sm:px-6 sm:py-7 md:px-8">
           {view === "confirm" || view === "sent" ? (
             <>
               <h2 id="auth-modal-title" className="text-[24px] font-bold leading-[32px]">
@@ -294,7 +308,10 @@ export function AuthModal({
 
                 {view !== "forgot" && (
                   <div className="mb-5">
-                    <div className="flex items-baseline justify-between gap-3">
+                    {/* Wraps because "Mot de passe" beside "Mot de passe
+                        oublié ?" does not fit one 320px line; without it the
+                        link breaks mid-phrase instead of moving down. */}
+                    <div className="flex flex-wrap items-baseline justify-between gap-x-3">
                       <label htmlFor="auth-password" className={LABEL}>
                         {t.auth.password}
                       </label>
@@ -302,7 +319,9 @@ export function AuthModal({
                         <button
                           type="button"
                           onClick={() => switchTo("forgot")}
-                          className={`${LINK} text-[14px]`}
+                          /* `-my-2` keeps the padded 40px tap area from
+                             changing where the row sits. */
+                          className={`${LINK} -my-2 py-2 text-[14px]`}
                         >
                           {t.auth.forgotLink}
                         </button>
@@ -355,9 +374,16 @@ export function AuthModal({
                 </button>
               </form>
 
-              <p className="mt-6 border-t border-[#ced4da] pt-6 text-center">
+              {/* `inline-block py-2` on the switches: these are the last thing
+                  a phone user reaches for and a bare line of text is a 24px
+                  target. */}
+              <p className="mt-6 border-t border-[#ced4da] pt-4 text-center">
                 {view === "forgot" ? (
-                  <button type="button" onClick={() => switchTo("signin")} className={LINK}>
+                  <button
+                    type="button"
+                    onClick={() => switchTo("signin")}
+                    className={`${LINK} inline-block py-2`}
+                  >
                     {t.auth.backToSignIn}
                   </button>
                 ) : (
@@ -366,7 +392,7 @@ export function AuthModal({
                     <button
                       type="button"
                       onClick={() => switchTo(view === "signin" ? "signup" : "signin")}
-                      className={LINK}
+                      className={`${LINK} inline-block py-2`}
                     >
                       {view === "signin" ? t.auth.signUp : t.auth.signIn}
                     </button>

@@ -10,7 +10,6 @@ type Row = {
   id: string;
   source_url: string;
   title: string;
-  description: string | null;
   starts_on: string;
   ends_on: string | null;
   event_type: string | null;
@@ -28,7 +27,6 @@ const toEvent = (r: Row): BoroughEvent => ({
   id: r.id,
   sourceUrl: r.source_url,
   title: r.title,
-  description: r.description,
   startsOn: r.starts_on,
   endsOn: r.ends_on,
   eventType: r.event_type,
@@ -45,16 +43,19 @@ const toEvent = (r: Row): BoroughEvent => ({
 /**
  * Every current event, ordered by start date.
  *
- * The whole set is sent to the client: at ~300 rows it is a few tens of
- * kilobytes, and having it all client-side makes the district and type filters
- * instant, with no round trip per toggle.
+ * The whole set is sent to the client: having it all there makes the district
+ * and type filters instant, with no round trip per toggle. That only stays
+ * defensible because the columns are narrow — `description` is deliberately not
+ * among them. It is stored by the ingest script and never rendered anywhere, so
+ * selecting it shipped roughly a quarter of a megabyte of dead text on every
+ * single load of this page.
  */
 export async function listEvents(): Promise<BoroughEvent[]> {
   const supabase = await sb();
   const { data, error } = await supabase
     .from("borough_events")
     .select(
-      "id, source_url, title, description, starts_on, ends_on, event_type, audience, setting, cost, venue_name, address, lat, lon, district",
+      "id, source_url, title, starts_on, ends_on, event_type, audience, setting, cost, venue_name, address, lat, lon, district",
     )
     .order("starts_on");
 

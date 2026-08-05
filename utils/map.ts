@@ -28,16 +28,32 @@ export const BOROUGH_BOUNDS: [[number, number], [number, number]] = [
   [45.5095, -73.598],
 ];
 
-/**
- * Opening view, set explicitly rather than by fitting the bounds.
- *
- * `fitBounds` zooms out until both axes fit, so in a wide, short frame the
- * height decides and the map opens on half the island with the borough a
- * smudge in the middle. A fixed centre and zoom holds the neighbourhood at any
- * aspect ratio; `setMaxBounds` still stops anyone wandering off it.
- */
+/** Centre of the borough, for anything that needs a point rather than a box. */
 export const BOROUGH_CENTER: [number, number] = [45.4795, -73.6315];
-export const BOROUGH_ZOOM = 14;
+
+/**
+ * Open every map on the whole borough, and make that view the floor.
+ *
+ * A fixed zoom cannot do this. At zoom 14 a 320px-wide frame shows about 40% of
+ * the borough's width, so a phone opened on Côte-des-Neiges with the other four
+ * districts somewhere off screen — you had to know to zoom out before the map
+ * could tell you anything. Fitting the bounds asks the frame how much room it
+ * has, which is the only way one rule holds from a 320px phone to a 1200px
+ * desktop column.
+ *
+ * The fitted zoom then becomes `minZoom`, so the opening view is also as far
+ * out as anyone can go: no zooming out to the whole province, and no way to
+ * lose the five districts once you have them.
+ */
+export function frameBorough(
+  L: typeof import("leaflet"),
+  map: import("leaflet").Map,
+  pad = 0.3,
+): void {
+  map.setMaxBounds(L.latLngBounds(BOROUGH_BOUNDS).pad(pad));
+  map.fitBounds(L.latLngBounds(BOROUGH_BOUNDS), { padding: [8, 8], animate: false });
+  map.setMinZoom(map.getZoom());
+}
 
 /**
  * Shared map options.

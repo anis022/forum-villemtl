@@ -1,6 +1,15 @@
 /** Monochrome brand marks for the footer's "Nous suivre" column. */
 
-const base = { width: 20, height: 20, viewBox: "0 0 24 24", "aria-hidden": true } as const;
+// `shrink-0` because each mark sits in a flex row beside its label: without it
+// the glyph is what gives way when the row runs out of width, and a squashed
+// logo reads as a rendering fault rather than as a tight fit.
+const base = {
+  width: 20,
+  height: 20,
+  viewBox: "0 0 24 24",
+  className: "shrink-0",
+  "aria-hidden": true,
+} as const;
 
 export function FacebookIcon() {
   return (

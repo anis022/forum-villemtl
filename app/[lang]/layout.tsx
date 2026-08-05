@@ -24,6 +24,9 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  // Light-only site. Without this a phone in dark mode gets a browser-invented
+  // dark rendering of a palette that has no dark version.
+  colorScheme: "light",
 };
 
 export function generateStaticParams() {

@@ -33,20 +33,23 @@ export function SiteHeader({ user, lang }: { user: SessionUser | null; lang: Loc
       {/* relative: the mega-menu panel drops out of this element full-bleed. */}
       <header className="relative border-b-[0.8px] border-[#ced4da] bg-white">
         <div className="flex items-center px-4 py-3 md:px-8 md:py-[14px]">
-          <Link href={`/${lang}`} className="flex shrink-0 items-center">
+          <Link href={`/${lang}`} className="flex min-w-0 shrink items-center">
             {/* The borough lockup is two lines tall, so it needs more height
-                than montreal.ca's single-line wordmark to stay legible. */}
+                than montreal.ca's single-line wordmark to stay legible.
+                It is the one element allowed to shrink: on a 320px screen the
+                five controls in this row are all targets, and a slightly
+                smaller wordmark costs less than a masthead that overflows. */}
             <Image
               src="/logo-montreal.png"
               alt="Ville de Montréal — Côte-des-Neiges–Notre-Dame-de-Grâce"
               width={260}
               height={120}
               priority
-              className="h-10 w-auto md:h-16"
+              className="h-9 w-auto max-w-full object-contain object-left sm:h-10 md:h-16"
             />
           </Link>
 
-          <div className="mx-3 h-8 w-px shrink-0 bg-[#ced4da] md:mx-6" />
+          <div className="mx-2 h-8 w-px shrink-0 bg-[#ced4da] sm:mx-3 md:mx-6" />
 
           <MainMenu
             lang={lang}

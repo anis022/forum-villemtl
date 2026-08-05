@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { BARE_CONTROL } from "@/components/ui/styles";
 import type { Locale } from "@/utils/i18n";
 
 type Labels = {
@@ -12,10 +13,12 @@ type Labels = {
   projects: string;
   events: string;
   council: string;
+  officials: string;
   forumDesc: string;
   projectsDesc: string;
   eventsDesc: string;
   councilDesc: string;
+  officialsDesc: string;
 };
 
 /**
@@ -53,6 +56,9 @@ export function MainMenu({ lang, labels }: { lang: Locale; labels: Labels }) {
 
   const items = [
     { href: `/${lang}`, label: labels.forum, desc: labels.forumDesc },
+    // Straight after the forum: the point of posting here is that someone is
+    // meant to answer, and this is who that someone is.
+    { href: `/${lang}/elus`, label: labels.officials, desc: labels.officialsDesc },
     { href: `/${lang}/conseils`, label: labels.council, desc: labels.councilDesc },
     { href: `/${lang}/projets`, label: labels.projects, desc: labels.projectsDesc },
     { href: `/${lang}/evenements`, label: labels.events, desc: labels.eventsDesc },
@@ -66,7 +72,7 @@ export function MainMenu({ lang, labels }: { lang: Locale; labels: Labels }) {
         aria-expanded={open}
         aria-controls="main-menu-panel"
         aria-label={labels.menu}
-        className={`flex h-10 items-center gap-2 rounded-full px-3 text-[16px] font-bold leading-[24px] transition-colors md:gap-3 ${
+        className={`flex h-10 shrink-0 items-center gap-2 ${BARE_CONTROL} px-2 text-[16px] font-bold leading-[24px] transition-colors sm:px-3 md:gap-3 ${
           open ? "text-[#097d6c]" : "text-[#16241f] hover:text-[#097d6c]"
         }`}
       >

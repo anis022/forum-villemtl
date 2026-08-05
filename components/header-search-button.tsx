@@ -1,23 +1,50 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { BARE_CONTROL } from "@/components/ui/styles";
+import { SEARCH_PANEL_ID, SEARCH_PARAM, SEARCH_STATE, SEARCH_TOGGLE } from "@/utils/forum-search";
 import type { Locale } from "@/utils/i18n";
 
 /**
- * The "Recherche" entry in the montreal.ca masthead. On the forum page it
- * jumps to and focuses the search field; elsewhere it navigates home first.
+ * The "Recherche" entry in the montreal.ca masthead — now the only way the
+ * search field appears. It used to jump to a field that was always on screen;
+ * the field is folded away by default so the hero can lead with the categories
+ * people browse, and this control unfolds it, or folds it back.
+ *
+ * The field lives on the forum page, not in the header, so off the forum this
+ * is a navigation carrying the request in the hash.
  */
 export function HeaderSearchButton({ lang, label }: { lang: Locale; label: string }) {
   const router = useRouter();
+  const pathname = usePathname();
+  /**
+   * The last thing a field said, and the page it said it from. Stamped with the
+   * route rather than cleared on navigation: a report from the forum says
+   * nothing about the page someone moved on to, and comparing is how that stays
+   * true without a second piece of state chasing the first.
+   */
+  const [panel, setPanel] = useState<{ path: string; open: boolean } | null>(null);
+
+  useEffect(() => {
+    const sync = (event: Event) =>
+      setPanel({
+        path: window.location.pathname,
+        open: (event as CustomEvent<{ open: boolean }>).detail.open,
+      });
+    window.addEventListener(SEARCH_STATE, sync);
+    return () => window.removeEventListener(SEARCH_STATE, sync);
+  }, []);
+
+  /** `null` while no field on this page has introduced itself. */
+  const expanded = panel && panel.path === pathname ? panel.open : null;
 
   const activate = () => {
-    const field = document.getElementById("forum-search");
-    if (field) {
-      field.scrollIntoView({ behavior: "smooth", block: "center" });
-      field.focus({ preventScroll: true });
+    if (document.getElementById(SEARCH_PANEL_ID)) {
+      window.dispatchEvent(new Event(SEARCH_TOGGLE));
       return;
     }
-    router.push(`/${lang}`);
+    router.push(`/${lang}?${SEARCH_PARAM}=1`);
   };
 
   return (
@@ -25,7 +52,11 @@ export function HeaderSearchButton({ lang, label }: { lang: Locale; label: strin
       type="button"
       onClick={activate}
       aria-label={label}
-      className="flex h-10 items-center gap-2 rounded-full px-3 text-[16px] font-bold leading-[24px] text-[#16241f] transition-colors hover:text-[#097d6c] md:px-3"
+      aria-expanded={expanded ?? undefined}
+      aria-controls={expanded === null ? undefined : SEARCH_PANEL_ID}
+      className={`flex h-10 shrink-0 items-center gap-2 ${BARE_CONTROL} px-2 text-[16px] font-bold leading-[24px] transition-colors sm:px-3 ${
+        expanded ? "text-[#097d6c]" : "text-[#16241f] hover:text-[#097d6c]"
+      }`}
     >
       <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" fill="none" className="shrink-0">
         <circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" strokeWidth="1.7" />

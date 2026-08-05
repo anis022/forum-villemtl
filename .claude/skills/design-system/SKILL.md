@@ -45,7 +45,39 @@ everyone.
 - Every focusable control needs a radius: the focus ring is a `box-shadow`, so
   it traces whatever radius the element has, and anything left at 0 gets a
   hard-cornered rectangle while its neighbours get rounded ones. `globals.css`
-  sets a 10px floor in `@layer base`; component utilities still win.
+  sets a 6px floor in `@layer base`; component utilities still win.
+- **The ring only goes as round as the control actually is.** `rounded-full`
+  belongs to things drawn as buttons — filled, bordered, or filled on hover.
+  Bare text and icon controls (the menu trigger, header search, account and
+  sign-out, the profile link) take `BARE_CONTROL` (8px), and plain links keep
+  the 6px floor. A pill ring around a menu item outlines a button that was
+  never drawn, which is why those read as too round.
+
+## Small screens
+
+The floor is **320px**, not 360 — and the site is light-only, so no page may
+declare a dark `--background`. Every page root is `bg-[#f8faf9] text-[#16241f]`:
+cards are white, and a white page makes them vanish.
+
+- The document never scrolls sideways. `html, body` carry `overflow-x: clip`
+  (not `hidden`, which would break the sticky masthead) plus
+  `overscroll-behavior-x: none`, but that is a backstop — fix the element that
+  overflows. The usual culprits: `shrink-0` on a full sentence, a `<select>`
+  sized by its longest `<option>`, a flex child missing `min-w-0`, and icon
+  rows in the masthead.
+- **Measure, don't eyeball.** Load the route in a 320px iframe and compare every
+  `getBoundingClientRect().right` against `documentElement.clientWidth`;
+  `scrollWidth` reads clean even when content is clipped.
+- Category and status hold the **top right of a post at every width** — they are
+  how you triage a feed. They stack into a column there on a phone rather than
+  moving. What gives instead is the author block: one truncated line, short date.
+- The sort and view toggles stay on **one line** at every width. Padding, type
+  size and the icons give way; the pair never stacks.
+- Touch targets are at least 40px tall, padding included — a 12px label is a
+  16px target without it.
+- A list beside a map becomes a scroller **only** at `lg`, where it has to match
+  the map's height. Stacked on a phone, a nested scroller swallows the drag and
+  the page feels stuck.
 
 ## Type
 

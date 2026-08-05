@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Avatar } from "@/components/ui/avatar";
+import { BARE_CONTROL } from "@/components/ui/styles";
 import { createClient } from "@/utils/supabase/client";
 import type { SessionUser } from "@/utils/supabase/auth";
 import { getDictionary, type Locale } from "@/utils/i18n";
@@ -83,7 +84,7 @@ export function AccountButton({
             way in every social product to reach "what have I been up to". */}
         <Link
           href={`/${lang}/profil/${user.id}`}
-          className="flex h-10 items-center gap-2 rounded-full px-2 text-[16px] font-bold leading-[24px] text-[#16241f] transition-colors hover:text-[#097d6c]"
+          className={`flex h-10 shrink-0 items-center gap-2 ${BARE_CONTROL} px-1.5 text-[16px] font-bold leading-[24px] text-[#16241f] transition-colors hover:text-[#097d6c] sm:px-2`}
         >
           <Avatar person={{ ...user, avatarUrl: user.avatarUrl }} size="sm" />
           <span className="hidden max-w-[16ch] truncate lg:inline">{name}</span>
@@ -92,7 +93,7 @@ export function AccountButton({
           type="button"
           onClick={signOut}
           aria-label={t.header.signOut}
-          className="flex h-10 items-center gap-2 rounded-full px-3 text-[16px] font-bold leading-[24px] text-[#097d6c] transition-colors hover:text-[#075f53]"
+          className={`flex h-10 shrink-0 items-center gap-2 ${BARE_CONTROL} px-2 text-[16px] font-bold leading-[24px] text-[#097d6c] transition-colors hover:text-[#075f53] sm:px-3`}
         >
           <LogoutIcon />
           <span className="hidden md:inline">{t.header.signOut}</span>
@@ -107,7 +108,7 @@ export function AccountButton({
         type="button"
         onClick={() => setOpen(true)}
         aria-label={t.header.account}
-        className="flex h-10 items-center gap-2 rounded-full px-3 text-[16px] font-bold leading-[24px] text-[#16241f] transition-colors hover:text-[#097d6c]"
+        className={`flex h-10 shrink-0 items-center gap-2 ${BARE_CONTROL} px-2 text-[16px] font-bold leading-[24px] text-[#16241f] transition-colors hover:text-[#097d6c] sm:px-3`}
       >
         <PersonIcon />
         <span className="hidden md:inline">{t.header.account}</span>

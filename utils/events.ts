@@ -30,7 +30,6 @@ export type BoroughEvent = {
   id: string;
   sourceUrl: string;
   title: string;
-  description: string | null;
   startsOn: string; // ISO date
   endsOn: string | null;
   eventType: string | null;

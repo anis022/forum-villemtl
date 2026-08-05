@@ -22,7 +22,7 @@ export default async function NewIssuePage({
   if (!user) redirect(`/${lang}`);
 
   return (
-    <div className="flex min-h-screen flex-col bg-white text-[#212529]">
+    <div className="flex min-h-screen flex-col bg-[#f8faf9] text-[#16241f]">
       <SiteHeader user={user} lang={lang} />
 
       <div className={HERO_BAND}>

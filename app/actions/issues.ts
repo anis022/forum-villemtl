@@ -257,8 +257,15 @@ export async function deleteIssue(issueId: string, formData: FormData): Promise<
   redirect(`/${locale}`);
 }
 
+/**
+ * Post a reply — to the report itself, or to another reply when `parentId` is
+ * given. Which issue the parent belongs to, and how deep the thread is allowed
+ * to run, are settled by the trigger in migration 0014 rather than here: this
+ * insert goes through the same API a signed-in browser can call directly.
+ */
 export async function addComment(
   issueId: string,
+  parentId: string | null,
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
@@ -284,11 +291,95 @@ export async function addComment(
     author_id: user.id,
     body,
     is_official: profile?.role === "official",
+    // Only when there is one. Naming the column unconditionally would break
+    // every comment on the site on a database where migration 0014 has not been
+    // applied yet — and where the page never offers to reply to a reply anyway.
+    ...(parentId ? { parent_id: parentId } : {}),
   });
 
   if (error) return { error: "commentFailed", values: { body } };
 
   revalidatePath(`/${locale}/sujets/${issueId}`);
+  revalidatePath(`/${locale}`);
+  return { error: null };
+}
+
+/**
+ * Who may change or remove a given comment: the person who wrote it, or an
+ * elected official acting as a moderator.
+ *
+ * The same shape as `editRights` for reports, and for the same reason — RLS
+ * decides this independently, and deciding it here as well is what lets the
+ * thread render the right controls and return a usable message rather than an
+ * opaque policy error.
+ */
+async function commentRights(commentId: string) {
+  const { supabase, user } = await requireUser();
+  if (!user) return { supabase, user: null, allowed: false, isOfficial: false, issueId: null };
+
+  const [{ data: comment }, { data: profile }] = await Promise.all([
+    supabase.from("comments").select("author_id, issue_id").eq("id", commentId).maybeSingle(),
+    supabase.from("profiles").select("role").eq("id", user.id).maybeSingle(),
+  ]);
+
+  const isOfficial = profile?.role === "official";
+  const authorId = (comment?.author_id as string | undefined) ?? null;
+  return {
+    supabase,
+    user,
+    isOfficial,
+    issueId: (comment?.issue_id as string | undefined) ?? null,
+    allowed: Boolean(authorId) && (authorId === user.id || isOfficial),
+  };
+}
+
+/**
+ * Correct a comment.
+ *
+ * `edited_by` records who did it, so a thread can say out loud when an official
+ * rewrote a resident's words. Everything else about the row — where it sits in
+ * the thread, who wrote it, whether it is an official answer — is pinned by a
+ * trigger in migration 0015 rather than by what this function chooses to send.
+ */
+export async function updateComment(
+  commentId: string,
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const { supabase, user, allowed, issueId } = await commentRights(commentId);
+  if (!user) return { error: "notSignedIn" };
+  if (!allowed) return { error: "notAuthorized" };
+
+  const locale = localeFrom(formData);
+  const body = String(formData.get("body") ?? "").trim();
+  if (body.length < 2) return { error: "commentTooShort", values: { body } };
+  if (body.length > 5000) return { error: "commentTooLong", values: { body } };
+
+  const { error } = await supabase
+    .from("comments")
+    .update({ body, edited_at: new Date().toISOString(), edited_by: user.id })
+    .eq("id", commentId);
+
+  if (error) return { error: "commentFailed", values: { body } };
+
+  if (issueId) revalidatePath(`/${locale}/sujets/${issueId}`);
+  return { error: null };
+}
+
+/** Remove a comment. The replies hanging off it go with it — see migration 0014. */
+export async function deleteComment(
+  commentId: string,
+  formData: FormData,
+): Promise<ActionState> {
+  const { supabase, user, allowed, issueId } = await commentRights(commentId);
+  if (!user) return { error: "notSignedIn" };
+  if (!allowed) return { error: "notAuthorized" };
+
+  const locale = localeFrom(formData);
+  const { error } = await supabase.from("comments").delete().eq("id", commentId);
+  if (error) return { error: "notAuthorized" };
+
+  if (issueId) revalidatePath(`/${locale}/sujets/${issueId}`);
   revalidatePath(`/${locale}`);
   return { error: null };
 }

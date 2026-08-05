@@ -6,6 +6,8 @@ import { SiteFooter } from "@/components/site-footer";
 import { VoteButton } from "@/components/issues/vote-button";
 import { ShareButton } from "@/components/issues/share-button";
 import { CommentForm } from "@/components/issues/comment-form";
+import { CommentThread } from "@/components/issues/comment-thread";
+import { TranslateButton, Translated, TranslationProvider } from "@/components/translate";
 import { StatusControls } from "@/components/issues/status-controls";
 import {
   CategoryTag,
@@ -13,33 +15,43 @@ import {
   StatusTag,
   authorName,
   formatDate,
+  formatDateShort,
 } from "@/components/issues/issue-meta";
 import { getSessionUser } from "@/utils/supabase/auth";
-import { getIssue, listComments } from "@/utils/supabase/issues";
+import { REPLIES_PAGE, getIssue, listComments } from "@/utils/supabase/issues";
 import { editedByOther } from "@/utils/issues";
 import { IssueActions } from "@/components/issues/issue-actions";
 import { getDictionary, isLocale } from "@/utils/i18n";
-import { CARD, CONTAINER, MUTED } from "@/components/ui/styles";
+import { BTN_SECONDARY, CARD, CONTAINER, MUTED } from "@/components/ui/styles";
 import { Avatar } from "@/components/ui/avatar";
 
 export default async function IssuePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ lang: string; id: string }>;
+  searchParams: Promise<{ r?: string }>;
 }) {
   const { lang, id } = await params;
   if (!isLocale(lang)) notFound();
 
   const t = getDictionary(lang);
+  const { r } = await searchParams;
   const [user, issue] = await Promise.all([getSessionUser(), getIssue(id)]);
   if (!issue) notFound();
 
-  const comments = await listComments(id);
+  // Clamped for the same reason as the feed: this number comes from the address
+  // bar, and an unbounded one is a request to render every reply ever written.
+  const shownReplies = Math.min(
+    Math.max(Number(r) || REPLIES_PAGE, REPLIES_PAGE),
+    REPLIES_PAGE * 10,
+  );
+  const { comments, hasMore: moreReplies, threaded } = await listComments(id, shownReplies);
   const isOfficial = user?.role === "official";
   const isAuthor = Boolean(user) && user!.id === issue.author.id;
 
   return (
-    <div className="flex min-h-screen flex-col bg-white text-[#212529]">
+    <div className="flex min-h-screen flex-col bg-[#f8faf9] text-[#16241f]">
       <SiteHeader user={user} lang={lang} />
 
       <main className={`${CONTAINER} flex-1 py-8 md:py-10`}>
@@ -47,48 +59,58 @@ export default async function IssuePage({
           {t.issue.back}
         </Link>
 
+        <TranslationProvider kind="issue" id={issue.id} lang={lang}>
         <article className={`${CARD} mt-4 overflow-hidden`}>
           <div className="p-4 md:p-6">
+            {/* Same shape as the feed card: pills in the top right corner, and
+                the author block truncates rather than pushing them off. */}
             <div className="flex items-start gap-3">
               <Link href={`/${lang}/profil/${issue.author.id}`} className="shrink-0">
                 <Avatar person={issue.author} size="md" />
               </Link>
               <div className="min-w-0 flex-1">
-                <p className="flex flex-wrap items-center gap-x-2 text-[15px] font-bold leading-[20px]">
-                  <Link href={`/${lang}/profil/${issue.author.id}`} className="hover:underline">
+                <p className="flex min-w-0 items-center gap-1.5 text-[15px] font-bold leading-[20px]">
+                  <Link
+                    href={`/${lang}/profil/${issue.author.id}`}
+                    className="truncate hover:underline"
+                  >
                     {authorName(issue.author, t.issue.anonymousAuthor)}
                   </Link>
                   {issue.author.isOfficial && <OfficialBadge lang={lang} />}
                 </p>
-                <p className={`mt-0.5 text-[13px] leading-[18px] ${MUTED}`}>
-                  {formatDate(issue.createdAt, lang)}
-                  {issue.editedAt && (
-                    <>
-                      {" · "}
-                      {/* An edit by someone other than the author is named as
-                          such. A silent change by an official would be
-                          indistinguishable from censorship. */}
-                      <span className={editedByOther(issue) ? "font-bold text-[#b8660a]" : ""}>
-                        {editedByOther(issue)
-                          ? t.issue.editedByOfficial(formatDate(issue.editedAt, lang))
-                          : t.issue.editedByAuthor(formatDate(issue.editedAt, lang))}
-                      </span>
-                    </>
-                  )}
+                <p className={`mt-0.5 truncate text-[13px] leading-[18px] ${MUTED}`}>
+                  {formatDateShort(issue.createdAt, lang)}
                 </p>
               </div>
-              <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
+              <div className="flex shrink-0 flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-1.5">
                 <CategoryTag category={issue.category} lang={lang} />
                 <StatusTag status={issue.status} lang={lang} />
               </div>
             </div>
 
+            {/* The edit notice is its own statement and gets its own line
+                rather than trailing the date behind a separator: squeezed into
+                the corner beside the pills it wrapped into a column of
+                fragments, and an edit by someone other than the author is the
+                one piece of metadata here that must be easy to read. */}
+            {issue.editedAt && (
+              <p
+                className={`mt-2 break-words text-[13px] leading-[18px] ${
+                  editedByOther(issue) ? "font-bold text-[#b8660a]" : MUTED
+                }`}
+              >
+                {editedByOther(issue)
+                  ? t.issue.editedByOfficial(formatDate(issue.editedAt, lang))
+                  : t.issue.editedByAuthor(formatDate(issue.editedAt, lang))}
+              </p>
+            )}
+
             <h1 className="mt-4 text-[24px] font-bold leading-[32px] break-words md:text-[30px] md:leading-[38px]">
-              {issue.title}
+              <Translated field="title">{issue.title}</Translated>
             </h1>
 
             <p className="mt-3 max-w-[68ch] whitespace-pre-wrap break-words text-[17px] leading-[27px]">
-              {issue.body}
+              <Translated field="body">{issue.body}</Translated>
             </p>
           </div>
 
@@ -119,13 +141,14 @@ export default async function IssuePage({
                   ? t.vote.youAndOthers(issue.voteCount - 1)
                   : t.vote.othersSupport(issue.voteCount)}
               </span>
-              {/* Bottom right, at the far end of the action row: sharing is the
-                  one control here that changes nothing. */}
+              {/* Bottom right, at the far end of the action row: the two
+                  controls here that change nothing about the report — reading
+                  it in your own language, and passing it on. */}
+              <TranslateButton className="ml-auto" />
               <ShareButton
                 path={`/${lang}/sujets/${issue.id}`}
                 title={issue.title}
                 lang={lang}
-                className="ml-auto"
               />
             </div>
 
@@ -149,9 +172,10 @@ export default async function IssuePage({
             />
           </div>
         </article>
+        </TranslationProvider>
 
         <section className="mt-10">
-          <h2 className="border-b-[0.8px] border-[#ced4da] pb-4 text-[24px] font-bold leading-[32px] md:text-[32px] md:leading-[40px]">
+          <h2 className="border-b border-[#dde5e1] pb-4 text-[24px] font-bold leading-[32px] md:text-[32px] md:leading-[40px]">
             {issue.commentCount}{" "}
             {issue.commentCount === 1 ? t.issue.replyOne : t.issue.replyMany}
           </h2>
@@ -160,45 +184,28 @@ export default async function IssuePage({
             {comments.length === 0 && <p className={MUTED}>{t.issue.noReplies}</p>}
 
             {comments.map((comment) => (
-              <article
+              <CommentThread
                 key={comment.id}
-                className={
-                  comment.isOfficial
-                    ? "flex gap-3 rounded-[16px] border-l-4 border-[#097d6c] bg-[#e2f0ec] p-5"
-                    : `${CARD} flex gap-3 p-5`
-                }
-              >
-                <Link href={`/${lang}/profil/${comment.author.id}`} className="shrink-0">
-                  <Avatar person={comment.author} size="md" />
-                </Link>
-
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[14px]">
-                    <Link
-                      href={`/${lang}/profil/${comment.author.id}`}
-                      className="font-bold hover:underline"
-                    >
-                      {authorName(comment.author, t.issue.anonymousAuthor)}
-                    </Link>
-                    {comment.author.isOfficial && <OfficialBadge lang={lang} />}
-                    <span aria-hidden="true" className={MUTED}>
-                      ·
-                    </span>
-                    <span className={MUTED}>{formatDate(comment.createdAt, lang)}</span>
-                  </div>
-
-                  {comment.isOfficial && (
-                    <p className="mt-1 text-[14px] font-bold text-[#097d6c]">
-                      {t.issue.officialAnswer}
-                    </p>
-                  )}
-
-                  <p className="mt-1.5 whitespace-pre-wrap break-words leading-[26px]">
-                    {comment.body}
-                  </p>
-                </div>
-              </article>
+                comment={comment}
+                issueId={issue.id}
+                viewerId={user?.id ?? null}
+                isOfficial={isOfficial}
+                threaded={threaded}
+                lang={lang}
+              />
             ))}
+
+            {/* Same reasoning as the feed: paging lives in the URL so it works
+                without JavaScript and can be linked to. */}
+            {moreReplies && (
+              <Link
+                href={`/${lang}/sujets/${issue.id}?r=${shownReplies + REPLIES_PAGE}`}
+                scroll={false}
+                className={`${BTN_SECONDARY} w-full`}
+              >
+                {t.issue.showMoreReplies}
+              </Link>
+            )}
           </div>
 
           <div className={`${CARD} mt-8 p-6`}>
