@@ -50,14 +50,65 @@ export function isMappable(e: BoroughEvent): boolean {
 
 // The borough geometry lives in utils/map.ts, shared with the reports map.
 
-/** A colour per district, so the pins read as a set rather than a rainbow. */
-export const DISTRICT_COLORS: Record<District, string> = {
-  "Côte-des-Neiges": "#097d6c",
-  Darlington: "#1c4fa1",
-  Snowdon: "#a4231f",
-  "Notre-Dame-de-Grâce": "#6b3fa0",
-  Loyola: "#b8660a",
+/**
+ * One colour for every pin.
+ *
+ * They used to be coloured per district, which worked only while a row of
+ * district chips sat above the map acting as the legend. Without it five hues
+ * on a map are a rainbow nobody can read — colour that encodes something the
+ * page never explains is worse than no colour at all. What the map has to say
+ * now is "an event is here", and one accent says it.
+ */
+export const ACCENT = "#097d6c";
+
+/** The warm accent, for something happening today rather than later. */
+export const ACCENT_TODAY = "#d94f45";
+
+/** The time windows the filter offers. */
+export const WHENS = ["all", "today", "week", "month"] as const;
+export type When = (typeof WHENS)[number];
+
+/** ISO day, `days` from `from`. Dates are compared as strings throughout. */
+const addDays = (from: string, days: number): string => {
+  const d = new Date(from + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
 };
+
+/**
+ * The last day a window covers, or null when it covers everything. "This week"
+ * is the next seven days rather than the calendar week: on a Sunday the
+ * calendar answer is "today", which is not what anyone means by it.
+ */
+export function windowEnd(when: When, today: string): string | null {
+  if (when === "today") return today;
+  if (when === "week") return addDays(today, 7);
+  if (when === "month") return addDays(today, 30);
+  return null;
+}
+
+/**
+ * Accent- and case-insensitive. A resident typing "cote des neiges" or
+ * "Côte-des-Neiges" is asking the same question, and a search that only honours
+ * one of them is a search that fails on the borough's own name.
+ */
+const fold = (s: string) =>
+  s
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase();
+
+/** Free-text match over the fields a person would search by. */
+export function matches(e: BoroughEvent, query: string): boolean {
+  const q = fold(query.trim());
+  if (!q) return true;
+  const haystack = fold(
+    [e.title, e.venueName, e.address, e.eventType, e.audience].filter(Boolean).join(" "),
+  );
+  // Every word must appear, in any order: "parc jazz" should find a jazz
+  // evening in a park without the person guessing the title's word order.
+  return q.split(/\s+/).every((word) => haystack.includes(word));
+}
 
 /** "du 6 au 21 juillet" style ranges collapse to a single date when equal. */
 export function formatDateRange(

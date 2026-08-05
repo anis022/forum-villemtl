@@ -3,6 +3,7 @@ import Link from "next/link";
 import { BackToTop } from "@/components/back-to-top";
 import {
   FacebookIcon,
+  GitHubIcon,
   InstagramIcon,
   XIcon,
   YouTubeIcon,
@@ -75,33 +76,25 @@ export function SiteFooter({ lang }: { lang: Locale }) {
             </div>
           ))}
 
+          {/* montreal.ca used to sit here. A link to the city's own homepage
+              from a borough forum is the one link every visitor could already
+              find; what nobody can find unless it is said is that this thing is
+              open — so the column now points at the source instead. */}
           <div className="border-t border-white/40 pt-4">
-            <p className="text-[16px] font-bold leading-[24px]">{t.footer.borough}</p>
+            <p className="text-[16px] font-bold leading-[24px]">{t.footer.sourceCode}</p>
             <ul className="mt-1 space-y-0.5">
               <li>
+                {/* Same shape as the rows in "Nous suivre" just below: mark,
+                    then name. A repository is one more place this borough
+                    exists, and it should read like the others. */}
                 <a
-                  href="https://montreal.ca"
-                  className="inline-flex min-h-[40px] items-center gap-1 text-[14px] leading-[20px] text-white hover:underline"
+                  href="https://github.com/anis022/forum-villemtl"
+                  className="inline-flex min-h-[40px] items-center gap-2 text-[14px] leading-[20px] text-white hover:underline"
                   target="_blank"
                   rel="noreferrer"
                 >
-                  montreal.ca
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 12 12"
-                    aria-hidden="true"
-                    fill="none"
-                    className="shrink-0"
-                  >
-                    <path
-                      d="M4.5 1.5H10.5V7.5M10.5 1.5L5 7M8 8.5v2h-6.5V4h2"
-                      stroke="currentColor"
-                      strokeWidth="1.3"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
+                  <GitHubIcon />
+                  GitHub
                   <span className="sr-only">{t.footer.newWindow}</span>
                 </a>
               </li>

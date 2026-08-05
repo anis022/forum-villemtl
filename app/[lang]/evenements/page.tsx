@@ -46,10 +46,14 @@ export default async function EventsPage({
             events={events}
             locale={dateLocale(lang)}
             labels={{
-              allDistricts: t.events.allDistricts,
               allTypes: t.events.allTypes,
-              district: t.events.district,
               type: t.events.type,
+              mapLabel: t.events.mapLabel,
+              searchPlaceholder: t.events.searchPlaceholder,
+              when: t.events.when,
+              settings: t.events.settings,
+              allSettings: t.events.allSettings,
+              todayPill: t.events.todayPill,
               eventOne: t.events.eventOne,
               eventMany: t.events.eventMany,
               noneTitle: t.events.noneTitle,
@@ -57,7 +61,6 @@ export default async function EventsPage({
               details: t.events.details,
               online: t.events.online,
               unmapped: t.events.unmapped,
-              free: t.events.free,
               showAll: t.events.showAll,
               showMore: t.events.showMore,
             }}

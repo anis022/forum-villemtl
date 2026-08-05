@@ -4,14 +4,18 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import "leaflet/dist/leaflet.css";
 import type { Map as LeafletMap, LayerGroup } from "leaflet";
 import {
-  DISTRICTS,
-  DISTRICT_COLORS,
+  ACCENT,
+  ACCENT_TODAY,
   formatDateRange,
   isMappable,
+  isOngoing,
+  matches,
+  windowEnd,
   type BoroughEvent,
-  type District,
+  type Setting,
+  type When,
 } from "@/utils/events";
-import { BTN_SECONDARY, CARD, MUTED } from "@/components/ui/styles";
+import { BTN_SECONDARY, CARD, FIELD, MUTED } from "@/components/ui/styles";
 import {
   MAP_OPTIONS,
   TILE_OPTIONS,
@@ -21,10 +25,14 @@ import {
 } from "@/utils/map";
 
 export type MapLabels = {
-  allDistricts: string;
   allTypes: string;
-  district: string;
   type: string;
+  mapLabel: string;
+  searchPlaceholder: string;
+  when: Record<When, string>;
+  settings: Record<Setting, string>;
+  allSettings: string;
+  todayPill: string;
   eventOne: string;
   eventMany: string;
   noneTitle: string;
@@ -32,7 +40,6 @@ export type MapLabels = {
   details: string;
   online: string;
   unmapped: string;
-  free: string;
   showAll: string;
   // A plain string, not a formatter: labels cross the server/client boundary
   // and a function cannot. The count is composed here instead.
@@ -54,9 +61,16 @@ const PAGE = 8;
  * is on this week" without a single click, and hovering a card lights its pin,
  * so the two halves explain each other.
  *
- * Filters are chips rather than dropdowns. There are five districts and they
- * are the primary way anyone slices this — a select box hides all five behind
- * a click and gives no sense of how many there are.
+ * The filters answer the questions people actually arrive with, in the order
+ * they ask them: *when* first as chips, because a listing is read forwards from
+ * today; then a search box, because someone looking for one thing knows its
+ * name; then type and indoor/outdoor as selects, which are refinements rather
+ * than entry points.
+ *
+ * Filtering by district is deliberately gone. Nobody looking for something to
+ * do on Saturday thinks in electoral boundaries — they think about when they
+ * are free and how far they will walk — and the map already shows where
+ * everything is far better than five chips could.
  */
 export function EventMap({
   events,
@@ -67,7 +81,9 @@ export function EventMap({
   locale: string;
   labels: MapLabels;
 }) {
-  const [district, setDistrict] = useState<District | "">("");
+  const [query, setQuery] = useState("");
+  const [when, setWhen] = useState<When>("all");
+  const [setting, setSetting] = useState<Setting | "">("");
   const [type, setType] = useState("");
   const [active, setActive] = useState<string | null>(null);
   const [limit, setLimit] = useState(PAGE);
@@ -82,14 +98,27 @@ export function EventMap({
     [events],
   );
 
-  const filtered = useMemo(
-    () =>
-      events.filter(
-        (e) => (!district || e.district === district) && (!type || e.eventType === type),
-      ),
-    [events, district, type],
-  );
+  /**
+   * Today, read once per filter pass rather than at module scope. This
+   * component renders on the server too, and a date captured at import time
+   * would be whichever day the server happened to start on.
+   */
+  const filtered = useMemo(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    const until = windowEnd(when, today);
+
+    return events.filter((e) => {
+      if (type && e.eventType !== type) return false;
+      if (setting && e.setting !== setting) return false;
+      // A window asks "is any of this event inside it", not "does it start
+      // inside it": a series running all summer is on this week too.
+      if (until && e.startsOn > until) return false;
+      return matches(e, query);
+    });
+  }, [events, query, when, setting, type]);
+
   const mappable = useMemo(() => filtered.filter(isMappable), [filtered]);
+  const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
   // Leaflet reads `window` at import time, so it is pulled in here rather than
   // at module scope.
@@ -148,10 +177,9 @@ export function EventMap({
       const popupMaxWidth = frame > 0 ? Math.min(300, frame - 32) : 300;
 
       for (const e of mappable) {
-        const color = e.district ? DISTRICT_COLORS[e.district] : "#5d6b66";
         const marker = L.marker([e.lat!, e.lon!], {
           title: e.title,
-          icon: pin(L, color, false),
+          icon: pin(L, ACCENT, false),
         });
 
         const place = [e.venueName, e.address].filter(Boolean).join(" · ");
@@ -183,8 +211,7 @@ export function EventMap({
       for (const e of mappable) {
         const marker = markersRef.current.get(e.id);
         if (!marker) continue;
-        const color = e.district ? DISTRICT_COLORS[e.district] : "#5d6b66";
-        marker.setIcon(pin(L, color, active === e.id));
+        marker.setIcon(pin(L, ACCENT, active === e.id));
       }
     })();
     return () => {
@@ -193,17 +220,25 @@ export function EventMap({
   }, [active, mappable]);
 
   const hidden = filtered.length - mappable.length;
-  const hasFilter = Boolean(district || type);
+  const hasFilter = Boolean(query || when !== "all" || setting || type);
 
   // Changing a filter re-answers the question, so the list starts over. Done in
   // the handlers rather than an effect: an effect would run after a render that
   // had already painted the old list at its old length.
-  const chooseDistrict = (value: District | "") => {
-    setDistrict(value);
+  const reset = <T,>(set: (v: T) => void) => (value: T) => {
+    set(value);
     setLimit(PAGE);
   };
-  const chooseType = (value: string) => {
-    setType(value);
+  const chooseWhen = reset(setWhen);
+  const chooseType = reset(setType);
+  const chooseSetting = reset(setSetting);
+  const chooseQuery = reset(setQuery);
+
+  const clearAll = () => {
+    setQuery("");
+    setWhen("all");
+    setSetting("");
+    setType("");
     setLimit(PAGE);
   };
 
@@ -212,18 +247,27 @@ export function EventMap({
 
   return (
     <div>
-      <div className="flex flex-wrap items-center gap-2">
-        <FilterChip active={!district} onClick={() => chooseDistrict("")}>
-          {labels.allDistricts}
-        </FilterChip>
-        {DISTRICTS.map((d) => (
-          <FilterChip
-            key={d}
-            active={district === d}
-            onClick={() => chooseDistrict(d)}
-            dot={DISTRICT_COLORS[d]}
-          >
-            {d}
+      {/* Searching comes first because it is the only control that answers
+          "where is the thing I already know about". Full width: an event title
+          is a sentence, not a keyword. */}
+      <label className="block">
+        <span className="sr-only">{labels.searchPlaceholder}</span>
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => chooseQuery(e.target.value)}
+          placeholder={labels.searchPlaceholder}
+          className={`${FIELD} rounded-full`}
+        />
+      </label>
+
+      {/* Then when. A listing is read forwards from today, so this is the cut
+          most people want and it gets chips rather than a select — four
+          options behind a click is three options hidden. */}
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        {(Object.keys(labels.when) as When[]).map((key) => (
+          <FilterChip key={key} active={when === key} onClick={() => chooseWhen(key)}>
+            {labels.when[key]}
           </FilterChip>
         ))}
       </div>
@@ -250,6 +294,24 @@ export function EventMap({
           </select>
         </label>
 
+        {/* Indoors or out is the other thing that decides whether an event is
+            worth crossing the borough for in February. */}
+        <label className="flex w-full min-w-0 items-center gap-2 text-[14px] sm:w-auto">
+          <span className="sr-only">{labels.allSettings}</span>
+          <select
+            value={setting}
+            onChange={(e) => chooseSetting(e.target.value as Setting | "")}
+            className="min-h-[40px] min-w-0 max-w-full flex-1 rounded-full border border-[#dde5e1] bg-white px-3.5 py-2 text-[14px] font-bold text-[#16241f] transition-colors hover:border-[#097d6c] sm:flex-none"
+          >
+            <option value="">{labels.allSettings}</option>
+            {(Object.keys(labels.settings) as Setting[]).map((key) => (
+              <option key={key} value={key}>
+                {labels.settings[key]}
+              </option>
+            ))}
+          </select>
+        </label>
+
         <p className={`text-[14px] ${MUTED}`}>
           {/* The count and its noun are held together; broken across lines the
               number reads as belonging to the sentence above it. Only this
@@ -265,10 +327,7 @@ export function EventMap({
         {hasFilter && (
           <button
             type="button"
-            onClick={() => {
-              chooseDistrict("");
-              chooseType("");
-            }}
+            onClick={clearAll}
             className="inline-flex min-h-[40px] items-center text-[14px] font-bold text-[#097d6c] underline hover:text-[#075f53]"
           >
             {labels.showAll}
@@ -290,7 +349,7 @@ export function EventMap({
           <div
             ref={containerRef}
             role="application"
-            aria-label={labels.district}
+            aria-label={labels.mapLabel}
             className="h-[320px] w-full overflow-hidden rounded-[16px] border border-[#dde5e1] sm:h-[400px] md:h-[620px]"
           />
 
@@ -319,12 +378,15 @@ export function EventMap({
                           : "border-[#dde5e1] bg-white hover:border-[#097d6c]"
                       }`}
                     >
+                      {/* The bar used to carry the district's colour, which
+                          only meant anything while the district chips were
+                          there to read it against. It now marks the one
+                          distinction a listing actually turns on: happening
+                          today, or still to come. */}
                       <span
                         aria-hidden="true"
                         className="mt-1 h-9 w-1.5 shrink-0 rounded-full"
-                        style={{
-                          background: e.district ? DISTRICT_COLORS[e.district] : "#93a19c",
-                        }}
+                        style={{ background: isOngoing(e, today) ? ACCENT_TODAY : ACCENT }}
                       />
                       <span className="min-w-0 flex-1">
                         <span className="block text-[15px] font-bold leading-[21px]">
@@ -334,11 +396,18 @@ export function EventMap({
                           {formatDateRange(e.startsOn, e.endsOn, locale)}
                           {e.venueName ? ` · ${e.venueName}` : ""}
                         </span>
-                        {e.setting === "online" && (
-                          <span className="mt-1 inline-block rounded-full bg-[#e8eef9] px-2 py-0.5 text-[11px] font-bold text-[#1c4fa1]">
-                            {labels.online}
-                          </span>
-                        )}
+                        <span className="mt-1 flex flex-wrap gap-1">
+                          {isOngoing(e, today) && (
+                            <span className="inline-block rounded-full bg-[#fdeceb] px-2 py-0.5 text-[11px] font-bold text-[#a4231f]">
+                              {labels.todayPill}
+                            </span>
+                          )}
+                          {e.setting === "online" && (
+                            <span className="inline-block rounded-full bg-[#e8eef9] px-2 py-0.5 text-[11px] font-bold text-[#1c4fa1]">
+                              {labels.online}
+                            </span>
+                          )}
+                        </span>
                       </span>
                     </a>
                   </li>
@@ -400,19 +469,15 @@ function pin(L: typeof import("leaflet"), color: string, raised: boolean) {
 function FilterChip({
   active,
   onClick,
-  dot,
   children,
 }: {
   active: boolean;
   onClick: () => void;
-  dot?: string;
   children: React.ReactNode;
 }) {
-  // `max-w-full` matters on the longest district names: a wrapping flex row will
-  // happily let a chip wider than the row hang off the edge, and
-  // "Notre-Dame-de-Grâce" is close to the width of a 320px screen once the dot
-  // and the padding are counted. Clamped, it wraps inside the chip instead.
-  // `min-h-[40px]` keeps it a thumb-sized target; the type alone leaves it 36px.
+  // `max-w-full` so a wrapping flex row cannot let a chip hang off the edge on
+  // a 320px screen; clamped, it wraps inside the chip instead. `min-h-[40px]`
+  // keeps it a thumb-sized target — the type alone leaves it 36px.
   return (
     <button
       type="button"
@@ -424,13 +489,6 @@ function FilterChip({
           : "border-[#dde5e1] bg-white text-[#5d6b66] hover:border-[#097d6c] hover:text-[#16241f]"
       }`}
     >
-      {dot && (
-        <span
-          aria-hidden="true"
-          className="h-2.5 w-2.5 rounded-full ring-1 ring-white/40"
-          style={{ background: active ? "#ffffff" : dot }}
-        />
-      )}
       {children}
     </button>
   );

@@ -68,12 +68,6 @@ export default async function OfficialsPage({ params }: { params: Promise<{ lang
                       ? t.officials.district(person.district)
                       : t.officials.wholeBorough}
                   </p>
-
-                  {/* What the card adds over the name: the seats beyond the
-                      borough are the reason to open it. */}
-                  <p className={`mt-2 text-[13px] leading-[19px] ${MUTED}`}>
-                    {t.officials.seatCount(person.mandates.length)}
-                  </p>
                 </div>
               </Link>
             </li>

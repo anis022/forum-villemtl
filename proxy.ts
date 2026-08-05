@@ -15,8 +15,11 @@ function preferredLocale(request: NextRequest) {
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Route handlers (e.g. the auth email callback) are not localized.
-  if (!pathname.startsWith("/auth")) {
+  // Route handlers are not localized. `/auth` is the email callback Supabase
+  // returns people to; `/api` is machine-facing — the daily events cron lands
+  // there, and a redirect to /fr/api/… turns a scheduled sync into a 307 that
+  // Vercel's cron does not follow, so the map silently stops updating.
+  if (!pathname.startsWith("/auth") && !pathname.startsWith("/api")) {
     const hasLocale = LOCALES.some(
       (locale) => pathname === `/${locale}` || pathname.startsWith(`/${locale}/`),
     );
