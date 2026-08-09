@@ -11,7 +11,7 @@ import {
   type ProfileCounts,
   type PublicProfile,
 } from "@/utils/supabase/profile";
-import { officialBySlug } from "@/utils/officials";
+import { officialByProfileId, officialBySlug } from "@/utils/officials";
 import { getDictionary, isLocale, dateLocale } from "@/utils/i18n";
 import { CARD, CONTAINER, MUTED } from "@/components/ui/styles";
 import { Avatar } from "@/components/ui/avatar";
@@ -52,10 +52,14 @@ export default async function ProfilePage({
   /**
    * The same page serves two kinds of handle: a resident's account id, and an
    * elected person's slug. Officials are on this page rather than in a
-   * directory of their own — that is the claim the forum makes about them — and
-   * none of them has signed up yet, so a name is the only key there is.
+   * directory of their own — that is the claim the forum makes about them.
+   *
+   * An account id is tried against the roster as well, because that is the
+   * handle a thread links with: a reply carries its author's uuid, so following
+   * an elected person's name out of a conversation has to land on the same
+   * profile the directory points at, seats and all — not on a stranger's.
    */
-  const official = officialBySlug(id);
+  const official = officialBySlug(id) ?? officialByProfileId(id);
   const accountId = official ? official.profileId : id;
 
   const [viewer, account] = await Promise.all([

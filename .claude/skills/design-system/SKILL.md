@@ -35,23 +35,30 @@ everyone.
 
 ## Shape
 
-- Cards `rounded-[16px]`, inputs `rounded-[12px]`, buttons and chips
-  `rounded-full`, list rows `rounded-[14px]`.
-- A 4px radius reads as a government form. Generous corners are the single
-  cheapest thing that makes this feel friendly — the user asked for them
-  explicitly.
+- Cards `rounded-[16px]`, inputs `rounded-[12px]`, buttons `rounded-[10px]`,
+  chips `rounded-full`, list rows `rounded-[14px]`.
+- A 4px radius reads as a government form. Generous corners on the *surfaces* —
+  cards, panels, fields — are the single cheapest thing that makes this feel
+  friendly, and the user asked for them explicitly.
+- **Buttons are not pills.** They were, and at button width a fully round one
+  reads as marketing rather than as a municipal service; the user called it
+  "ugly and not so professional". 10px: tighter than the field above it,
+  nowhere near square.
+- **Chips still are.** A filter is not a button, and the two shapes are how you
+  tell them apart without reading them. That covers the category chips and the
+  map/view toggles built in the same family.
 - Cards use a hairline border **plus a whisper of shadow**
   (`0_1px_2px_rgba(22,36,31,0.04)`), not a heavy border.
 - Every focusable control needs a radius: the focus ring is a `box-shadow`, so
   it traces whatever radius the element has, and anything left at 0 gets a
   hard-cornered rectangle while its neighbours get rounded ones. `globals.css`
   sets a 6px floor in `@layer base`; component utilities still win.
-- **The ring only goes as round as the control actually is.** `rounded-full`
+- **The ring only goes as round as the control actually is.** The button radius
   belongs to things drawn as buttons — filled, bordered, or filled on hover.
   Bare text and icon controls (the menu trigger, header search, account and
   sign-out, the profile link) take `BARE_CONTROL` (8px), and plain links keep
-  the 6px floor. A pill ring around a menu item outlines a button that was
-  never drawn, which is why those read as too round.
+  the 6px floor. A ring around a menu item outlines a button that was never
+  drawn, which is why those read as too round.
 
 ## Small screens
 

@@ -48,3 +48,7 @@ dev.log
 
 # generated seed, regenerate with npm run sync:events
 events-seed.sql
+
+# local ingestion artifacts (PDFs, audio, transcripts) - regenerate with scripts/py
+/data
+.venv-asr/

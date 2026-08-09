@@ -63,6 +63,11 @@ export default async function EventsPage({
               unmapped: t.events.unmapped,
               showAll: t.events.showAll,
               showMore: t.events.showMore,
+              nearbyHint: t.events.nearbyHint,
+              nearbyLabel: t.events.nearbyLabel,
+              nearbyClear: t.events.nearbyClear,
+              nearbyNoneTitle: t.events.nearbyNoneTitle,
+              nearbyNoneBody: t.events.nearbyNoneBody,
             }}
           />
         )}

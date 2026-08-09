@@ -166,7 +166,7 @@ export function LocationPicker({
           type="button"
           onClick={useMyPosition}
           disabled={disabled || locating}
-          className="inline-flex items-center gap-1.5 rounded-full border border-[#dde5e1] bg-white px-3.5 py-1.5 text-[13px] font-bold text-[#097d6c] transition-colors hover:border-[#097d6c] hover:bg-[#e2f0ec] disabled:opacity-60"
+          className="inline-flex items-center gap-1.5 rounded-[10px] border border-[#dde5e1] bg-white px-3.5 py-1.5 text-[13px] font-bold text-[#097d6c] transition-colors hover:border-[#097d6c] hover:bg-[#e2f0ec] disabled:opacity-60"
         >
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <circle cx="12" cy="12" r="3.2" stroke="currentColor" strokeWidth="1.7" />

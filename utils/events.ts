@@ -68,6 +68,61 @@ export const ACCENT_TODAY = "#d94f45";
 export const WHENS = ["all", "today", "week", "month"] as const;
 export type When = (typeof WHENS)[number];
 
+/**
+ * The radii offered once someone picks a point on the map, in metres.
+ *
+ * Walking distances, not driving ones: the question behind "what is near here"
+ * in a borough five kilometres across is whether you would go on foot. 1 km is
+ * the default because it is roughly a twelve-minute walk — near enough to be
+ * worth it, wide enough that a click never comes back empty by a hundred
+ * metres. 500 m is one's own street corner, 2 km most of a district.
+ */
+export const RADII = [500, 1000, 2000] as const;
+export type Radius = (typeof RADII)[number];
+export const DEFAULT_RADIUS: Radius = 1000;
+
+/** A point picked on the map, to measure everything else against. */
+export type Origin = { lat: number; lon: number };
+
+const EARTH_RADIUS_M = 6_371_008.8;
+
+/**
+ * Metres between two positions, by the haversine formula.
+ *
+ * A sphere is wrong by about half a percent, which over the two kilometres this
+ * is ever asked about is a few metres — far below the precision of a fingertip
+ * on a phone-sized map. Anything more elaborate would be arithmetic nobody can
+ * see the result of.
+ */
+export function distanceMeters(a: Origin, bLat: number, bLon: number): number {
+  const rad = Math.PI / 180;
+  const dLat = (bLat - a.lat) * rad;
+  const dLon = (bLon - a.lon) * rad;
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(a.lat * rad) * Math.cos(bLat * rad) * Math.sin(dLon / 2) ** 2;
+  return 2 * EARTH_RADIUS_M * Math.asin(Math.sqrt(h));
+}
+
+/** True when the event has a position and it falls inside the circle. */
+export function isNearby(e: BoroughEvent, origin: Origin, radius: number): boolean {
+  if (!isMappable(e)) return false;
+  return distanceMeters(origin, e.lat!, e.lon!) <= radius;
+}
+
+/**
+ * A distance as a person would say it. Rounded to ten metres below a kilometre:
+ * the origin is wherever a fingertip landed, so "437 m" claims a precision the
+ * number does not have.
+ */
+export function formatDistance(metres: number, locale: string): string {
+  if (metres < 1000) return `${Math.round(metres / 10) * 10} m`;
+  const km = new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(
+    metres / 1000,
+  );
+  return `${km} km`;
+}
+
 /** ISO day, `days` from `from`. Dates are compared as strings throughout. */
 const addDays = (from: string, days: number): string => {
   const d = new Date(from + "T00:00:00Z");

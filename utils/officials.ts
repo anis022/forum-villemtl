@@ -48,13 +48,22 @@ export type Official = {
    * The portrait's filename in `public/elus/`, and the handle their profile
    * lives at: `/fr/profil/teodoresco`. Elected officials share the residents'
    * profile page rather than getting a page of their own — the point of this
-   * forum is that they are in the conversation, not beside it — and none of
-   * them has an account to key that page off yet.
+   * forum is that they are in the conversation, not beside it — and the slug
+   * is the handle that works whether or not there is an account behind it.
    */
   slug: string;
   /**
    * Their forum account, once they have one. Null until then; the profile page
    * falls back to an empty history rather than inventing one.
+   *
+   * The four ids below belong to the demonstration community
+   * (`supabase/demo-seed.sql`) and not to the people themselves — nobody on
+   * this council has signed up. They are written here rather than looked up
+   * because the seed derives them, uuid v5, from the same slugs in this file:
+   * the value is a function of the name, so it is knowable without a round trip
+   * and stable across every run of the seed. On a database where the seed has
+   * not been applied the row simply is not there, and the profile page falls
+   * back exactly as it did when this was null.
    */
   profileId: string | null;
   name: string;
@@ -110,7 +119,7 @@ const PARTY = "Ensemble Montréal – Équipe Soraya";
 const ROSTER: Official[] = [
   {
     slug: "valenzuela",
-    profileId: null,
+    profileId: "590744e9-3f01-5feb-9ed0-7aaae61b9257",
     name: "Stéphanie Valenzuela",
     firstName: "Stéphanie",
     surname: "Valenzuela",
@@ -134,7 +143,7 @@ const ROSTER: Official[] = [
   },
   {
     slug: "thiagarajah",
-    profileId: null,
+    profileId: "228c144e-2413-5749-8178-e8f374534d31",
     name: "Milany Thiagarajah",
     firstName: "Milany",
     surname: "Thiagarajah",
@@ -163,7 +172,7 @@ const ROSTER: Official[] = [
   },
   {
     slug: "teodoresco",
-    profileId: null,
+    profileId: "d9a14b6d-8a9c-5139-a203-8740412426ef",
     name: "Alexandre Teodoresco",
     firstName: "Alexandre",
     surname: "Teodoresco",
@@ -188,7 +197,7 @@ const ROSTER: Official[] = [
   },
   {
     slug: "moroz",
-    profileId: null,
+    profileId: "36bbfb80-19dd-5c1c-8771-30eb5e428b6f",
     name: "Sonny Moroz",
     firstName: "Sonny",
     surname: "Moroz",
@@ -226,3 +235,13 @@ export const OFFICIALS: Official[] = [...ROSTER].sort((a, b) =>
 
 export const officialBySlug = (slug: string): Official | undefined =>
   OFFICIALS.find((person) => person.slug === slug);
+
+/**
+ * The other direction, for the handle a thread actually links with. A reply
+ * carries its author's account id, so following an elected person's name out of
+ * a conversation arrives at `/profil/<uuid>` rather than at their slug. Without
+ * this the same person has two profiles — one with their seats on it, one
+ * reading "membre depuis mars" like any resident's.
+ */
+export const officialByProfileId = (id: string): Official | undefined =>
+  OFFICIALS.find((person) => person.profileId === id);

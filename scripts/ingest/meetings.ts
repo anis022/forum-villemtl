@@ -5,8 +5,11 @@
  * so they do not appear under /videos. Dates come from the video title, or
  * from the description when the title carries none; none are inferred.
  *
+ * Scoped to 2026: these are the sittings whose recordings we transcribe
+ * ourselves and whose proces-verbaux we parse, so they are the only ones an
+ * answer can cite down to the second.
+ *
  * Excluded on purpose:
- *   zN9WIzrj5C0  9 mar 2026  — no caption track of any kind
  *   ocpBhVKogeY  2 feb 2026  — 5-minute aborted stream (real one: eAdQaeKWXxE)
  *   dwtuiT2irT4  2 feb 2026  — 1-minute duplicate
  */
@@ -23,12 +26,8 @@ export const MEETINGS: MeetingSeed[] = [
   { youtubeId: "Jo73VwX55zQ", date: "2026-06-01", title: "Séance ordinaire du conseil d'arrondissement — 1er juin 2026" },
   { youtubeId: "bjBQBY3Mvjo", date: "2026-05-04", title: "Séance ordinaire du conseil d'arrondissement — 4 mai 2026" },
   { youtubeId: "jQoMGEnaZaw", date: "2026-04-13", title: "Séance ordinaire du conseil d'arrondissement — 13 avril 2026" },
+  // Carried no caption track of any kind, which is why it used to sit in the
+  // excluded list. Transcription no longer depends on YouTube publishing one.
+  { youtubeId: "zN9WIzrj5C0", date: "2026-03-09", title: "Séance ordinaire du conseil d'arrondissement — 9 mars 2026" },
   { youtubeId: "eAdQaeKWXxE", date: "2026-02-02", title: "Séance ordinaire du conseil d'arrondissement — 2 février 2026" },
-  { youtubeId: "niHU4GMRyg8", date: "2025-12-08", title: "Séance ordinaire du conseil d'arrondissement — 8 décembre 2025" },
-  { youtubeId: "gdUFR41SvLY", date: "2025-11-26", title: "Séance du conseil d'arrondissement — 26 novembre 2025" },
-  { youtubeId: "Hdx4R5PPMjM", date: "2025-11-17", title: "Séance extraordinaire du conseil d'arrondissement — 17 novembre 2025" },
-  { youtubeId: "htykOiQE4ME", date: "2025-09-02", title: "Séance ordinaire du conseil d'arrondissement — 2 septembre 2025" },
-  { youtubeId: "-tEJiepqszQ", date: "2025-08-04", title: "Séance ordinaire du conseil d'arrondissement — 4 août 2025" },
-  { youtubeId: "aUHqg22me5U", date: "2025-07-07", title: "Séance ordinaire du conseil d'arrondissement — 7 juillet 2025" },
-  { youtubeId: "VUcqfnk-iUo", date: "2025-06-09", title: "Séance ordinaire du conseil d'arrondissement — 9 juin 2025" },
 ];

@@ -112,6 +112,10 @@ export type Comment = {
 /** A comment with the exchange hanging off it. */
 export type CommentNode = Comment & { replies: CommentNode[] };
 
+/** Everything hanging off a comment, however deep — what a fold hides. */
+export const countReplies = (comment: CommentNode): number =>
+  comment.replies.reduce((n, reply) => n + 1 + countReplies(reply), 0);
+
 /**
  * How far a thread is allowed to step right before replies stop indenting and
  * carry on at the same level. Nesting is what shows who is answering whom, and
@@ -120,3 +124,19 @@ export type CommentNode = Comment & { replies: CommentNode[] };
  * they just stop moving sideways.
  */
 export const MAX_INDENT = 3;
+
+/**
+ * The depth at which a reply's own answers stop being drawn and become a fold.
+ *
+ * `MAX_INDENT` keeps a deep thread from walking off the right edge, but it does
+ * not stop it from being long: once replies stop indenting, four generations of
+ * an argument between two people sit in one flat column under a comment nobody
+ * is still reading, and the next top-level reply is a screen and a half away.
+ *
+ * So the third generation onward is collapsed by default, the way Reddit does
+ * it — the exchange is still there, announced by a count, one tap from being
+ * read. Two levels is what fits: a comment, its answers, and the answers to
+ * those. Past that a resident scanning a report is being asked to scroll
+ * through a conversation between other people to find the next one.
+ */
+export const FOLD_DEPTH = 2;

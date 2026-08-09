@@ -124,10 +124,10 @@ export function SiteFooter({ lang }: { lang: Locale }) {
 
         <div className="mt-12 border-t border-white/40 pt-8">
           <Image
-            src="/logo-montreal.png"
-            alt="Ville de Montréal"
-            width={260}
-            height={120}
+            src="/logo-ensemble-mtl.png"
+            alt="Ensemble Montréal"
+            width={469}
+            height={166}
             className="h-[72px] w-auto brightness-0 invert"
           />
         </div>

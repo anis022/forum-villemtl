@@ -145,7 +145,7 @@ export function EditIssueForm({
             setPreview(file ? URL.createObjectURL(file) : null);
             if (file) setRemoved(false);
           }}
-          className="block w-full text-[15px] file:mr-4 file:rounded-full file:border file:border-[#dde5e1] file:bg-white file:px-4 file:py-2 file:text-[15px] file:font-bold file:text-[#097d6c] hover:file:bg-[#e2f0ec]"
+          className="block w-full text-[15px] file:mr-4 file:rounded-[10px] file:border file:border-[#dde5e1] file:bg-white file:px-4 file:py-2 file:text-[15px] file:font-bold file:text-[#097d6c] hover:file:bg-[#e2f0ec]"
         />
         <p className={`mt-1 text-[14px] ${MUTED}`}>
           {issue.imageUrl ? t.issue.replacePhotoHint : t.issue.fieldPhotoHint}

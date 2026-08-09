@@ -1,75 +1,107 @@
 // Client-safe types and helpers for the council-meetings feature.
 // No server-only imports here (mirrors the utils/issues.ts split).
 
-export type Topic = {
-  id: string;
-  slug: string;
-  labelFr: string;
-  labelEn: string;
-};
+/** Which part of a sitting a result came from — the filter the page offers. */
+export const SECTIONS = ["questions", "resolutions"] as const;
+export type Section = (typeof SECTIONS)[number];
 
-export const INTERVENTION_TYPES = [
-  "complaint",
-  "question",
-  "support",
-  "info",
-  "response",
-] as const;
-export type InterventionType = (typeof INTERVENTION_TYPES)[number];
+export function isSection(v: string): v is Section {
+  return (SECTIONS as readonly string[]).includes(v);
+}
 
-export type SpeakerRole = "resident" | "councillor" | "mayor" | "staff" | "unknown";
-export type Sentiment = "neg" | "neutral" | "pos";
+/** The borough runs two question periods, and residents ask about both. */
+export const MODES = ["orale", "ecrite"] as const;
+export type QuestionMode = (typeof MODES)[number];
 
 /**
- * One transcript window returned by search. `text` is verbatim — nothing is
- * paraphrased between the recording and the page, so a reader can always check
- * the wording against the video at `startS`.
+ * One resident's intervention, as the proces-verbal recorded it.
+ *
+ * `subject` is the clerk's wording and `transcript` is what was actually said,
+ * aligned from the recording. Both are verbatim; neither is paraphrased.
  */
-export type SearchHit = {
+export type QuestionHit = {
   id: string;
   meetingTitle: string;
   meetingDate: string; // ISO (YYYY-MM-DD)
+  youtubeId: string;
+  /** The borough's published minutes — the source this row was read from. */
+  pvUrl: string | null;
+  personId: string | null;
+  name: string;
+  subject: string;
+  mode: QuestionMode;
+  speakingOrder: number;
+  startS: number | null;
+  endS: number | null;
+  transcript: string | null;
+  /**
+   * True when the row literally contains the words searched for. Only these
+   * are counted — see `CouncilAnswer`.
+   */
+  lexical: boolean;
+  similarity: number | null;
+};
+
+/** One decision of the council, as numbered in the minutes. */
+export type ResolutionHit = {
+  id: string;
+  meetingTitle: string;
+  meetingDate: string;
+  youtubeId: string;
+  pvUrl: string | null;
+  odjUrl: string | null;
+  number: string;
+  title: string;
+  body: string | null;
+  outcome: string | null;
+  agendaCode: string | null;
+  movedBy: string | null;
+  secondedBy: string | null;
+  debate: boolean;
+  startS: number | null;
+  lexical: boolean;
+  similarity: number | null;
+};
+
+/** One passage of transcript, for when the words themselves are the answer. */
+export type SearchHit = {
+  id: string;
+  meetingTitle: string;
+  meetingDate: string;
   youtubeId: string;
   startS: number;
   endS: number;
   text: string;
-  /** Which half of the hybrid search found it — useful for tuning, and shown. */
+  section: Section | null;
+  speaker: string | null;
   lexicalRank: number | null;
   semanticRank: number | null;
-  /** Raw cosine similarity. Not comparable across queries — see `margin`. */
-  similarity: number | null;
-  /** Standard deviations above the corpus mean for this query. */
-  margin: number | null;
 };
 
-/*
- * There is deliberately no relevance gate here.
+/**
+ * What the page states out loud.
  *
- * An attempt was made using `margin` — how far the best hit stands above the
- * corpus mean for that query. On 381 segments it looked separable; on 3400 it
- * collapsed: relevant queries scored a median 3.71, irrelevant ones 3.68, with
- * "recette de tarte aux pommes" (3.68) beating "déneigement" (3.47). With
- * enough windows of rambling transcript, some window is always an outlier, so
- * the margin measures oddity rather than relevance.
+ * The split between `counted` and `related` is the honest part of this feature.
+ * `counted` holds rows that contain the words asked about, so "three residents"
+ * means three residents a reader can check by reading the quotes. `related`
+ * holds rows an embedding placed nearby that contain none of those words: worth
+ * reading, never worth counting.
  *
- * A cross-encoder does separate the two (relevant -1.76..4.02 against
- * irrelevant -5.20..0.44) at roughly 850 ms per search. Its residual errors
- * are caption-corruption artifacts — "déneigement" fails to match the
- * transcript's "déénagement" — so transcript quality, not ranking, is the
- * binding constraint.
+ * An earlier attempt tried to count by similarity instead. It could not be made
+ * to work — the notes in migration 0007 and 0018 record why, and the short
+ * version is that nearest-neighbour ranking always returns neighbours, so an
+ * off-topic query produced a confident number for a thing nobody discussed.
  */
-
-export type CouncilResult = {
-  id: string;
-  meetingTitle: string;
-  meetingDate: string; // ISO (YYYY-MM-DD)
-  youtubeId: string;
-  startS: number;
-  speakerRole: SpeakerRole;
-  type: InterventionType | null;
-  sentiment: Sentiment | null;
-  summary: string | null;
-  topicIds: string[];
+export type CouncilAnswer = {
+  query: string;
+  /** After bilingual widening — shown so a reader knows what was searched. */
+  expanded: string;
+  counted: QuestionHit[];
+  related: QuestionHit[];
+  /** Distinct humans among `counted`. This is the number in the headline. */
+  people: number;
+  /** Distinct sittings among `counted`. */
+  meetings: number;
 };
 
 /** Deep-link straight to the moment in the recording. */
@@ -85,14 +117,29 @@ export function formatTimestamp(startS: number): string {
   return h > 0 ? `${h} h ${String(m).padStart(2, "0")}` : `${m} min`;
 }
 
-/** Preset ranges keep the UI to a single dropdown instead of date pickers. */
-export const RANGE_MONTHS = [3, 6, 12, 0] as const; // 0 = all
-export type RangeMonths = (typeof RANGE_MONTHS)[number];
+/**
+ * Distinct people in a set of interventions.
+ *
+ * Falls back to the printed name when a row has no person id, folded the same
+ * way the ingest folds `name_key`, so "Joël" and "Joel" stay one person rather
+ * than becoming two and inflating every count on the page.
+ */
+export function distinctPeople(hits: QuestionHit[]): number {
+  const keys = new Set(
+    hits.map(
+      (h) =>
+        h.personId ??
+        h.name
+          .normalize("NFD")
+          .replace(/[̀-ͯ]/g, "")
+          .replace(/\s+/g, " ")
+          .trim()
+          .toLowerCase(),
+    ),
+  );
+  return keys.size;
+}
 
-/** ISO date N months before today, or null for "all". */
-export function rangeFrom(months: number): string | null {
-  if (!months) return null;
-  const d = new Date();
-  d.setMonth(d.getMonth() - months);
-  return d.toISOString().slice(0, 10);
+export function distinctMeetings(hits: { youtubeId: string }[]): number {
+  return new Set(hits.map((h) => h.youtubeId)).size;
 }

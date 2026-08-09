@@ -60,7 +60,7 @@ export function VoteButton({
       aria-pressed={state.voted}
       aria-label={state.voted ? t.vote.remove : t.vote.add}
       title={canVote ? undefined : t.vote.signInFirst}
-      className={`group inline-flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-2 text-[14px] font-bold leading-[20px] transition-all active:scale-[0.97] ${
+      className={`group inline-flex shrink-0 items-center gap-2 rounded-[10px] border px-3.5 py-2 text-[14px] font-bold leading-[20px] transition-all active:scale-[0.97] ${
         state.voted
           ? "border-[#d94f45] bg-[#fdeceb] text-[#c0392f]"
           : "border-[#dde5e1] bg-white text-[#5d6b66] hover:border-[#d94f45] hover:bg-[#fdeceb] hover:text-[#c0392f]"

@@ -1,10 +1,10 @@
-import Image from "next/image";
 import Link from "next/link";
 import type { Issue } from "@/utils/issues";
 import { getDictionary, type Locale } from "@/utils/i18n";
 import { CARD_INTERACTIVE, MUTED } from "@/components/ui/styles";
 import { Avatar, FacePile } from "@/components/ui/avatar";
 import { TranslateButton, Translated, TranslationProvider } from "@/components/translate";
+import { IssuePhoto } from "./issue-photo";
 import { VoteButton } from "./vote-button";
 import { ShareButton } from "./share-button";
 import { CategoryTag, OfficialBadge, StatusTag, authorName, formatDateShort } from "./issue-meta";
@@ -78,17 +78,16 @@ export function IssueCard({
         </Link>
       </div>
 
-      {/* The photo is evidence, not decoration — a resident attaches it to show
-          you the pothole. Full bleed and large, the way every feed people
-          already read presents an image, rather than a thumbnail in the margin. */}
+      {/* Full bleed and large, the way every feed people already read presents
+          an image, rather than a thumbnail in the margin. Whole rather than
+          cropped — see IssuePhoto for why that is worth the letterboxing. */}
       {issue.imageUrl && (
-        <Link href={href} className="block border-y border-[#eef2f0] bg-[#f2f6f4]">
-          <Image
+        <Link href={href} className="block">
+          <IssuePhoto
             src={issue.imageUrl}
             alt=""
-            width={1200}
-            height={800}
-            className="max-h-[420px] w-full object-cover"
+            cap="max-h-[420px]"
+            sizes="(min-width: 1024px) 640px, 100vw"
           />
         </Link>
       )}
@@ -116,7 +115,7 @@ export function IssueCard({
           />
           <Link
             href={href}
-            className="inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-[14px] font-bold leading-[20px] text-[#5d6b66] transition-colors hover:bg-[#f2f6f4] hover:text-[#16241f]"
+            className="inline-flex items-center gap-2 rounded-[10px] px-3.5 py-2 text-[14px] font-bold leading-[20px] text-[#5d6b66] transition-colors hover:bg-[#f2f6f4] hover:text-[#16241f]"
           >
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path

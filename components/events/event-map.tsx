@@ -6,16 +6,23 @@ import type { Map as LeafletMap, LayerGroup } from "leaflet";
 import {
   ACCENT,
   ACCENT_TODAY,
+  DEFAULT_RADIUS,
+  RADII,
+  distanceMeters,
   formatDateRange,
+  formatDistance,
   isMappable,
+  isNearby,
   isOngoing,
   matches,
   windowEnd,
   type BoroughEvent,
+  type Origin,
+  type Radius,
   type Setting,
   type When,
 } from "@/utils/events";
-import { BTN_SECONDARY, CARD, FIELD, MUTED } from "@/components/ui/styles";
+import { BTN_SECONDARY, CARD, FIELD, INK, MUTED } from "@/components/ui/styles";
 import {
   MAP_OPTIONS,
   TILE_OPTIONS,
@@ -44,6 +51,11 @@ export type MapLabels = {
   // A plain string, not a formatter: labels cross the server/client boundary
   // and a function cannot. The count is composed here instead.
   showMore: string;
+  nearbyHint: string;
+  nearbyLabel: string;
+  nearbyClear: string;
+  nearbyNoneTitle: string;
+  nearbyNoneBody: string;
 };
 
 /**
@@ -71,6 +83,12 @@ const PAGE = 8;
  * do on Saturday thinks in electoral boundaries — they think about when they
  * are free and how far they will walk — and the map already shows where
  * everything is far better than five chips could.
+ *
+ * "How far they will walk" is the other half of that, and it is why the map
+ * takes a click: pick a corner — home, the métro, the school — and the page
+ * narrows to what is within walking distance of it. A radius drawn from a point
+ * someone chose is the filter that district chips were only ever approximating,
+ * and it needs no vocabulary to use.
  */
 export function EventMap({
   events,
@@ -87,10 +105,13 @@ export function EventMap({
   const [type, setType] = useState("");
   const [active, setActive] = useState<string | null>(null);
   const [limit, setLimit] = useState(PAGE);
+  const [origin, setOrigin] = useState<Origin | null>(null);
+  const [radius, setRadius] = useState<Radius>(DEFAULT_RADIUS);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const layerRef = useRef<LayerGroup | null>(null);
+  const areaRef = useRef<LayerGroup | null>(null);
   const markersRef = useRef(new Map<string, { setIcon: (i: unknown) => void }>());
 
   const types = useMemo(
@@ -113,9 +134,12 @@ export function EventMap({
       // A window asks "is any of this event inside it", not "does it start
       // inside it": a series running all summer is on this week too.
       if (until && e.startsOn > until) return false;
+      // A point on the map excludes everything without one, online events
+      // included. "Near here" is a question they have no answer to.
+      if (origin && !isNearby(e, origin, radius)) return false;
       return matches(e, query);
     });
-  }, [events, query, when, setting, type]);
+  }, [events, query, when, setting, type, origin, radius]);
 
   const mappable = useMemo(() => filtered.filter(isMappable), [filtered]);
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
@@ -147,6 +171,14 @@ export function EventMap({
       // Not awaited: the outline is decoration, and blocking on it would hold
       // up the pins behind a network round trip.
       void addBoroughOutline(L, map);
+
+      // Anywhere on the map is a place you might be standing. Clicking a second
+      // time moves the point rather than clearing it — the common case is
+      // "not quite there, a bit more east", not "never mind".
+      map.on("click", (ev: { latlng: { lat: number; lng: number } }) => {
+        setOrigin({ lat: ev.latlng.lat, lon: ev.latlng.lng });
+        setLimit(PAGE);
+      });
     })();
 
     return () => {
@@ -154,8 +186,57 @@ export function EventMap({
       mapRef.current?.remove();
       mapRef.current = null;
       layerRef.current = null;
+      areaRef.current = null;
     };
   }, []);
+
+  /**
+   * The circle, drawn as its own layer so redrawing the pins cannot wipe it.
+   *
+   * Nothing in it is interactive: a Leaflet circle swallows clicks by default,
+   * and the one place you most want to click again is just inside the circle
+   * you have already drawn.
+   */
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      const L = await import("leaflet");
+      const map = mapRef.current;
+      if (cancelled || !map) return;
+
+      areaRef.current?.remove();
+      areaRef.current = null;
+      if (!origin) return;
+
+      areaRef.current = L.layerGroup([
+        L.circle([origin.lat, origin.lon], {
+          radius,
+          color: ACCENT,
+          weight: 2,
+          opacity: 0.7,
+          dashArray: "5 5",
+          fillColor: ACCENT,
+          fillOpacity: 0.08,
+          interactive: false,
+        }),
+        // The point itself, in ink rather than the accent: it is the one mark on
+        // the map that is not an event, and it should not read as another pin.
+        L.circleMarker([origin.lat, origin.lon], {
+          radius: 5,
+          color: "#fff",
+          weight: 2,
+          fillColor: INK,
+          fillOpacity: 1,
+          interactive: false,
+        }),
+      ]).addTo(map);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [origin, radius]);
 
   // Redraw pins whenever the filters change.
   useEffect(() => {
@@ -220,7 +301,7 @@ export function EventMap({
   }, [active, mappable]);
 
   const hidden = filtered.length - mappable.length;
-  const hasFilter = Boolean(query || when !== "all" || setting || type);
+  const hasFilter = Boolean(query || when !== "all" || setting || type || origin);
 
   // Changing a filter re-answers the question, so the list starts over. Done in
   // the handlers rather than an effect: an effect would run after a render that
@@ -233,12 +314,19 @@ export function EventMap({
   const chooseType = reset(setType);
   const chooseSetting = reset(setSetting);
   const chooseQuery = reset(setQuery);
+  const chooseRadius = reset(setRadius);
 
   const clearAll = () => {
     setQuery("");
     setWhen("all");
     setSetting("");
     setType("");
+    setOrigin(null);
+    setLimit(PAGE);
+  };
+
+  const clearOrigin = () => {
+    setOrigin(null);
     setLimit(PAGE);
   };
 
@@ -283,7 +371,7 @@ export function EventMap({
           <select
             value={type}
             onChange={(e) => chooseType(e.target.value)}
-            className="min-h-[40px] min-w-0 max-w-full flex-1 rounded-full border border-[#dde5e1] bg-white px-3.5 py-2 text-[14px] font-bold text-[#16241f] transition-colors hover:border-[#097d6c] sm:flex-none"
+            className="min-h-[40px] min-w-0 max-w-full flex-1 rounded-[10px] border border-[#dde5e1] bg-white px-3.5 py-2 text-[14px] font-bold text-[#16241f] transition-colors hover:border-[#097d6c] sm:flex-none"
           >
             <option value="">{labels.allTypes}</option>
             {types.map((tp) => (
@@ -301,7 +389,7 @@ export function EventMap({
           <select
             value={setting}
             onChange={(e) => chooseSetting(e.target.value as Setting | "")}
-            className="min-h-[40px] min-w-0 max-w-full flex-1 rounded-full border border-[#dde5e1] bg-white px-3.5 py-2 text-[14px] font-bold text-[#16241f] transition-colors hover:border-[#097d6c] sm:flex-none"
+            className="min-h-[40px] min-w-0 max-w-full flex-1 rounded-[10px] border border-[#dde5e1] bg-white px-3.5 py-2 text-[14px] font-bold text-[#16241f] transition-colors hover:border-[#097d6c] sm:flex-none"
           >
             <option value="">{labels.allSettings}</option>
             {(Object.keys(labels.settings) as Setting[]).map((key) => (
@@ -335,30 +423,72 @@ export function EventMap({
         )}
       </div>
 
-      {filtered.length === 0 ? (
-        // 40px of padding on each side of a 320px screen leaves the message a
-        // column barely wider than one word.
-        <div className={`${CARD} mt-5 p-6 text-center sm:p-10`}>
-          <p className="text-[18px] font-bold leading-[26px]">{labels.noneTitle}</p>
-          <p className={`mt-2 ${MUTED}`}>{labels.noneBody}</p>
-        </div>
-      ) : (
-        <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">
-          {/* Shorter on a phone. At full height the map fills the screen on its
-              own, and nothing suggests there is a readable list under it. */}
-          <div
-            ref={containerRef}
-            role="application"
-            aria-label={labels.mapLabel}
-            className="h-[320px] w-full overflow-hidden rounded-[16px] border border-[#dde5e1] sm:h-[400px] md:h-[620px]"
-          />
+      {/* The point, and how far around it to look.
 
-          {/* The same events, readable without touching the map.
+          Before one is placed this row is only an invitation — the map gives no
+          sign that it can be clicked, and a feature nobody discovers is not a
+          feature. Once placed it becomes the control: three walking distances,
+          and a way out. */}
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        {origin ? (
+          <>
+            <span className={`text-[14px] font-bold ${MUTED}`}>{labels.nearbyLabel}</span>
+            {RADII.map((r) => (
+              <FilterChip key={r} active={radius === r} onClick={() => chooseRadius(r)}>
+                {formatDistance(r, locale)}
+              </FilterChip>
+            ))}
+            <button
+              type="button"
+              onClick={clearOrigin}
+              className="inline-flex min-h-[40px] items-center text-[14px] font-bold text-[#097d6c] underline hover:text-[#075f53]"
+            >
+              {labels.nearbyClear}
+            </button>
+          </>
+        ) : (
+          <p className={`flex items-center gap-2 text-[14px] ${MUTED}`}>
+            <Crosshair />
+            {labels.nearbyHint}
+          </p>
+        )}
+      </div>
 
-              The list only becomes its own scroller once it sits beside the map
-              and has to match its height. Stacked on a phone that inner scroller
-              is a trap: a thumb dragged over the list scrolls the list instead
-              of the page, and the rest of the page becomes unreachable. */}
+      {/* The map is never taken away, even when nothing matches.
+
+          It used to be: an empty result replaced the whole pane with a card.
+          That is survivable for a search box, and impossible once the map is
+          itself a filter — clicking a quiet corner would remove the very thing
+          you needed in order to click somewhere else. So the message moved into
+          the list column, where the map stays beside it to be clicked again. */}
+      <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">
+        {/* Shorter on a phone. At full height the map fills the screen on its
+            own, and nothing suggests there is a readable list under it. */}
+        <div
+          ref={containerRef}
+          role="application"
+          aria-label={labels.mapLabel}
+          className="h-[320px] w-full cursor-crosshair overflow-hidden rounded-[16px] border border-[#dde5e1] sm:h-[400px] md:h-[620px]"
+        />
+
+        {filtered.length === 0 ? (
+          // 40px of padding on each side of a 320px screen leaves the message a
+          // column barely wider than one word.
+          <div className={`${CARD} p-6 text-center sm:p-10`}>
+            <p className="text-[18px] font-bold leading-[26px]">
+              {origin ? labels.nearbyNoneTitle : labels.noneTitle}
+            </p>
+            <p className={`mt-2 ${MUTED}`}>
+              {origin ? labels.nearbyNoneBody : labels.noneBody}
+            </p>
+          </div>
+        ) : (
+          /* The same events, readable without touching the map.
+
+             The list only becomes its own scroller once it sits beside the map
+             and has to match its height. Stacked on a phone that inner scroller
+             is a trap: a thumb dragged over the list scrolls the list instead
+             of the page, and the rest of the page becomes unreachable. */
           <div className="min-w-0">
             <div className="relative">
               <ul className="space-y-2 lg:max-h-[620px] lg:overflow-y-auto lg:pr-1">
@@ -397,6 +527,18 @@ export function EventMap({
                           {e.venueName ? ` · ${e.venueName}` : ""}
                         </span>
                         <span className="mt-1 flex flex-wrap gap-1">
+                          {/* How far, once there is a point to measure from.
+                              A radius that only thins the list leaves you
+                              trusting it; the distance on each row is the
+                              circle saying what it did. Its own pill rather
+                              than a third clause on the meta line, which at
+                              320px would wrap the venue onto a line of its
+                              own. */}
+                          {origin && isMappable(e) && (
+                            <span className="inline-block rounded-full bg-[#e2f0ec] px-2 py-0.5 text-[11px] font-bold tabular-nums text-[#075f53]">
+                              {formatDistance(distanceMeters(origin, e.lat!, e.lon!), locale)}
+                            </span>
+                          )}
                           {isOngoing(e, today) && (
                             <span className="inline-block rounded-full bg-[#fdeceb] px-2 py-0.5 text-[11px] font-bold text-[#a4231f]">
                               {labels.todayPill}
@@ -444,9 +586,31 @@ export function EventMap({
               </button>
             )}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
+  );
+}
+
+/**
+ * The mark beside the invitation to click. It is the cursor the map now shows,
+ * drawn small next to the sentence that explains it — so the hint and the thing
+ * under the pointer are recognisably the same gesture.
+ */
+function Crosshair() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      className="h-4 w-4 shrink-0"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    >
+      <circle cx="12" cy="12" r="6.5" />
+      <path d="M12 1.5v4M12 18.5v4M1.5 12h4M18.5 12h4" />
+    </svg>
   );
 }
 

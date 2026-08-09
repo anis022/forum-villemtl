@@ -27,9 +27,10 @@ export type ErrorCode =
   | "uploadFailed"
   | "nameRequired"
   | "emailInvalid"
-  | "passwordTooShort"
-  | "passwordMismatch"
-  | "badCredentials"
+  | "noAccount"
+  | "codeInvalid"
+  | "codeSendFailed"
+  | "tooManyCodes"
   | "locationRequired"
   | "locationOutside";
 
@@ -71,47 +72,69 @@ const fr = {
   council: {
     title: "Recherche dans les conseils d'arrondissement",
     intro:
-      "Posez votre question en toutes lettres. La recherche porte sur la transcription des séances et renvoie les passages correspondants, avec le moment exact dans la vidéo.",
+      "Posez votre question en toutes lettres. La recherche croise les procès-verbaux officiels de l'arrondissement avec la transcription des enregistrements : elle vous dit combien de personnes ont abordé un sujet, qui elles sont, et à quel moment exact de la vidéo.",
     searchLabel: "Rechercher dans les séances",
-    searchPlaceholder: "ex. pistes cyclables sur Terrebonne, déneigement, tramway…",
+    searchPlaceholder: "ex. trottoir sur Wilson, piste cyclable de Terrebonne, déneigement…",
     searchButton: "Rechercher",
     examplesLabel: "Essayez par exemple :",
-    examples: ["pistes cyclables", "déneigement", "tramway", "logement", "sécurité routière"],
-    corpusNote: (meetings: number, segments: number) =>
-      `${meetings} séance${meetings > 1 ? "s" : ""} indexée${meetings > 1 ? "s" : ""}, ${segments} passages consultables.`,
-    passageOne: "passage trouvé",
-    passageMany: "passages trouvés",
-    bothMatch: "Mots-clés + sens",
+    examples: [
+      "piste cyclable de Terrebonne",
+      "trottoir",
+      "logement social",
+      "déneigement",
+      "sécurité aux abords des écoles",
+    ],
+    corpusNote: (meetings: number, questions: number, resolutions: number) =>
+      `${meetings} séance${meetings > 1 ? "s" : ""} de 2026 — ${questions} interventions citoyennes et ${resolutions} résolutions, tirées des procès-verbaux officiels.`,
+
+    // The filter residents asked for: what the public raised, or what the
+    // council decided.
+    sectionAll: "Tout",
+    sectionQuestions: "Questions du public",
+    sectionResolutions: "Ordre du jour et résolutions",
+    modeAll: "Orales et écrites",
+    modeOrale: "Questions orales",
+    modeEcrite: "Questions écrites",
+    badgeOrale: "Question orale",
+    badgeEcrite: "Question écrite",
+
+    // The headline. Phrased as a count of people, because that is the question
+    // being asked — "how many people", not "how many passages".
+    peopleCount: (n: number) =>
+      n === 1 ? "1 personne a abordé ce sujet" : `${n} personnes ont abordé ce sujet`,
+    acrossMeetings: (n: number) =>
+      n === 1 ? "lors d'une séance" : `lors de ${n} séances`,
+    interventionsCount: (n: number) =>
+      n === 1 ? "1 intervention" : `${n} interventions`,
+    resolutionsCount: (n: number) =>
+      n === 1 ? "1 résolution correspond" : `${n} résolutions correspondent`,
+
+    countedNote:
+      "Ces personnes ont employé les mots recherchés. Chaque source renvoie au procès-verbal officiel et au moment exact de l'enregistrement.",
+    relatedLabel: "Sujets proches",
+    relatedNote:
+      "Ces interventions ne contiennent pas les mots recherchés mais portent sur un sujet voisin. Elles ne sont pas comptées.",
+    expandedNote: (expanded: string) => `Recherche élargie : ${expanded}`,
+
+    subjectLabel: "Sujet inscrit au procès-verbal",
+    verbatimLabel: "Ce qui a été dit",
+    notAligned: "Moment non encore repéré dans l'enregistrement",
+    watch: "Voir dans la vidéo",
+    readPv: "Procès-verbal (PDF)",
+    readOdj: "Ordre du jour (PDF)",
+    movedBy: "Proposé par",
+    secondedBy: "appuyé par",
+    debate: "Débat",
+
     lexicalOnly:
-      "Recherche par mots-clés seulement — la recherche par sens est temporairement indisponible.",
-    weakTitle: "Aucun passage ne correspond clairement à votre recherche.",
-    weakBody:
-      "Les passages ci-dessous sont les plus proches trouvés, mais ce sujet ne semble pas avoir été abordé dans les séances indexées. Vérifiez toujours la vidéo.",
-    noResultsTitle: "Aucun passage trouvé",
+      "Recherche par mots-clés seulement — la recherche par sens est temporairement indisponible. Le décompte, lui, est inchangé : il repose toujours sur les mots.",
+    noResultsTitle: "Personne n'a abordé ce sujet",
     noResultsBody:
-      "Reformulez avec d'autres mots. La recherche ne couvre que les séances déjà indexées.",
+      "Aucune intervention ni résolution de 2026 ne contient ces mots. Reformulez, ou essayez un terme plus courant.",
     emptyCorpusTitle: "Aucune séance indexée",
     emptyCorpusBody:
-      "Les transcriptions n'ont pas encore été traitées. Revenez après l'exécution du pipeline d'ingestion.",
-    topic: "Sujet",
-    allTopics: "Tous les sujets",
-    type: "Type d'intervention",
-    allTypes: "Tous les types",
-    range: "Période",
-    apply: "Filtrer",
-    types: {
-      complaint: "Plaintes",
-      question: "Questions",
-      support: "Soutiens",
-      info: "Informations",
-      response: "Réponses",
-    },
-    ranges: {
-      m3: "3 derniers mois",
-      m6: "6 derniers mois",
-      m12: "12 derniers mois",
-      all: "Depuis le début",
-    },
+      "Les procès-verbaux et les transcriptions n'ont pas encore été traités. Revenez après l'exécution du pipeline d'ingestion.",
+
     roles: {
       resident: "Résident·e",
       councillor: "Conseiller·ère",
@@ -119,19 +142,8 @@ const fr = {
       staff: "Personnel",
       unknown: "Intervenant·e",
     },
-    resultOne: "intervention",
-    resultMany: "interventions",
-    across: "réparties sur",
-    meetingOne: "séance",
-    meetingMany: "séances",
-    byMeeting: "Par séance",
-    watch: "Voir dans la vidéo",
-    emptyTitle: "Aucune intervention trouvée",
-    emptyBody: "Essayez un autre sujet, type ou une période plus longue.",
-    noData:
-      "Aucune séance n'a encore été indexée. Les données apparaîtront après l'exécution du pipeline d'ingestion.",
     disclaimer:
-      "Les passages affichés proviennent des sous-titres automatiques de YouTube, qui comportent des erreurs de transcription — notamment sur les noms propres. Ce ne sont pas des verbatim officiels. Consultez toujours la vidéo pour vérifier les propos et leur contexte.",
+      "Les noms, les sujets et les résolutions proviennent des procès-verbaux publiés par l'arrondissement : ce sont des données officielles. Les extraits de paroles proviennent d'une transcription automatique de l'enregistrement, qui peut comporter des erreurs. Consultez la vidéo pour vérifier les propos et leur contexte.",
   },
   events: {
     intro:
@@ -146,6 +158,13 @@ const fr = {
     },
     settings: { outdoor: "À l'extérieur", indoor: "En salle", online: "En ligne" },
     allSettings: "Partout",
+    // Autour d'un point : l'invitation, puis les distances une fois le point posé.
+    nearbyHint: "Cliquez sur la carte pour voir ce qui se passe autour d'un endroit.",
+    nearbyLabel: "Autour du point",
+    nearbyClear: "Enlever le point",
+    nearbyNoneTitle: "Rien à cet endroit",
+    nearbyNoneBody:
+      "Aucun événement dans ce rayon. Élargissez-le, ou cliquez ailleurs sur la carte.",
     todayPill: "Aujourd'hui",
     type: "Type d'activité",
     allTypes: "Tous les types",
@@ -171,6 +190,34 @@ const fr = {
     eventsTitle: "Carte des événements dans l'arrondissement",
     eventsIntro: "Découvrez les événements à venir près de chez vous.",
     comingSoon: "Cette section sera bientôt disponible.",
+  },
+  projects: {
+    back: "← Tous les projets",
+    status: {
+      study: "À l'étude",
+      decided: "Décidé",
+      underway: "En cours",
+      done: "Terminé",
+    },
+    timeline: "Chronologie",
+    photos: "Images",
+    upcoming: "À venir",
+    resolutionLabel: (number: string) => `Résolution ${number}`,
+    atCouncil: "Au conseil d'arrondissement",
+    // Le lien entre la fiche et le registre : ce que les gens ont demandé.
+    raisedIntro: (people: number, sittings: number) =>
+      `${people} ${people === 1 ? "personne a soulevé" : "personnes ont soulevé"} ce dossier à la période de questions, sur ${sittings} ${sittings === 1 ? "séance" : "séances"}.`,
+    noResolutions:
+      "Aucune résolution du conseil d'arrondissement ne porte sur ce dossier dans les séances indexées.",
+    questionOrale: "Question orale",
+    questionEcrite: "Question écrite",
+    readMinutes: "Procès-verbal",
+    sources: "Sources",
+    credits: "Crédits photo",
+    emptyTitle: "Aucun projet suivi pour l'instant",
+    emptyBody:
+      "Un projet apparaît ici lorsqu'il a une description, des images du lieu et une chronologie vérifiable. Les dossiers qui n'ont encore qu'une date ne sont pas listés.",
+    milestoneCount: (n: number) => (n === 1 ? "1 étape" : `${n} étapes`),
   },
   home: {
     welcome: "Bienvenue sur le forum",
@@ -241,6 +288,10 @@ const fr = {
     replyMany: "réponses",
     noReplies: "Aucune réponse pour le moment.",
     showMoreReplies: "Afficher plus de réponses",
+    // Le repli d'un fil trop profond : ce qu'on ouvre, et ce qu'on referme.
+    expandThread: (n: number) =>
+      n === 1 ? "Afficher 1 réponse" : `Afficher ${n} réponses`,
+    collapseThread: "Masquer ce fil",
     addComment: "Ajouter un commentaire",
     replyAsOfficial: "Répondre en tant qu'élu·e",
     officialHint:
@@ -335,29 +386,22 @@ const fr = {
   auth: {
     signIn: "Se connecter",
     signUp: "Créer un compte",
-    signInSubtitle: "Accédez à votre compte pour participer au forum.",
-    forgotLink: "Mot de passe oublié?",
-    forgotTitle: "Réinitialiser le mot de passe",
-    forgotSubtitle:
-      "Entrez votre courriel et nous vous enverrons un lien pour choisir un nouveau mot de passe.",
-    submitReset: "Envoyer le lien",
-    resetSentTitle: "Vérifiez vos courriels",
-    resetSentBody:
-      "Si un compte existe pour cette adresse, un lien de réinitialisation vient d'y être envoyé. Le lien expire après une heure.",
-    signUpSubtitle: "Créez un compte pour participer au forum.",
     firstName: "Prénom",
     lastName: "Nom",
     email: "Courriel",
-    password: "Mot de passe",
-    confirmPassword: "Confirmer le mot de passe",
-    submitSignIn: "Se connecter",
-    submitSignUp: "Créer mon compte",
+    submitSignIn: "Continuer",
+    submitSignUp: "Créer le compte",
     working: "Un instant…",
     noAccount: "Vous n'avez pas de compte?",
     hasAccount: "Vous avez déjà un compte?",
-    checkEmailTitle: "Vérifiez vos courriels",
-    checkEmailBody:
-      "Nous vous avons envoyé un lien de confirmation. Cliquez sur ce lien pour activer votre compte, puis revenez vous connecter.",
+    codeTitle: "Code de vérification",
+    codeSentTo: (email: string) => `Code envoyé à ${email}.`,
+    codeLabel: "Code de vérification",
+    submitCode: "Confirmer",
+    resend: "Renvoyer le code",
+    resendIn: (seconds: number) => `Renvoyer le code (${seconds} s)`,
+    resendDone: "Nouveau code envoyé.",
+    changeEmail: "Modifier l'adresse",
     backToSignIn: "Retour à la connexion",
   },
   footer: {
@@ -404,9 +448,10 @@ const fr = {
     uploadFailed: "Le téléversement de l'image a échoué.",
     nameRequired: "Veuillez indiquer votre prénom et votre nom.",
     emailInvalid: "Veuillez saisir une adresse courriel valide.",
-    passwordTooShort: "Le mot de passe doit contenir au moins 8 caractères.",
-    passwordMismatch: "Les mots de passe ne correspondent pas.",
-    badCredentials: "Courriel ou mot de passe invalide.",
+    noAccount: "Aucun compte n'est associé à cette adresse.",
+    codeInvalid: "Code invalide ou expiré.",
+    codeSendFailed: "L'envoi du code a échoué. Veuillez réessayer.",
+    tooManyCodes: "Trop de demandes. Veuillez patienter une minute.",
     locationRequired: "Indiquez l'endroit sur la carte en cliquant dessus.",
     locationOutside:
       "Cet endroit est hors de Côte-des-Neiges–Notre-Dame-de-Grâce. Choisissez un point dans l'arrondissement.",
@@ -453,46 +498,65 @@ const en: Dictionary = {
   council: {
     title: "Search borough council meetings",
     intro:
-      "Ask in plain language. The search runs over meeting transcripts and returns matching passages, each linked to the exact moment in the video.",
+      "Ask in plain language. The search cross-references the borough's official minutes with a transcript of the recordings: it tells you how many people raised a subject, who they were, and the exact moment in the video.",
     searchLabel: "Search the meetings",
-    searchPlaceholder: "e.g. bike lanes on Terrebonne, snow removal, tramway…",
+    searchPlaceholder: "e.g. sidewalk on Wilson, Terrebonne bike path, snow removal…",
     searchButton: "Search",
     examplesLabel: "For example:",
-    examples: ["bike lanes", "snow removal", "tramway", "housing", "road safety"],
-    corpusNote: (meetings: number, segments: number) =>
-      `${meetings} meeting${meetings > 1 ? "s" : ""} indexed, ${segments} passages searchable.`,
-    passageOne: "passage found",
-    passageMany: "passages found",
-    bothMatch: "Keywords + meaning",
-    lexicalOnly: "Keyword search only — meaning-based search is temporarily unavailable.",
-    weakTitle: "Nothing clearly matches your search.",
-    weakBody:
-      "The passages below are the closest found, but this topic does not appear to have been discussed in the indexed meetings. Always check the video.",
-    noResultsTitle: "No passages found",
+    examples: [
+      "Terrebonne bike path",
+      "sidewalk",
+      "social housing",
+      "snow removal",
+      "safety around schools",
+    ],
+    corpusNote: (meetings: number, questions: number, resolutions: number) =>
+      `${meetings} sitting${meetings > 1 ? "s" : ""} from 2026 — ${questions} resident interventions and ${resolutions} resolutions, taken from the official minutes.`,
+
+    sectionAll: "Everything",
+    sectionQuestions: "Public questions",
+    sectionResolutions: "Agenda and resolutions",
+    modeAll: "Spoken and written",
+    modeOrale: "Spoken questions",
+    modeEcrite: "Written questions",
+    badgeOrale: "Spoken question",
+    badgeEcrite: "Written question",
+
+    peopleCount: (n: number) =>
+      n === 1 ? "1 person raised this subject" : `${n} people raised this subject`,
+    acrossMeetings: (n: number) =>
+      n === 1 ? "at one sitting" : `across ${n} sittings`,
+    interventionsCount: (n: number) =>
+      n === 1 ? "1 intervention" : `${n} interventions`,
+    resolutionsCount: (n: number) =>
+      n === 1 ? "1 resolution matches" : `${n} resolutions match`,
+
+    countedNote:
+      "These people used the words you searched for. Every source links to the official minutes and to the exact moment in the recording.",
+    relatedLabel: "Related subjects",
+    relatedNote:
+      "These interventions do not contain the words you searched for but cover a nearby subject. They are not counted.",
+    expandedNote: (expanded: string) => `Search widened to: ${expanded}`,
+
+    subjectLabel: "Subject as recorded in the minutes",
+    verbatimLabel: "What was said",
+    notAligned: "Moment not yet located in the recording",
+    watch: "Watch in the video",
+    readPv: "Minutes (PDF)",
+    readOdj: "Agenda (PDF)",
+    movedBy: "Moved by",
+    secondedBy: "seconded by",
+    debate: "Debate",
+
+    lexicalOnly:
+      "Keyword search only — meaning-based search is temporarily unavailable. The count is unaffected: it always rests on the words themselves.",
+    noResultsTitle: "Nobody raised this subject",
     noResultsBody:
-      "Try different wording. The search only covers meetings that have been indexed.",
-    emptyCorpusTitle: "No meetings indexed",
+      "No 2026 intervention or resolution contains these words. Try rewording, or a more common term.",
+    emptyCorpusTitle: "No sittings indexed",
     emptyCorpusBody:
-      "Transcripts have not been processed yet. Check back once the ingestion pipeline has run.",
-    topic: "Topic",
-    allTopics: "All topics",
-    type: "Intervention type",
-    allTypes: "All types",
-    range: "Period",
-    apply: "Filter",
-    types: {
-      complaint: "Complaints",
-      question: "Questions",
-      support: "Support",
-      info: "Information",
-      response: "Responses",
-    },
-    ranges: {
-      m3: "Last 3 months",
-      m6: "Last 6 months",
-      m12: "Last 12 months",
-      all: "All time",
-    },
+      "The minutes and transcripts have not been processed yet. Check back once the ingestion pipeline has run.",
+
     roles: {
       resident: "Resident",
       councillor: "Councillor",
@@ -500,19 +564,8 @@ const en: Dictionary = {
       staff: "Staff",
       unknown: "Speaker",
     },
-    resultOne: "intervention",
-    resultMany: "interventions",
-    across: "across",
-    meetingOne: "meeting",
-    meetingMany: "meetings",
-    byMeeting: "By meeting",
-    watch: "Watch in the video",
-    emptyTitle: "No interventions found",
-    emptyBody: "Try another topic, type, or a longer period.",
-    noData:
-      "No meetings have been indexed yet. Data will appear once the ingestion pipeline has run.",
     disclaimer:
-      "Passages come from YouTube's automatic captions, which contain transcription errors — particularly on proper nouns. They are not official verbatim records. Always check the video to verify what was said and its context.",
+      "Names, subjects and resolutions come from the minutes published by the borough: this is official data. Spoken excerpts come from an automatic transcript of the recording, which may contain errors. Check the video to verify what was said and its context.",
   },
   events: {
     intro:
@@ -527,6 +580,12 @@ const en: Dictionary = {
     },
     settings: { outdoor: "Outdoors", indoor: "Indoors", online: "Online" },
     allSettings: "Anywhere",
+    nearbyHint: "Click the map to see what is on around a spot.",
+    nearbyLabel: "Around the spot",
+    nearbyClear: "Remove the spot",
+    nearbyNoneTitle: "Nothing here",
+    nearbyNoneBody:
+      "No events within this radius. Widen it, or click somewhere else on the map.",
     todayPill: "Today",
     type: "Activity type",
     allTypes: "All types",
@@ -551,6 +610,33 @@ const en: Dictionary = {
     eventsTitle: "Map of events in the borough",
     eventsIntro: "Discover upcoming events near you.",
     comingSoon: "This section will be available soon.",
+  },
+  projects: {
+    back: "← All projects",
+    status: {
+      study: "Under study",
+      decided: "Decided",
+      underway: "Under way",
+      done: "Completed",
+    },
+    timeline: "Timeline",
+    photos: "Images",
+    upcoming: "Upcoming",
+    resolutionLabel: (number: string) => `Resolution ${number}`,
+    atCouncil: "At the borough council",
+    raisedIntro: (people: number, sittings: number) =>
+      `${people} ${people === 1 ? "person raised" : "people raised"} this at question period, across ${sittings} ${sittings === 1 ? "sitting" : "sittings"}.`,
+    noResolutions:
+      "No borough council resolution covers this file in the indexed sittings.",
+    questionOrale: "Spoken question",
+    questionEcrite: "Written question",
+    readMinutes: "Minutes",
+    sources: "Sources",
+    credits: "Photo credits",
+    emptyTitle: "No projects tracked yet",
+    emptyBody:
+      "A project appears here once it has a description, photographs of the place and a verifiable timeline. Files with only a single date are not listed.",
+    milestoneCount: (n: number) => (n === 1 ? "1 milestone" : `${n} milestones`),
   },
   home: {
     welcome: "Welcome to the forum",
@@ -621,6 +707,8 @@ const en: Dictionary = {
     replyMany: "replies",
     noReplies: "No replies yet.",
     showMoreReplies: "Show more replies",
+    expandThread: (n: number) => (n === 1 ? "Show 1 reply" : `Show ${n} replies`),
+    collapseThread: "Hide this thread",
     addComment: "Add a comment",
     replyAsOfficial: "Reply as an elected official",
     officialHint:
@@ -713,29 +801,22 @@ const en: Dictionary = {
   auth: {
     signIn: "Sign in",
     signUp: "Create an account",
-    signInSubtitle: "Access your account to take part in the forum.",
-    forgotLink: "Forgot password?",
-    forgotTitle: "Reset your password",
-    forgotSubtitle:
-      "Enter your email and we will send you a link to choose a new password.",
-    submitReset: "Send the link",
-    resetSentTitle: "Check your email",
-    resetSentBody:
-      "If an account exists for that address, a reset link has just been sent to it. The link expires after one hour.",
-    signUpSubtitle: "Create an account to take part in the forum.",
     firstName: "First name",
     lastName: "Last name",
     email: "Email",
-    password: "Password",
-    confirmPassword: "Confirm password",
-    submitSignIn: "Sign in",
-    submitSignUp: "Create my account",
+    submitSignIn: "Continue",
+    submitSignUp: "Create account",
     working: "One moment…",
     noAccount: "Don't have an account?",
     hasAccount: "Already have an account?",
-    checkEmailTitle: "Check your email",
-    checkEmailBody:
-      "We sent you a confirmation link. Click it to activate your account, then come back to sign in.",
+    codeTitle: "Verification code",
+    codeSentTo: (email: string) => `Code sent to ${email}.`,
+    codeLabel: "Verification code",
+    submitCode: "Confirm",
+    resend: "Resend code",
+    resendIn: (seconds: number) => `Resend code (${seconds}s)`,
+    resendDone: "New code sent.",
+    changeEmail: "Change address",
     backToSignIn: "Back to sign in",
   },
   footer: {
@@ -782,9 +863,10 @@ const en: Dictionary = {
     uploadFailed: "The image upload failed.",
     nameRequired: "Please enter your first and last name.",
     emailInvalid: "Please enter a valid email address.",
-    passwordTooShort: "The password must be at least 8 characters.",
-    passwordMismatch: "The passwords do not match.",
-    badCredentials: "Invalid email or password.",
+    noAccount: "No account is linked to that address.",
+    codeInvalid: "Invalid or expired code.",
+    codeSendFailed: "The code could not be sent. Please try again.",
+    tooManyCodes: "Too many requests. Please wait one minute.",
     locationRequired: "Point out the spot by clicking the map.",
     locationOutside:
       "That spot is outside Côte-des-Neiges–Notre-Dame-de-Grâce. Pick a point inside the borough.",

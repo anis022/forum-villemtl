@@ -1,46 +1,108 @@
 import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { QuestionCard } from "@/components/council/question-card";
+import { ResolutionCard } from "@/components/council/resolution-card";
 import { getSessionUser } from "@/utils/supabase/auth";
-import { getDictionary, isLocale, dateLocale } from "@/utils/i18n";
-import { searchCouncil, corpusStats } from "@/utils/supabase/council";
-import { youtubeDeepLink, formatTimestamp } from "@/utils/council";
+import { getDictionary, isLocale } from "@/utils/i18n";
+import { answerAboutQuestions, searchResolutions, corpusStats } from "@/utils/supabase/council";
+import { isSection, type Section } from "@/utils/council";
 import {
-  BARE_CONTROL,
   BTN_PRIMARY,
   CARD,
   CHIP,
+  CHIP_ACTIVE,
   CONTAINER,
   FIELD,
   HERO_BAND,
   MUTED,
 } from "@/components/ui/styles";
 
+type Search = { q?: string; section?: string; mode?: string };
+
+/**
+ * A filter that reads as a filter: chips, not a dropdown.
+ *
+ * Three choices behind a select box hide all three behind a click and give no
+ * sense of how many exist. Rendered as links so the whole page stays a plain
+ * GET — every search and filter combination is a shareable URL and the back
+ * button behaves.
+ */
+function FilterChips({
+  options,
+  current,
+  hrefFor,
+}: {
+  options: { value: string; label: string }[];
+  current: string;
+  hrefFor: (value: string) => string;
+}) {
+  return (
+    <ul className="flex flex-wrap gap-2">
+      {options.map((o) => (
+        <li key={o.value}>
+          <a href={hrefFor(o.value)} className={o.value === current ? CHIP_ACTIVE : CHIP}>
+            {o.label}
+          </a>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export default async function CouncilPage({
   params,
   searchParams,
 }: {
   params: Promise<{ lang: string }>;
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<Search>;
 }) {
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
 
-  const { q } = await searchParams;
+  const sp = await searchParams;
   const t = getDictionary(lang);
-  const query = (q ?? "").trim();
+  const query = (sp.q ?? "").trim();
 
-  const [user, stats] = await Promise.all([getSessionUser(), corpusStats()]);
-  const { hits, semantic } = query
-    ? await searchCouncil(query)
-    : { hits: [], semantic: false };
+  const section: Section | "all" = sp.section && isSection(sp.section) ? sp.section : "all";
+  const mode = sp.mode === "orale" || sp.mode === "ecrite" ? sp.mode : undefined;
 
-  const fmtDate = (iso: string) =>
-    new Intl.DateTimeFormat(dateLocale(lang), {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    }).format(new Date(iso + "T00:00:00"));
+  const wantsQuestions = section === "all" || section === "questions";
+  const wantsResolutions = section === "all" || section === "resolutions";
+
+  const [user, stats, answer, resolutions] = await Promise.all([
+    getSessionUser(),
+    corpusStats(),
+    query && wantsQuestions
+      ? answerAboutQuestions(query, mode)
+      : Promise.resolve(null),
+    query && wantsResolutions ? searchResolutions(query) : Promise.resolve(null),
+  ]);
+
+  /** Preserve the rest of the query string when one control changes. */
+  const url = (patch: Partial<Search>) => {
+    const next = new URLSearchParams();
+    const merged = { q: query, section, mode, ...patch };
+    if (merged.q) next.set("q", merged.q);
+    if (merged.section && merged.section !== "all") next.set("section", merged.section);
+    if (merged.mode) next.set("mode", merged.mode);
+    const qs = next.toString();
+    return `/${lang}/conseils${qs ? `?${qs}` : ""}`;
+  };
+
+  /*
+   * Whether to say, plainly, that nobody raised this.
+   *
+   * Judged on counted rows alone. The semantic half always returns its nearest
+   * neighbours — that is what nearest means — so a page that waited for those
+   * to be empty before admitting defeat would never admit it: searching
+   * "zzzzintrouvable" came back with a friendly list of related subjects and no
+   * indication that the answer was zero.
+   */
+  const nothingCounted =
+    !!query &&
+    (answer?.counted.length ?? 0) === 0 &&
+    (resolutions?.counted.length ?? 0) === 0;
 
   return (
     <div className="flex min-h-screen flex-col bg-[#f8faf9] text-[#16241f]">
@@ -58,16 +120,16 @@ export default async function CouncilPage({
             {t.council.intro}
           </p>
 
-          {/* Native GET form: the query lives in the URL, so every search is
-              shareable and the back button behaves. No client JS. */}
+          {/* Native GET form: no client JS, and the query lives in the URL. */}
           <form method="get" action={`/${lang}/conseils`} className="mt-6 max-w-[760px]">
+            {section !== "all" && <input type="hidden" name="section" value={section} />}
+            {mode && <input type="hidden" name="mode" value={mode} />}
             <label htmlFor="q" className="sr-only">
               {t.council.searchLabel}
             </label>
             <div className="flex flex-col gap-2 sm:flex-row">
               {/* `min-w-0` because a text input refuses to shrink below the
-                  intrinsic width of its `size` attribute inside a flex row,
-                  which would push the button off the side of the field. */}
+                  intrinsic width of its `size` attribute inside a flex row. */}
               <input
                 id="q"
                 name="q"
@@ -76,20 +138,43 @@ export default async function CouncilPage({
                 placeholder={t.council.searchPlaceholder}
                 className={`${FIELD} min-w-0`}
               />
-              {/* Stacked and full width on a phone, where a pill sitting beside
-                  the field would leave neither enough room to be legible;
-                  `self-stretch` then matches the field's height once they sit
-                  side by side. */}
+              {/* Stacked and full width on a phone, where a pill beside the
+                  field would leave neither enough room to be legible. */}
               <button type="submit" className={`${BTN_PRIMARY} shrink-0 sm:self-stretch`}>
                 {t.council.searchButton}
               </button>
             </div>
           </form>
+
+          <div className="mt-4 max-w-[760px] space-y-2">
+            <FilterChips
+              current={section}
+              hrefFor={(v) => url({ section: v as Section | "all", mode: undefined })}
+              options={[
+                { value: "all", label: t.council.sectionAll },
+                { value: "questions", label: t.council.sectionQuestions },
+                { value: "resolutions", label: t.council.sectionResolutions },
+              ]}
+            />
+            {/* Spoken versus written only means anything once the public
+                questions are what is being looked at. */}
+            {section === "questions" && (
+              <FilterChips
+                current={mode ?? "all"}
+                hrefFor={(v) => url({ mode: v === "all" ? undefined : (v as "orale" | "ecrite") })}
+                options={[
+                  { value: "all", label: t.council.modeAll },
+                  { value: "orale", label: t.council.modeOrale },
+                  { value: "ecrite", label: t.council.modeEcrite },
+                ]}
+              />
+            )}
+          </div>
         </div>
       </div>
 
       <main className={`${CONTAINER} flex-1 py-8 md:py-10`}>
-        {stats.segments === 0 ? (
+        {stats.questions === 0 && stats.segments === 0 ? (
           <div className={`${CARD} p-6 text-center md:p-10`}>
             <p className="text-[20px] font-bold leading-[28px]">{t.council.emptyCorpusTitle}</p>
             <p className={`mt-2 ${MUTED}`}>{t.council.emptyCorpusBody}</p>
@@ -97,96 +182,98 @@ export default async function CouncilPage({
         ) : !query ? (
           <div className="max-w-[760px]">
             <p className={`text-[15px] ${MUTED}`}>
-              {t.council.corpusNote(stats.meetings, stats.segments)}
+              {t.council.corpusNote(stats.meetings, stats.questions, stats.resolutions)}
             </p>
             <p className="mt-6 text-[15px] font-bold">{t.council.examplesLabel}</p>
             <ul className="mt-3 flex flex-wrap gap-2">
               {t.council.examples.map((ex) => (
                 <li key={ex}>
-                  {/* The 40px thumb floor lives in CHIP itself now. */}
-                  <a href={`/${lang}/conseils?q=${encodeURIComponent(ex)}`} className={CHIP}>
+                  <a href={url({ q: ex })} className={CHIP}>
                     {ex}
                   </a>
                 </li>
               ))}
             </ul>
           </div>
-        ) : hits.length === 0 ? (
-          <div className={`${CARD} p-6 text-center md:p-10`}>
-            <p className="text-[20px] font-bold leading-[28px]">{t.council.noResultsTitle}</p>
-            <p className={`mt-2 ${MUTED}`}>{t.council.noResultsBody}</p>
-          </div>
         ) : (
-          <>
-            <div className="border-b border-[#dde5e1] pb-4">
-              <p className="text-[20px] font-bold leading-[28px] md:text-[24px]">
-                {hits.length} {hits.length === 1 ? t.council.passageOne : t.council.passageMany}
-              </p>
-              {!semantic && (
-                <p className="mt-1 text-[14px] leading-[20px] text-[#a4231f]">
-                  {t.council.lexicalOnly}
+          <div className="max-w-[860px] space-y-10">
+            {/* Said first and said plainly, before any consolation prizes. */}
+            {nothingCounted && (
+              <div className={`${CARD} p-6 text-center md:p-10`}>
+                <p className="text-[20px] font-bold leading-[28px]">
+                  {t.council.noResultsTitle}
                 </p>
-              )}
-            </div>
+                <p className={`mt-2 ${MUTED}`}>{t.council.noResultsBody}</p>
+              </div>
+            )}
 
-            <ul className="mt-6 max-w-[860px] space-y-3">
-              {hits.map((h) => (
-                <li key={h.id}>
-                  <article className={`${CARD} p-4`}>
-                    <div className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-[13px]">
-                      {/* Date and moment are one unit: allowed to wrap between
-                          them, the separator ends up stranded at the edge of a
-                          line. Together they stay well inside a 320px card. */}
-                      <span className={`${MUTED} whitespace-nowrap`}>
-                        {fmtDate(h.meetingDate)}
-                        <span aria-hidden="true"> · </span>
-                        {formatTimestamp(h.startS)}
-                      </span>
-                      {h.lexicalRank !== null && h.semanticRank !== null && (
-                        <span className="rounded-full bg-[#e2f0ec] px-2.5 py-1 font-bold text-[#097d6c]">
-                          {t.council.bothMatch}
-                        </span>
-                      )}
-                    </div>
+            {answer && answer.counted.length > 0 && (
+              <section>
+                {/* The number, said plainly. This is the whole point of the
+                    page: not "here are some passages", but "three people". */}
+                <p className="text-[24px] font-bold leading-[32px] tabular-nums md:text-[28px] md:leading-[36px]">
+                  {t.council.peopleCount(answer.people)}
+                </p>
+                <p className={`mt-1 text-[15px] ${MUTED}`}>
+                  {t.council.acrossMeetings(answer.meetings)}
+                  <span aria-hidden="true"> · </span>
+                  {t.council.interventionsCount(answer.counted.length)}
+                </p>
+                <p className={`mt-3 text-[14px] leading-[20px] ${MUTED}`}>
+                  {t.council.countedNote}
+                </p>
+                {answer.expanded !== answer.query && (
+                  <p className={`mt-1 text-[13px] leading-[20px] ${MUTED}`}>
+                    {t.council.expandedNote(answer.expanded)}
+                  </p>
+                )}
 
-                    {/* Verbatim. Nothing between the recording and the reader. */}
-                    <p className="text-[16px] leading-[26px] break-words">{h.text}</p>
+                <ul className="mt-5 space-y-3">
+                  {answer.counted.map((hit) => (
+                    <li key={hit.id}>
+                      <QuestionCard hit={hit} lang={lang} />
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
 
-                    {/* The link carries its own 44px box and pulls back by the
-                        padding that creates it, so it stays flush with the
-                        passage while still being a thumb-sized target. */}
-                    <a
-                      href={youtubeDeepLink(h.youtubeId, h.startS)}
-                      target="_blank"
-                      rel="noreferrer"
-                      className={`${BARE_CONTROL} -mx-2 mt-1 inline-flex min-h-[44px] items-center gap-1.5 px-2 text-[14px] font-bold text-[#097d6c] hover:underline`}
-                    >
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                        aria-hidden="true"
-                        className="shrink-0"
-                      >
-                        <path d="M10 8l6 4-6 4V8z" />
-                        <path
-                          d="M3 6.5A2.5 2.5 0 0 1 5.5 4h13A2.5 2.5 0 0 1 21 6.5v11a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5v-11z"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.6"
-                        />
-                      </svg>
-                      {t.council.watch}
-                    </a>
-                  </article>
-                </li>
-              ))}
-            </ul>
-          </>
+            {resolutions && resolutions.counted.length > 0 && (
+              <section>
+                <h2 className="text-[20px] font-bold leading-[28px] md:text-[24px]">
+                  {t.council.resolutionsCount(resolutions.counted.length)}
+                </h2>
+                <ul className="mt-5 space-y-3">
+                  {resolutions.counted.map((hit) => (
+                    <li key={hit.id}>
+                      <ResolutionCard hit={hit} lang={lang} />
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
+            {/* Kept below, and kept apart. These are worth reading and are not
+                part of any number stated above. */}
+            {answer && answer.related.length > 0 && (
+              <section className="border-t border-[#dde5e1] pt-8">
+                <h2 className="text-[20px] font-bold leading-[28px]">{t.council.relatedLabel}</h2>
+                <p className={`mt-1 text-[14px] leading-[20px] ${MUTED}`}>
+                  {t.council.relatedNote}
+                </p>
+                <ul className="mt-5 space-y-3">
+                  {answer.related.map((hit) => (
+                    <li key={hit.id}>
+                      <QuestionCard hit={hit} lang={lang} />
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+          </div>
         )}
 
-        <p className={`mt-8 max-w-[860px] text-[13px] leading-[20px] ${MUTED}`}>
+        <p className={`mt-10 max-w-[860px] text-[13px] leading-[20px] ${MUTED}`}>
           {t.council.disclaimer}
         </p>
       </main>

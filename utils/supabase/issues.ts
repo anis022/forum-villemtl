@@ -36,11 +36,21 @@ type IssueRow = {
   author: ProfileRow;
 };
 
-// The bucket is public, so the URL can be derived without a signing round-trip.
+/**
+ * The bucket is public, so the URL can be derived without a signing round-trip.
+ *
+ * A path already starting with `/` is served as-is: the demonstration community
+ * (`supabase/demo-seed.sql`) attaches photos shipped in `public/demo/` rather
+ * than uploaded ones. They have to live in the repository — nothing signs in as
+ * those residents to upload anything, and a seed that depends on a storage
+ * bucket having been filled by hand is a seed that only works on one machine.
+ */
 const imageUrl = (path: string | null) =>
-  path
-    ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/issue-images/${path}`
-    : null;
+  path === null || path === ""
+    ? null
+    : path.startsWith("/")
+      ? path
+      : `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/issue-images/${path}`;
 
 const toAuthor = (profile: ProfileRow): Author => ({
   id: profile?.id ?? "",

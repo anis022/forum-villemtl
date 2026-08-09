@@ -12,6 +12,14 @@
 //
 // Corners are generous on purpose. A 4px radius reads as a government form; a
 // 16px card reads as somewhere people talk to each other.
+//
+// Buttons are the exception, and they used to be pills. A fully round button is
+// friendly at small sizes and gets less so the wider it is: "Créer mon compte"
+// across a 400px dialog came out as a lozenge, which reads as a marketing page
+// rather than as a municipal service. They are 10px now — softer than the card
+// they sit on is not possible, tighter than the 12px field above them is
+// deliberate, and nothing about them is square. Chips keep the pill: a filter
+// is not a button, and the two shapes are how you tell them apart at a glance.
 
 export const INK = "#16241f";
 export const MUTED_HEX = "#5d6b66";
@@ -33,24 +41,23 @@ export const FIELD =
   "w-full rounded-[12px] border border-[#dde5e1] bg-white px-4 py-[12px] text-[16px] leading-[24px] text-[#16241f] placeholder:text-[#93a19c] transition-colors focus:border-[#097d6c] disabled:bg-[#f2f6f4]";
 
 export const BTN_PRIMARY =
-  "inline-flex items-center justify-center gap-2 rounded-full border border-[#097d6c] bg-[#097d6c] px-5 py-[10px] text-[15px] font-bold leading-[22px] text-white transition-all hover:bg-[#075f53] hover:border-[#075f53] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60";
+  "inline-flex items-center justify-center gap-2 rounded-[10px] border border-[#097d6c] bg-[#097d6c] px-5 py-[10px] text-[15px] font-bold leading-[22px] text-white transition-all hover:bg-[#075f53] hover:border-[#075f53] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60";
 
 export const BTN_SECONDARY =
-  "inline-flex items-center justify-center gap-2 rounded-full border border-[#dde5e1] bg-white px-5 py-[10px] text-[15px] font-bold leading-[22px] text-[#097d6c] transition-all hover:border-[#097d6c] hover:bg-[#e2f0ec] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60";
+  "inline-flex items-center justify-center gap-2 rounded-[10px] border border-[#dde5e1] bg-white px-5 py-[10px] text-[15px] font-bold leading-[22px] text-[#097d6c] transition-all hover:border-[#097d6c] hover:bg-[#e2f0ec] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60";
 
 /**
  * Radius for controls that have no shell of their own — header nav items, text
  * buttons, links. The focus ring is a box-shadow tracing whatever radius the
- * element has, so a `rounded-full` menu item gets a pill ring drawn around a
- * button that was never there. Only things that actually look like buttons —
- * filled, bordered or hover-filled — earn a pill ring; everything else gets
- * corners just round enough to match the page.
+ * element has, so a control left at 0 gets a hard-cornered rectangle while its
+ * neighbours get rounded ones, and one left rounder than it looks gets a ring
+ * drawn around a button that was never there.
  */
 export const BARE_CONTROL = "rounded-[8px]";
 
 /** Quiet button for row actions — comment, share. Reads as a control on hover. */
 export const BTN_GHOST =
-  "inline-flex items-center justify-center gap-2 rounded-full px-3.5 py-2 text-[14px] font-bold leading-[20px] text-[#5d6b66] transition-colors hover:bg-[#f2f6f4] hover:text-[#16241f]";
+  "inline-flex items-center justify-center gap-2 rounded-[10px] px-3.5 py-2 text-[14px] font-bold leading-[20px] text-[#5d6b66] transition-colors hover:bg-[#f2f6f4] hover:text-[#16241f]";
 
 /**
  * `py-2.5` rather than `py-2`: a 20px line plus 16px of padding is a 36px

@@ -166,7 +166,7 @@ export function CommentActions({
               type="button"
               onClick={remove}
               disabled={removing}
-              className="rounded-full border border-[#c0392f] bg-[#c0392f] px-4 py-2 text-[14px] font-bold text-white transition-colors hover:bg-[#a4231f] disabled:opacity-60"
+              className="rounded-[10px] border border-[#c0392f] bg-[#c0392f] px-4 py-2 text-[14px] font-bold text-white transition-colors hover:bg-[#a4231f] disabled:opacity-60"
             >
               {removing ? t.issue.deleting : t.issue.deleteReplyYes}
             </button>
@@ -174,7 +174,7 @@ export function CommentActions({
               type="button"
               onClick={() => setConfirming(false)}
               disabled={removing}
-              className="rounded-full border border-[#dde5e1] bg-white px-4 py-2 text-[14px] font-bold text-[#5d6b66] transition-colors hover:border-[#637381] hover:text-[#16241f] disabled:opacity-60"
+              className="rounded-[10px] border border-[#dde5e1] bg-white px-4 py-2 text-[14px] font-bold text-[#5d6b66] transition-colors hover:border-[#637381] hover:text-[#16241f] disabled:opacity-60"
             >
               {t.issue.cancelEdit}
             </button>

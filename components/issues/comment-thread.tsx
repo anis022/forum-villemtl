@@ -3,9 +3,15 @@ import { Avatar } from "@/components/ui/avatar";
 import { OfficialBadge, authorName, formatDate } from "@/components/issues/issue-meta";
 import { CommentActions } from "@/components/issues/comment-actions";
 import { Translated, TranslationProvider } from "@/components/translate";
-import { MAX_INDENT, editedByOther, type CommentNode } from "@/utils/issues";
+import {
+  FOLD_DEPTH,
+  MAX_INDENT,
+  countReplies,
+  editedByOther,
+  type CommentNode,
+} from "@/utils/issues";
 import { getDictionary, type Locale } from "@/utils/i18n";
-import { CARD, MUTED, THREAD_LINE } from "@/components/ui/styles";
+import { BARE_CONTROL, CARD, MUTED, THREAD_LINE } from "@/components/ui/styles";
 
 /**
  * Beyond this the database refuses a reply outright — see migration 0014. The
@@ -13,6 +19,9 @@ import { CARD, MUTED, THREAD_LINE } from "@/components/ui/styles";
  * before the conversation is required to stop.
  */
 const MAX_DEPTH = 4;
+
+/** The rule the answers to a comment hang off, folded or not. */
+const REPLY_RAIL = `space-y-4 border-l-2 ${THREAD_LINE} pl-3 sm:pl-4`;
 
 /**
  * One comment and everything hanging off it.
@@ -52,6 +61,22 @@ export function CommentThread({
   // Officials moderate; everyone else may only touch their own words. Enforced
   // by RLS regardless — this decides which controls are worth drawing.
   const canManage = threaded && (isAuthor || (viewerId !== null && isOfficial));
+
+  // Built once: the same list goes inside the fold or straight onto the page.
+  const replies = comment.replies.map((reply) => (
+    <CommentThread
+      key={reply.id}
+      comment={reply}
+      issueId={issueId}
+      viewerId={viewerId}
+      isOfficial={isOfficial}
+      threaded={threaded}
+      lang={lang}
+    />
+  ));
+
+  // Every step right is width a 320px screen does not have back.
+  const indent = comment.depth < MAX_INDENT ? "ml-3 sm:ml-5" : "";
 
   return (
     <article
@@ -129,29 +154,56 @@ export function CommentThread({
         </TranslationProvider>
       </div>
 
-      {comment.replies.length > 0 && (
-        /* The thread line hangs under the avatar rather than at the card edge,
-           so it reads as coming out of the person who was answered. It stops
-           stepping right at MAX_INDENT: past that, replies stay put and the
-           line alone keeps saying they belong to the exchange above. */
-        <div
-          className={`mt-3 space-y-4 border-l-2 ${THREAD_LINE} pl-3 sm:pl-4 ${
-            comment.depth < MAX_INDENT ? "ml-3 sm:ml-5" : ""
-          }`}
-        >
-          {comment.replies.map((reply) => (
-            <CommentThread
-              key={reply.id}
-              comment={reply}
-              issueId={issueId}
-              viewerId={viewerId}
-              isOfficial={isOfficial}
-              threaded={threaded}
-              lang={lang}
-            />
-          ))}
-        </div>
-      )}
+      {comment.replies.length > 0 &&
+        (comment.depth >= FOLD_DEPTH ? (
+          /* Folded from here down. A <details>, not a client component with
+             state: the browser already knows how to open and close one, it
+             costs no JavaScript on a page that can carry two hundred of them,
+             and the replies are in the HTML either way — so a reader with
+             scripting off, and a search engine, still get the whole thread.
+
+             It takes no indent step of its own, unlike the branch below: the
+             fold line is already what marks the level, and charging a reader
+             who opened it another 12px of margin per generation for a rule the
+             summary has drawn is how a column gets down to three words wide. */
+          <details className="group mt-3">
+            <summary
+              className={`${BARE_CONTROL} inline-flex cursor-pointer list-none items-center gap-1.5 py-2 pr-2 text-[14px] font-bold leading-[20px] text-[#097d6c] transition-colors hover:text-[#075f53] [&::-webkit-details-marker]:hidden`}
+            >
+              <svg
+                aria-hidden="true"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                className="fold-chevron shrink-0 transition-transform group-open:rotate-90"
+              >
+                <path
+                  d="M9 5l7 7-7 7"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              {/* One control, two labels — the open one has to say how to get
+                  back out, and "Afficher 6 réponses" on an already-open thread
+                  is a button lying about what it does. */}
+              <span className="group-open:hidden">
+                {t.issue.expandThread(countReplies(comment))}
+              </span>
+              <span className="hidden group-open:inline">{t.issue.collapseThread}</span>
+            </summary>
+
+            <div className={`mt-1 ${REPLY_RAIL}`}>{replies}</div>
+          </details>
+        ) : (
+          /* The thread line hangs under the avatar rather than at the card edge,
+             so it reads as coming out of the person who was answered. It stops
+             stepping right at MAX_INDENT: past that, replies stay put and the
+             line alone keeps saying they belong to the exchange above. */
+          <div className={`mt-3 ${indent} ${REPLY_RAIL}`}>{replies}</div>
+        ))}
     </article>
   );
 }

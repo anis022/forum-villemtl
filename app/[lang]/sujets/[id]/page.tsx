@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
@@ -7,6 +6,7 @@ import { VoteButton } from "@/components/issues/vote-button";
 import { ShareButton } from "@/components/issues/share-button";
 import { CommentForm } from "@/components/issues/comment-form";
 import { CommentThread } from "@/components/issues/comment-thread";
+import { IssuePhoto } from "@/components/issues/issue-photo";
 import { TranslateButton, Translated, TranslationProvider } from "@/components/translate";
 import { StatusControls } from "@/components/issues/status-controls";
 import {
@@ -114,17 +114,15 @@ export default async function IssuePage({
             </p>
           </div>
 
-          {/* Full bleed: the photo is what the report is about. */}
+          {/* Full bleed: the photo is what the report is about, so it gets more
+              height here than in the feed and the same whole-image treatment. */}
           {issue.imageUrl && (
-            <div className="border-y border-[#eef2f0] bg-[#f2f6f4]">
-              <Image
-                src={issue.imageUrl}
-                alt={`${t.issue.photoAlt} : ${issue.title}`}
-                width={1600}
-                height={1000}
-                className="max-h-[620px] w-full object-contain"
-              />
-            </div>
+            <IssuePhoto
+              src={issue.imageUrl}
+              alt={`${t.issue.photoAlt} : ${issue.title}`}
+              cap="max-h-[620px]"
+              sizes="(min-width: 1024px) 900px, 100vw"
+            />
           )}
 
           <div className="p-4 md:p-6">

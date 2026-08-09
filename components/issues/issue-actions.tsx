@@ -86,7 +86,7 @@ export function IssueActions({
               type="button"
               onClick={withdraw}
               disabled={pending}
-              className="rounded-full border border-[#c0392f] bg-[#c0392f] px-4 py-2 text-[14px] font-bold text-white transition-colors hover:bg-[#a4231f] disabled:opacity-60"
+              className="rounded-[10px] border border-[#c0392f] bg-[#c0392f] px-4 py-2 text-[14px] font-bold text-white transition-colors hover:bg-[#a4231f] disabled:opacity-60"
             >
               {pending ? labels.withdrawing : labels.confirmYes}
             </button>
@@ -94,7 +94,7 @@ export function IssueActions({
               type="button"
               onClick={() => setConfirming(false)}
               disabled={pending}
-              className="rounded-full border border-[#dde5e1] bg-white px-4 py-2 text-[14px] font-bold text-[#5d6b66] transition-colors hover:border-[#637381] hover:text-[#16241f] disabled:opacity-60"
+              className="rounded-[10px] border border-[#dde5e1] bg-white px-4 py-2 text-[14px] font-bold text-[#5d6b66] transition-colors hover:border-[#637381] hover:text-[#16241f] disabled:opacity-60"
             >
               {labels.cancel}
             </button>
@@ -104,7 +104,7 @@ export function IssueActions({
         <div className="flex flex-wrap gap-2">
           <Link
             href={`/${lang}/sujets/${issueId}/modifier`}
-            className="inline-flex items-center gap-2 rounded-full border border-[#dde5e1] bg-white px-4 py-2 text-[14px] font-bold text-[#097d6c] transition-colors hover:border-[#097d6c] hover:bg-[#e2f0ec]"
+            className="inline-flex items-center gap-2 rounded-[10px] border border-[#dde5e1] bg-white px-4 py-2 text-[14px] font-bold text-[#097d6c] transition-colors hover:border-[#097d6c] hover:bg-[#e2f0ec]"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path
@@ -120,7 +120,7 @@ export function IssueActions({
           <button
             type="button"
             onClick={() => setConfirming(true)}
-            className="inline-flex items-center gap-2 rounded-full border border-[#dde5e1] bg-white px-4 py-2 text-[14px] font-bold text-[#5d6b66] transition-colors hover:border-[#c0392f] hover:text-[#c0392f]"
+            className="inline-flex items-center gap-2 rounded-[10px] border border-[#dde5e1] bg-white px-4 py-2 text-[14px] font-bold text-[#5d6b66] transition-colors hover:border-[#c0392f] hover:text-[#c0392f]"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path

@@ -103,12 +103,23 @@ html {
   scroll-padding-top: calc(var(--masthead-h) + 16px);
 }
 
-/* Focus indicator, copied exactly from montreal.ca:
-     box-shadow: 0 0 0 2px #fff, 0 0 0 4px #0079c4
-   A 2px white ring separates the element from a 4px blue ring, and it hangs
-   off `:focus` — not `:focus-visible` — so it appears on mouse clicks too,
-   which is the behaviour on the real site. The shadow follows each element's
-   own border-radius. Never replace this with a bare `outline: none`. */
+/* Focus indicators. Two of them, on purpose.
+ *
+ * The masthead keeps montreal.ca's own: box-shadow 0 0 0 2px #fff, 0 0 0 4px
+ * #0079c4, hanging off `:focus` rather than `:focus-visible` so it appears on
+ * mouse clicks too. That bar is a copy of the city's, down to the pixel, and
+ * its focus behaviour is part of what makes it read as the same object.
+ *
+ * The rest of the site does not. That blue is the only blue on the page, it is
+ * not a colour this design uses anywhere else, and firing it on every mouse
+ * click meant a bright box appearing around whatever you last touched — a vote
+ * arrow, a card, a chip — and staying there. It looked like an error state.
+ *
+ * So below the masthead the ring is the borough teal and only answers
+ * `:focus-visible`: keyboard navigation gets a clear indicator, a mouse click
+ * gets nothing. It is never removed outright — a focusable control with no
+ * visible focus is unusable by keyboard, and this is a public service. Never
+ * replace either of these with a bare `outline: none`. */
 a,
 button,
 input,
@@ -120,13 +131,29 @@ summary,
   transition: box-shadow 0.15s ease-in-out;
 }
 
-a:focus,
-button:focus,
-input:focus,
-select:focus,
-textarea:focus,
-summary:focus,
-[tabindex]:focus {
+/* Everywhere: keyboard only, in the site's own accent. */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px #ffffff,
+    0 0 0 3px #097d6c;
+}
+
+/* The masthead, and only the masthead: the city's blue, on plain `:focus`.
+   Two selectors deep, so it outranks the rule above on the same element. */
+[data-masthead] a:focus,
+[data-masthead] button:focus,
+[data-masthead] input:focus,
+[data-masthead] select:focus,
+[data-masthead] textarea:focus,
+[data-masthead] summary:focus,
+[data-masthead] [tabindex]:focus {
   outline: none;
   box-shadow:
     0 0 0 2px #ffffff,
@@ -403,7 +430,8 @@ summary:focus,
   .result-item,
   .auth-dialog,
   .auth-panel-shell,
-  .auth-panel {
+  .auth-panel,
+  .fold-chevron {
     transition-duration: 1ms;
     animation-duration: 1ms;
   }

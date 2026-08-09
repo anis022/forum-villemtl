@@ -105,7 +105,7 @@ export function NewIssueForm({ lang }: { lang: Locale }) {
             const file = event.target.files?.[0];
             setPreview(file ? URL.createObjectURL(file) : null);
           }}
-          className="block w-full text-[15px] file:mr-4 file:rounded-full file:border file:border-[#ced4da] file:bg-white file:px-4 file:py-2 file:text-[15px] file:font-bold file:text-[#097d6c] hover:file:bg-[#f5f5f5]"
+          className="block w-full text-[15px] file:mr-4 file:rounded-[10px] file:border file:border-[#ced4da] file:bg-white file:px-4 file:py-2 file:text-[15px] file:font-bold file:text-[#097d6c] hover:file:bg-[#f5f5f5]"
         />
         <p className={`mt-1 text-[14px] ${MUTED}`}>{t.issue.fieldPhotoHint}</p>
 

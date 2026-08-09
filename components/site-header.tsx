@@ -23,7 +23,10 @@ export function SiteHeader({ user, lang }: { user: SessionUser | null; lang: Loc
   const t = getDictionary(lang);
 
   return (
-    <div className="sticky top-0 z-50">
+    /* `data-masthead` is a styling hook, not decoration: globals.css keeps
+       montreal.ca's blue focus ring inside this bar and nowhere else, and it
+       needs something stable to scope it to. */
+    <div data-masthead className="sticky top-0 z-50">
       <div className="h-8 bg-[#212529]">
         <div className="flex h-full items-center justify-end pr-4 md:pr-8">
           <LanguageToggle lang={lang} label={t.header.otherLanguage} />
@@ -34,16 +37,18 @@ export function SiteHeader({ user, lang }: { user: SessionUser | null; lang: Loc
       <header className="relative border-b-[0.8px] border-[#ced4da] bg-white">
         <div className="flex items-center px-4 py-3 md:px-8 md:py-[14px]">
           <Link href={`/${lang}`} className="flex min-w-0 shrink items-center">
-            {/* The borough lockup is two lines tall, so it needs more height
-                than montreal.ca's single-line wordmark to stay legible.
+            {/* Heights are unchanged from the city lockup this replaced, so
+                --masthead-h in globals.css still holds. Like that lockup this
+                one is two lines of type tall, so it needs the same box to stay
+                legible — it is just wider (2.83:1 against 2.16:1).
                 It is the one element allowed to shrink: on a 320px screen the
                 five controls in this row are all targets, and a slightly
                 smaller wordmark costs less than a masthead that overflows. */}
             <Image
-              src="/logo-montreal.png"
-              alt="Ville de Montréal — Côte-des-Neiges–Notre-Dame-de-Grâce"
-              width={260}
-              height={120}
+              src="/logo-ensemble-mtl.png"
+              alt="Ensemble Montréal"
+              width={469}
+              height={166}
               priority
               className="h-9 w-auto max-w-full object-contain object-left sm:h-10 md:h-16"
             />
