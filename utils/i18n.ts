@@ -32,7 +32,8 @@ export type ErrorCode =
   | "codeSendFailed"
   | "tooManyCodes"
   | "locationRequired"
-  | "locationOutside";
+  | "locationOutside"
+  | "messageRefused";
 
 const fr = {
   header: {
@@ -183,6 +184,25 @@ const fr = {
     source:
       "Source : données ouvertes de la Ville de Montréal (événements publics), synchronisées quotidiennement. Le district est déterminé à partir des coordonnées, et le nom du lieu retrouvé à partir du parc contenant le point lorsque l'adresse est absente.",
   },
+  moderation: {
+    title: "Messages signalés",
+    intro:
+      "Ce que le filtre a laissé passer mais veut faire relire. Un message n'arrive ici qu'à cause des mots qu'il contient : c'est un soupçon, pas un verdict. Lisez-le en contexte avant de décider.",
+    navLabel: "Modération",
+    empty: "Rien en attente.",
+    emptyBody: "Aucun message n'attend d'être relu.",
+    forbidden: "Cette page est réservée aux personnes élues.",
+    reportKind: "Sujet",
+    replyKind: "Réponse",
+    terms: "Mots repérés",
+    open: "Lire en contexte",
+    dismiss: "Laisser passer",
+    dismissing: "En cours…",
+    dismissHint:
+      "Le message reste publié et sort de cette liste. Pour le retirer, ouvrez-le et supprimez-le.",
+    waiting: (n: number) =>
+      n === 1 ? "1 message en attente" : `${n} messages en attente`,
+  },
   pages: {
     projectsTitle: "État d'avancement des projets",
     projectsIntro:
@@ -315,20 +335,7 @@ const fr = {
     share: "Partager",
     copied: "Lien copié",
     backToIssue: "← Retour au sujet",
-    edit: "Modifier",
-    editTitle: "Modifier le sujet",
-    editSubtitle:
-      "Corrigez le titre, la catégorie ou la description. L'historique du sujet indiquera qu'il a été modifié.",
-    editLocationNote:
-      "L'endroit n'est pas modifiable : l'épingle est ce que le signalement désigne, et la déplacer en ferait un autre. Retirez celui-ci et publiez-en un nouveau si l'endroit était erroné.",
-    removePhoto: "Retirer la photo",
-    photoWillBeRemoved: "La photo sera retirée à l'enregistrement.",
-    undo: "Annuler",
-    replacePhotoHint: "Choisissez un fichier pour remplacer la photo actuelle.",
-    editOfficialWarning:
-      "Vous modifiez le texte d'une autre personne à titre d'élu·e. La page indiquera publiquement que le sujet a été modifié par un·e élu·e.",
-    save: "Enregistrer",
-    saving: "Enregistrement…",
+    // « Annuler » sort d'une confirmation de retrait, la seule qui reste.
     cancelEdit: "Annuler",
     editedByAuthor: (date: string) => `modifié le ${date}`,
     editedByOfficial: (date: string) => `modifié par un·e élu·e le ${date}`,
@@ -455,6 +462,14 @@ const fr = {
     locationRequired: "Indiquez l'endroit sur la carte en cliquant dessus.",
     locationOutside:
       "Cet endroit est hors de Côte-des-Neiges–Notre-Dame-de-Grâce. Choisissez un point dans l'arrondissement.",
+    // Ce qui est refusé, et pourquoi — sans nommer les mots en cause, qui
+    // seraient autant d'indications pour recommencer autrement.
+    //
+    // La deuxième phrase n'est pas de la politesse : le refus est décidé par un
+    // traitement automatisé, et l'article 12.1 de la Loi 25 oblige à le dire au
+    // moment de la décision et à ouvrir une porte vers une personne.
+    messageRefused:
+      "Ce message n'a pas été publié : un filtre automatique y a repéré des propos injurieux ou menaçants. Reformulez-le sans viser personne, ou écrivez à moderation@cdn-ndg.ca pour qu'une personne le relise.",
   },
 };
 
@@ -604,6 +619,24 @@ const en: Dictionary = {
     source:
       "Source: City of Montréal open data (public events), synced daily. The district is derived from the coordinates, and the venue name resolved from the park containing the point when no address is given.",
   },
+  moderation: {
+    title: "Flagged messages",
+    intro:
+      "What the filter let through but wants read again. A message lands here because of the words in it — that is a suspicion, not a verdict. Read it in context before deciding.",
+    navLabel: "Moderation",
+    empty: "Nothing waiting.",
+    emptyBody: "No message is waiting to be read.",
+    forbidden: "This page is for elected officials.",
+    reportKind: "Topic",
+    replyKind: "Reply",
+    terms: "Words matched",
+    open: "Read in context",
+    dismiss: "Let it stand",
+    dismissing: "Working…",
+    dismissHint:
+      "The message stays published and leaves this list. To take it down, open it and delete it.",
+    waiting: (n: number) => (n === 1 ? "1 message waiting" : `${n} messages waiting`),
+  },
   pages: {
     projectsTitle: "Project progress",
     projectsIntro: "Follow the progress of construction and projects under way in the borough.",
@@ -731,20 +764,6 @@ const en: Dictionary = {
     share: "Share",
     copied: "Link copied",
     backToIssue: "← Back to the topic",
-    edit: "Edit",
-    editTitle: "Edit the topic",
-    editSubtitle:
-      "Correct the title, category or description. The topic will show that it was edited.",
-    editLocationNote:
-      "The location cannot be changed: the pin is what the report points at, and moving it would make this a different report. Withdraw this one and post a new one if the location was wrong.",
-    removePhoto: "Remove the photo",
-    photoWillBeRemoved: "The photo will be removed when you save.",
-    undo: "Undo",
-    replacePhotoHint: "Choose a file to replace the current photo.",
-    editOfficialWarning:
-      "You are editing someone else's words as an elected official. The page will state publicly that the topic was edited by an official.",
-    save: "Save",
-    saving: "Saving…",
     cancelEdit: "Cancel",
     editedByAuthor: (date: string) => `edited on ${date}`,
     editedByOfficial: (date: string) => `edited by an official on ${date}`,
@@ -870,6 +889,8 @@ const en: Dictionary = {
     locationRequired: "Point out the spot by clicking the map.",
     locationOutside:
       "That spot is outside Côte-des-Neiges–Notre-Dame-de-Grâce. Pick a point inside the borough.",
+    messageRefused:
+      "This message was not published: an automatic filter found abusive or threatening language in it. Rewrite it without targeting anyone, or write to moderation@cdn-ndg.ca to have a person review it.",
   },
 };
 

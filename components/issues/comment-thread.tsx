@@ -120,9 +120,10 @@ export function CommentThread({
             <p className="mt-1 text-[14px] font-bold text-[#097d6c]">{t.issue.officialAnswer}</p>
           )}
 
-          {/* Its own line, like the notice on a report: an edit made by someone
-              other than the author is the one piece of metadata here that has
-              to be easy to read, not tucked in beside the date. */}
+          {/* Only on replies written before editing was removed in migration
+              0019. Its own line, like the notice on a report: an edit made by
+              someone other than the author is the one piece of metadata here
+              that has to be easy to read, not tucked in beside the date. */}
           {comment.editedAt && (
             <p
               className={`mt-1 text-[13px] leading-[18px] ${
@@ -138,7 +139,6 @@ export function CommentThread({
           <CommentActions
             commentId={comment.id}
             issueId={issueId}
-            body={comment.body}
             author={name}
             lang={lang}
             canManage={canManage}

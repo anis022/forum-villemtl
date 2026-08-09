@@ -19,6 +19,9 @@ type Labels = {
   eventsDesc: string;
   councilDesc: string;
   officialsDesc: string;
+  /** Only rendered for elected officials — see `moderation` below. */
+  moderation: string;
+  moderationDesc: string;
 };
 
 /**
@@ -31,7 +34,20 @@ type Labels = {
  * With three, each link gets a one-line description so the width is actually
  * used instead of leaving a third of the panel blank.
  */
-export function MainMenu({ lang, labels }: { lang: Locale; labels: Labels }) {
+export function MainMenu({
+  lang,
+  labels,
+  moderationCount,
+}: {
+  lang: Locale;
+  labels: Labels;
+  /**
+   * How many messages are waiting to be read, or null for anyone who is not an
+   * elected official — which is how the entry stays out of the menu entirely
+   * rather than appearing and refusing.
+   */
+  moderationCount: number | null;
+}) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
@@ -62,6 +78,18 @@ export function MainMenu({ lang, labels }: { lang: Locale; labels: Labels }) {
     { href: `/${lang}/conseils`, label: labels.council, desc: labels.councilDesc },
     { href: `/${lang}/projets`, label: labels.projects, desc: labels.projectsDesc },
     { href: `/${lang}/evenements`, label: labels.events, desc: labels.eventsDesc },
+    // Last, and only for the people who can act on it. A queue is work, not a
+    // section of the site, and it belongs after the things residents come for.
+    ...(moderationCount === null
+      ? []
+      : [
+          {
+            href: `/${lang}/moderation`,
+            label:
+              moderationCount > 0 ? `${labels.moderation} (${moderationCount})` : labels.moderation,
+            desc: labels.moderationDesc,
+          },
+        ]),
   ];
 
   return (

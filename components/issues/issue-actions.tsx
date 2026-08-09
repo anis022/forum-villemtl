@@ -1,12 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useState, useTransition } from "react";
 import { deleteIssue } from "@/app/actions/issues";
 import type { Locale } from "@/utils/i18n";
 
 export type ActionLabels = {
-  edit: string;
   withdraw: string;
   withdrawing: string;
   confirmTitle: string;
@@ -17,33 +15,38 @@ export type ActionLabels = {
 };
 
 /**
- * Edit and withdraw, for the author or an elected official.
+ * Withdrawing a report, for the author or an elected official.
  *
- * Withdrawing asks first, inline rather than through `window.confirm`: a native
- * dialog cannot explain that the replies go with it, and this is not an action
- * anyone should be able to complete by reflex.
+ * Editing used to sit beside this and is deliberately gone: a report can be
+ * backed by two hundred residents, and words that change afterwards carry that
+ * support somewhere nobody agreed to go. Withdrawing and filing again costs the
+ * author their votes and their replies, which is the point — see migration 0019.
+ *
+ * It asks first, inline rather than through `window.confirm`: a native dialog
+ * cannot explain that the replies go with it, and this is not an action anyone
+ * should be able to complete by reflex.
  *
  * When an official is acting on someone else's report the panel says so before
- * the buttons. Nobody should remove a resident's words while under the
+ * the button. Nobody should remove a resident's words while under the
  * impression they are tidying their own.
  */
 export function IssueActions({
   issueId,
   lang,
-  canEdit,
+  canWithdraw,
   actingAsOfficial,
   labels,
 }: {
   issueId: string;
   lang: Locale;
-  canEdit: boolean;
+  canWithdraw: boolean;
   actingAsOfficial: boolean;
   labels: ActionLabels;
 }) {
   const [confirming, setConfirming] = useState(false);
   const [pending, startTransition] = useTransition();
 
-  if (!canEdit) return null;
+  if (!canWithdraw) return null;
 
   const withdraw = () => {
     const data = new FormData();
@@ -102,21 +105,6 @@ export function IssueActions({
         </div>
       ) : (
         <div className="flex flex-wrap gap-2">
-          <Link
-            href={`/${lang}/sujets/${issueId}/modifier`}
-            className="inline-flex items-center gap-2 rounded-[10px] border border-[#dde5e1] bg-white px-4 py-2 text-[14px] font-bold text-[#097d6c] transition-colors hover:border-[#097d6c] hover:bg-[#e2f0ec]"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path
-                d="M4 20h4l10-10-4-4L4 16v4zM14.5 5.5l4 4"
-                stroke="currentColor"
-                strokeWidth="1.7"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            {labels.edit}
-          </Link>
           <button
             type="button"
             onClick={() => setConfirming(true)}

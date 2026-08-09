@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 import { CATEGORY_KEYS, type Category } from "@/utils/issues";
+import { isBlocked, type Score } from "@/utils/moderation";
 import { DEFAULT_LOCALE, isLocale, type ErrorCode, type Locale } from "@/utils/i18n";
 
 /**
@@ -53,6 +54,28 @@ const localeFrom = (formData: FormData): Locale => {
   return isLocale(value) ? value : DEFAULT_LOCALE;
 };
 
+/**
+ * Ask the matcher about a message before writing it.
+ *
+ * The trigger in migration 0020 will refuse the insert on its own, so this is
+ * not what makes the rule hold — it is what makes the refusal a sentence
+ * instead of a failed request. Somebody being told "this is not going up, and
+ * here is why" can rewrite it; somebody watching a spinner fail cannot.
+ *
+ * A matcher that cannot be reached returns `clear`. The alternative is a
+ * database hiccup silently turning into a forum nobody can post to, and the
+ * trigger is still there to catch what this pass missed.
+ */
+async function screen(
+  supabase: Awaited<ReturnType<typeof requireUser>>["supabase"],
+  text: string,
+): Promise<Score> {
+  const { data, error } = await supabase.rpc("moderation_score", { p_text: text });
+  const row = (Array.isArray(data) ? data[0] : data) as Score | undefined;
+  if (error || !row) return { score: 0, verdict: "clear", terms: [] };
+  return row;
+}
+
 export async function createIssue(
   _prev: ActionState,
   formData: FormData,
@@ -93,6 +116,12 @@ export async function createIssue(
     return { error: "locationOutside", values };
   }
 
+  // Asked before the upload, not after. The trigger would refuse the insert
+  // either way, but by then the photo is already in storage with nothing left
+  // pointing at it.
+  const verdict = await screen(supabase, `${title} ${body}`);
+  if (verdict.verdict === "block") return { error: "messageRefused", values };
+
   // Uploaded before the insert so a storage failure doesn't leave a published
   // issue pointing at a file that was never stored.
   let imagePath: string | null = null;
@@ -118,6 +147,9 @@ export async function createIssue(
     .select("id")
     .single();
 
+  // `isBlocked` covers the gap between the screen above and the insert: the
+  // lexicon is a table somebody may have just edited.
+  if (isBlocked(error)) return { error: "messageRefused", values };
   if (error || !data) return { error: "publishFailed", values };
 
   revalidatePath(`/${locale}`);
@@ -125,13 +157,13 @@ export async function createIssue(
 }
 
 /**
- * Who is allowed to change or withdraw a given report.
+ * Who is allowed to withdraw a given report.
  *
  * RLS enforces this independently; deciding it here as well is what lets the
  * page render the right controls and return a usable message instead of an
  * opaque policy error.
  */
-async function editRights(issueId: string) {
+async function removalRights(issueId: string) {
   const { supabase, user } = await requireUser();
   if (!user) return { supabase, user: null, allowed: false, isOfficial: false, authorId: null };
 
@@ -151,101 +183,9 @@ async function editRights(issueId: string) {
   };
 }
 
-/**
- * Edit a report: words, category, and the attached photo.
- *
- * The location stays fixed. A pin is not a detail of the report, it is what
- * the report points at, and moving it would silently turn one report into
- * another. Correcting a wrong location means withdrawing and re-filing.
- *
- * When the editor is not the author, `edited_by` records it so the page can say
- * an elected official altered a resident's text. An invisible edit by someone
- * with authority is indistinguishable from censorship.
- */
-export async function updateIssue(
-  issueId: string,
-  _prev: ActionState,
-  formData: FormData,
-): Promise<ActionState> {
-  const { supabase, user, allowed } = await editRights(issueId);
-  if (!user) return { error: "notSignedIn" };
-  if (!allowed) return { error: "notAuthorized" };
-
-  const locale = localeFrom(formData);
-  const title = String(formData.get("title") ?? "").trim();
-  const body = String(formData.get("body") ?? "").trim();
-  const category = String(formData.get("category") ?? "general") as Category;
-  const values = { title, body, category };
-
-  if (title.length < 5) return { error: "titleTooShort", values };
-  if (title.length > 150) return { error: "titleTooLong", values };
-  if (body.length < 20) return { error: "bodyTooShort", values };
-  if (body.length > 5000) return { error: "bodyTooLong", values };
-  if (!CATEGORY_KEYS.includes(category)) return { error: "badCategory", values };
-
-  // Read the stored path server-side rather than trusting a hidden field: a
-  // forged one would point the delete below at somebody else's file.
-  const { data: current } = await supabase
-    .from("issues")
-    .select("image_path")
-    .eq("id", issueId)
-    .maybeSingle();
-
-  const image = formData.get("image");
-  const removeImage = formData.get("removeImage") === "1";
-
-  let imagePath: string | null = (current?.image_path as string | null) ?? null;
-  let orphaned: string | null = null;
-
-  if (image instanceof File && image.size > 0) {
-    if (!ALLOWED_IMAGE_TYPES.includes(image.type)) return { error: "imageType", values };
-    if (image.size > MAX_IMAGE_BYTES) return { error: "imageTooBig", values };
-
-    const extension = image.type.split("/")[1].replace("jpeg", "jpg");
-    // Filed under the uploader's uid — the folder prefix is what the storage
-    // policy checks, so an official's replacement lands under their own name.
-    const path = `${user.id}/${crypto.randomUUID()}.${extension}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from("issue-images")
-      .upload(path, image, { contentType: image.type });
-    if (uploadError) return { error: "uploadFailed", values };
-
-    orphaned = imagePath;
-    imagePath = path;
-  } else if (removeImage) {
-    orphaned = imagePath;
-    imagePath = null;
-  }
-
-  const { error } = await supabase
-    .from("issues")
-    .update({
-      title,
-      body,
-      category,
-      image_path: imagePath,
-      edited_at: new Date().toISOString(),
-      edited_by: user.id,
-    })
-    .eq("id", issueId);
-
-  if (error) return { error: "publishFailed", values };
-
-  // Only after the row stops pointing at it, so a failed update never leaves a
-  // report referencing a file that has already been deleted.
-  if (orphaned) {
-    await supabase.storage.from("issue-images").remove([orphaned]);
-  }
-
-  revalidatePath(`/${locale}/sujets/${issueId}`);
-  revalidatePath(`/${locale}`);
-  redirect(`/${locale}/sujets/${issueId}`);
-}
-
 /** Withdraw a report. Comments and votes cascade with it. */
 export async function deleteIssue(issueId: string, formData: FormData): Promise<ActionState> {
-  const { supabase, user, allowed } = await editRights(issueId);
+  const { supabase, user, allowed } = await removalRights(issueId);
   if (!user) return { error: "notSignedIn" };
   if (!allowed) return { error: "notAuthorized" };
 
@@ -277,6 +217,9 @@ export async function addComment(
   if (body.length < 2) return { error: "commentTooShort", values: { body } };
   if (body.length > 5000) return { error: "commentTooLong", values: { body } };
 
+  const verdict = await screen(supabase, body);
+  if (verdict.verdict === "block") return { error: "messageRefused", values: { body } };
+
   // The official flag is derived from the server-side profile, never from the
   // client, so a citizen cannot post a reply styled as an official answer.
   // RLS enforces the same rule independently.
@@ -297,6 +240,7 @@ export async function addComment(
     ...(parentId ? { parent_id: parentId } : {}),
   });
 
+  if (isBlocked(error)) return { error: "messageRefused", values: { body } };
   if (error) return { error: "commentFailed", values: { body } };
 
   revalidatePath(`/${locale}/sujets/${issueId}`);
@@ -305,10 +249,10 @@ export async function addComment(
 }
 
 /**
- * Who may change or remove a given comment: the person who wrote it, or an
- * elected official acting as a moderator.
+ * Who may remove a given comment: the person who wrote it, or an elected
+ * official acting as a moderator.
  *
- * The same shape as `editRights` for reports, and for the same reason — RLS
+ * The same shape as `removalRights` for reports, and for the same reason — RLS
  * decides this independently, and deciding it here as well is what lets the
  * thread render the right controls and return a usable message rather than an
  * opaque policy error.
@@ -331,39 +275,6 @@ async function commentRights(commentId: string) {
     issueId: (comment?.issue_id as string | undefined) ?? null,
     allowed: Boolean(authorId) && (authorId === user.id || isOfficial),
   };
-}
-
-/**
- * Correct a comment.
- *
- * `edited_by` records who did it, so a thread can say out loud when an official
- * rewrote a resident's words. Everything else about the row — where it sits in
- * the thread, who wrote it, whether it is an official answer — is pinned by a
- * trigger in migration 0015 rather than by what this function chooses to send.
- */
-export async function updateComment(
-  commentId: string,
-  _prev: ActionState,
-  formData: FormData,
-): Promise<ActionState> {
-  const { supabase, user, allowed, issueId } = await commentRights(commentId);
-  if (!user) return { error: "notSignedIn" };
-  if (!allowed) return { error: "notAuthorized" };
-
-  const locale = localeFrom(formData);
-  const body = String(formData.get("body") ?? "").trim();
-  if (body.length < 2) return { error: "commentTooShort", values: { body } };
-  if (body.length > 5000) return { error: "commentTooLong", values: { body } };
-
-  const { error } = await supabase
-    .from("comments")
-    .update({ body, edited_at: new Date().toISOString(), edited_by: user.id })
-    .eq("id", commentId);
-
-  if (error) return { error: "commentFailed", values: { body } };
-
-  if (issueId) revalidatePath(`/${locale}/sujets/${issueId}`);
-  return { error: null };
 }
 
 /** Remove a comment. The replies hanging off it go with it — see migration 0014. */
@@ -405,6 +316,37 @@ export async function setIssueStatus(
 
   revalidatePath(`/${locale}/sujets/${issueId}`);
   revalidatePath(`/${locale}`);
+  return { error: null };
+}
+
+/**
+ * Dismiss a flag: an official read the message and it is fine.
+ *
+ * Cleared rather than deleted. The queue's job is partly to show that somebody
+ * looked — a flag that vanishes on being read leaves no way to tell "reviewed
+ * and allowed" apart from "never seen". Removing the message itself is the
+ * other button, and it is the one that already exists.
+ *
+ * Authorisation is the UPDATE policy on `moderation_flags`, which only officials
+ * satisfy; a resident's call writes no rows and reports it.
+ */
+export async function clearFlag(
+  flagId: string,
+  locale: Locale = DEFAULT_LOCALE,
+): Promise<ActionState> {
+  const { supabase, user } = await requireUser();
+  if (!user) return { error: "notSignedIn" };
+
+  const { data, error } = await supabase
+    .from("moderation_flags")
+    .update({ cleared_at: new Date().toISOString(), cleared_by: user.id })
+    .eq("id", flagId)
+    .is("cleared_at", null)
+    .select("id");
+
+  if (error || !data?.length) return { error: "notAuthorized" };
+
+  revalidatePath(`/${locale}/moderation`);
   return { error: null };
 }
 

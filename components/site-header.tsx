@@ -5,6 +5,7 @@ import { MainMenu } from "@/components/main-menu";
 import { LanguageToggle } from "@/components/language-toggle";
 import { HeaderSearchButton } from "@/components/header-search-button";
 import type { SessionUser } from "@/utils/supabase/auth";
+import { countOpenFlags } from "@/utils/supabase/moderation";
 import { getDictionary, type Locale } from "@/utils/i18n";
 
 /**
@@ -19,8 +20,18 @@ import { getDictionary, type Locale } from "@/utils/i18n";
  * account labels hide (`md:`), so everything fits a 360px viewport without
  * overflow. Full labels return at the `md` breakpoint.
  */
-export function SiteHeader({ user, lang }: { user: SessionUser | null; lang: Locale }) {
+export async function SiteHeader({
+  user,
+  lang,
+}: {
+  user: SessionUser | null;
+  lang: Locale;
+}) {
   const t = getDictionary(lang);
+
+  // Counted only for the people the menu will show it to, so an ordinary
+  // visitor's masthead costs exactly what it did before.
+  const moderationCount = user?.role === "official" ? await countOpenFlags() : null;
 
   return (
     /* `data-masthead` is a styling hook, not decoration: globals.css keeps
@@ -58,7 +69,14 @@ export function SiteHeader({ user, lang }: { user: SessionUser | null; lang: Loc
 
           <MainMenu
             lang={lang}
-            labels={{ ...t.nav, menu: t.header.menu, sections: t.nav.sections }}
+            labels={{
+              ...t.nav,
+              menu: t.header.menu,
+              sections: t.nav.sections,
+              moderation: t.moderation.navLabel,
+              moderationDesc: t.moderation.intro,
+            }}
+            moderationCount={moderationCount}
           />
 
           <div className="ml-auto flex items-center gap-1 sm:gap-2 md:gap-0">

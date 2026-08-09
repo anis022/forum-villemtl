@@ -1,31 +1,30 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState, useTransition } from "react";
-import { deleteComment, updateComment, type ActionState } from "@/app/actions/issues";
+import { useState, useTransition } from "react";
+import { deleteComment } from "@/app/actions/issues";
 import { ReplyBox } from "@/components/issues/reply-box";
 import { TranslateButton } from "@/components/translate";
 import { getDictionary, type Locale } from "@/utils/i18n";
-import { ALERT, BTN_GHOST, BTN_PRIMARY, FIELD } from "@/components/ui/styles";
-
-const initial: ActionState = { error: null };
+import { BTN_GHOST } from "@/components/ui/styles";
 
 /**
- * Correcting and removing a comment.
+ * Replying to a comment, and removing one.
  *
- * Wraps the comment's own text rather than sitting beside it: editing swaps the
- * words for a field in the place they were, so the correction happens where the
- * sentence is instead of in a form somewhere else on the page. The text arrives
- * as `children`, server-rendered, so a reader who cannot touch this comment
- * never pays for the machinery that would let them.
+ * Correcting used to be here too, and is deliberately gone: a thread where the
+ * words can change under a reply is a thread nobody can be held to. What was a
+ * three-button row is a two-button one, and the answer to a mistake is to
+ * withdraw the message and write it again — see migration 0019.
  *
- * `actingAsOfficial` is not decoration. Someone moderating another person's
- * words should be told that is what they are doing, before the buttons and
- * again in the confirmation.
+ * Wraps the comment's own text rather than sitting beside it, so a reader who
+ * cannot touch this comment never pays for the machinery that would let them.
+ *
+ * `actingAsOfficial` is not decoration. Someone removing another person's words
+ * should be told that is what they are doing, before the button and again in the
+ * confirmation.
  */
 export function CommentActions({
   commentId,
   issueId,
-  body,
   author,
   lang,
   canManage,
@@ -36,41 +35,20 @@ export function CommentActions({
 }: {
   commentId: string;
   issueId: string;
-  /** The raw text, for the field. Only sent when the reader may edit it. */
-  body: string;
   /** Who wrote it — named in the reply form's heading. */
   author: string;
   lang: Locale;
   canManage: boolean;
   canReply: boolean;
-  /** The reader is moderating someone else's words rather than fixing their own. */
+  /** The reader is removing someone else's words rather than their own. */
   actingAsOfficial: boolean;
   /** Whether the *reader* is an elected official, which changes the reply form. */
   readerIsOfficial: boolean;
   children: React.ReactNode;
 }) {
   const t = getDictionary(lang);
-  const [editing, setEditing] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [removing, startRemoving] = useTransition();
-  const [state, formAction, saving] = useActionState(
-    updateComment.bind(null, commentId),
-    initial,
-  );
-  const saved = useRef(false);
-
-  // Close the field once the correction lands. Same guard as the reply form:
-  // this has to fire on the transition, not on mount.
-  useEffect(() => {
-    if (saving) {
-      saved.current = true;
-      return;
-    }
-    if (saved.current && !state.error) {
-      saved.current = false;
-      setEditing(false);
-    }
-  }, [saving, state]);
 
   const replyControl = (
     <ReplyBox
@@ -102,50 +80,6 @@ export function CommentActions({
       await deleteComment(commentId, data);
     });
   };
-
-  if (editing) {
-    return (
-      <form action={formAction} noValidate className="mt-1.5">
-        <input type="hidden" name="locale" value={lang} />
-
-        {actingAsOfficial && <ModerationNote text={t.issue.moderateNote} />}
-
-        <label htmlFor={`edit-${commentId}`} className="sr-only">
-          {t.issue.edit}
-        </label>
-        <textarea
-          id={`edit-${commentId}`}
-          name="body"
-          rows={4}
-          maxLength={5000}
-          disabled={saving}
-          autoFocus
-          defaultValue={state.values?.body ?? body}
-          className={`${FIELD} resize-y`}
-        />
-
-        {state.error && (
-          <p role="alert" className={`mt-3 ${ALERT}`}>
-            {t.errors[state.error]}
-          </p>
-        )}
-
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          <button type="submit" disabled={saving} className={BTN_PRIMARY}>
-            {saving ? t.issue.saving : t.issue.save}
-          </button>
-          <button
-            type="button"
-            onClick={() => setEditing(false)}
-            disabled={saving}
-            className={BTN_GHOST}
-          >
-            {t.issue.cancelEdit}
-          </button>
-        </div>
-      </form>
-    );
-  }
 
   return (
     <>
@@ -181,29 +115,16 @@ export function CommentActions({
           </div>
         </div>
       ) : (
-        /* One row: reply, edit and delete on the left, translate pushed to the
-           far right. Two rows of quiet buttons under every comment is most of a
-           thread's height spent on controls — but translating is not one of
-           these. It changes nothing about the comment, only how you read it, so
-           it keeps its distance from the three that do, the same way it sits
-           apart from voting and replying on a card.
+        /* One row: reply and delete on the left, translate pushed to the far
+           right. Translating is not one of the two that change the thread — it
+           changes nothing about the comment, only how you read it, so it keeps
+           its distance, the same way it sits apart from voting and replying on
+           a card.
 
            The negative margin pulls the first button's padding back so the row
            starts on the same edge as the text above it. */
         <div className="mt-1 flex flex-wrap items-center gap-1 [&>button:first-child]:-ml-3.5">
           {replyControl}
-          <button type="button" onClick={() => setEditing(true)} className={BTN_GHOST}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path
-                d="M4 20h4l10-10-4-4L4 16v4zM14.5 5.5l4 4"
-                stroke="currentColor"
-                strokeWidth="1.7"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            {t.issue.edit}
-          </button>
           <button
             type="button"
             onClick={() => setConfirming(true)}

@@ -88,11 +88,16 @@ export default async function IssuePage({
               </div>
             </div>
 
-            {/* The edit notice is its own statement and gets its own line
-                rather than trailing the date behind a separator: squeezed into
-                the corner beside the pills it wrapped into a column of
-                fragments, and an edit by someone other than the author is the
-                one piece of metadata here that must be easy to read. */}
+            {/* Only ever on reports filed before editing was removed — see
+                migration 0019. Kept rather than hidden: a post that says it was
+                changed is telling the truth about itself, and quietly dropping
+                the notice would rewrite the history of every report that had
+                been corrected, which is the thing removing editing was meant to
+                stop. It gets its own line rather than trailing the date behind
+                a separator: squeezed into the corner beside the pills it
+                wrapped into a column of fragments, and an edit by someone other
+                than the author is the one piece of metadata here that must be
+                easy to read. */}
             {issue.editedAt && (
               <p
                 className={`mt-2 break-words text-[13px] leading-[18px] ${
@@ -155,10 +160,9 @@ export default async function IssuePage({
             <IssueActions
               issueId={issue.id}
               lang={lang}
-              canEdit={isAuthor || isOfficial}
+              canWithdraw={isAuthor || isOfficial}
               actingAsOfficial={!isAuthor && isOfficial}
               labels={{
-                edit: t.issue.edit,
                 withdraw: t.issue.withdraw,
                 withdrawing: t.issue.withdrawing,
                 confirmTitle: t.issue.withdrawConfirmTitle,
