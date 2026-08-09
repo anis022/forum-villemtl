@@ -7,7 +7,14 @@ import { TranslateButton, Translated, TranslationProvider } from "@/components/t
 import { IssuePhoto } from "./issue-photo";
 import { VoteButton } from "./vote-button";
 import { ShareButton } from "./share-button";
-import { CategoryTag, OfficialBadge, StatusTag, authorName, formatDateShort } from "./issue-meta";
+import {
+  CategoryTag,
+  OfficialBadge,
+  ProfileLink,
+  StatusTag,
+  authorName,
+  formatDateShort,
+} from "./issue-meta";
 
 /**
  * A post, not a ticket.
@@ -42,15 +49,15 @@ export function IssueCard({
             so a long name shortens itself rather than pushing the pills off a
             320px screen. */}
         <header className="flex items-start gap-2.5 sm:gap-3">
-          <Link href={`/${lang}/profil/${issue.author.id}`} className="shrink-0">
+          <ProfileLink author={issue.author} lang={lang} className="shrink-0">
             <Avatar person={issue.author} size="md" />
-          </Link>
+          </ProfileLink>
 
           <div className="min-w-0 flex-1">
             <p className="flex min-w-0 items-center gap-1.5 text-[15px] font-bold leading-[20px]">
-              <Link href={`/${lang}/profil/${issue.author.id}`} className="truncate hover:underline">
+              <ProfileLink author={issue.author} lang={lang} className="truncate hover:underline">
                 {authorName(issue.author, t.issue.anonymousAuthor)}
-              </Link>
+              </ProfileLink>
               {issue.author.isOfficial && <OfficialBadge lang={lang} />}
             </p>
             <p className={`mt-0.5 truncate text-[13px] leading-[18px] ${MUTED}`}>

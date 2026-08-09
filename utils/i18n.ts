@@ -184,6 +184,34 @@ const fr = {
     source:
       "Source : données ouvertes de la Ville de Montréal (événements publics), synchronisées quotidiennement. Le district est déterminé à partir des coordonnées, et le nom du lieu retrouvé à partir du parc contenant le point lorsque l'adresse est absente.",
   },
+  account: {
+    heading: "Vos renseignements",
+    downloadTitle: "Télécharger mes données",
+    downloadBody:
+      "Un fichier contenant tout ce que le forum détient sur vous : votre compte, votre profil, vos signalements, vos réponses et vos appuis.",
+    download: "Télécharger",
+    closeTitle: "Fermer mon compte",
+    closeBody:
+      "Votre courriel, votre nom et votre photo sont supprimés, et vos appuis retirés. Vos signalements et vos réponses restent en ligne mais ne portent plus votre nom, pour ne pas effacer les échanges auxquels d'autres ont participé. Retirez d'abord ceux que vous ne voulez pas laisser. C'est irréversible.",
+    close: "Fermer mon compte",
+    closing: "Fermeture…",
+    confirmWord: "fermer",
+    confirmPrompt: "Écrivez « fermer » pour confirmer.",
+    confirmYes: "Fermer définitivement",
+    cancel: "Annuler",
+    failed: "La fermeture a échoué. Réessayez, ou écrivez à la personne responsable.",
+  },
+  privacy: {
+    title: "Confidentialité",
+    updated: "À jour au",
+    contactHeading: "Exercer vos droits",
+    contactBody:
+      "Pour obtenir copie de vos renseignements, faire corriger une erreur, demander la révision d'un message refusé ou fermer votre compte, écrivez à la personne responsable de l'accès aux documents et de la protection des renseignements personnels.",
+    contactMissing:
+      "Les coordonnées de la personne responsable ne sont pas encore inscrites sur cette page. En attendant, adressez votre demande au bureau de l'arrondissement.",
+    contactCai:
+      "Si notre réponse ne vous satisfait pas, vous pouvez vous adresser à la Commission d'accès à l'information du Québec :",
+  },
   moderation: {
     title: "Messages signalés",
     intro:
@@ -337,6 +365,8 @@ const fr = {
     backToIssue: "← Retour au sujet",
     // « Annuler » sort d'une confirmation de retrait, la seule qui reste.
     cancelEdit: "Annuler",
+    collectionNotice:
+      "Votre nom, le texte, la photo et l'épingle seront publics et resteront en ligne tant que vous ne les retirerez pas. Si vous publiez depuis chez vous, l'épingle indique où vous habitez.",
     editedByAuthor: (date: string) => `modifié le ${date}`,
     editedByOfficial: (date: string) => `modifié par un·e élu·e le ${date}`,
     withdraw: "Retirer",
@@ -398,6 +428,8 @@ const fr = {
     email: "Courriel",
     submitSignIn: "Continuer",
     submitSignUp: "Créer le compte",
+    collectionNotice:
+      "Votre prénom et votre nom seront publics à côté de ce que vous publierez. Votre courriel sert uniquement à vous connecter et n'est jamais affiché.",
     working: "Un instant…",
     noAccount: "Vous n'avez pas de compte?",
     hasAccount: "Vous avez déjà un compte?",
@@ -469,7 +501,7 @@ const fr = {
     // traitement automatisé, et l'article 12.1 de la Loi 25 oblige à le dire au
     // moment de la décision et à ouvrir une porte vers une personne.
     messageRefused:
-      "Ce message n'a pas été publié : un filtre automatique y a repéré des propos injurieux ou menaçants. Reformulez-le sans viser personne, ou écrivez à moderation@cdn-ndg.ca pour qu'une personne le relise.",
+      "Ce message n'a pas été publié : un filtre automatique y a repéré des propos injurieux ou menaçants. Reformulez-le sans viser personne, ou demandez qu'une personne le relise — voir la page Confidentialité.",
   },
 };
 
@@ -619,6 +651,34 @@ const en: Dictionary = {
     source:
       "Source: City of Montréal open data (public events), synced daily. The district is derived from the coordinates, and the venue name resolved from the park containing the point when no address is given.",
   },
+  account: {
+    heading: "Your information",
+    downloadTitle: "Download my data",
+    downloadBody:
+      "A file with everything the forum holds about you: your account, your profile, your reports, your replies and your backing.",
+    download: "Download",
+    closeTitle: "Close my account",
+    closeBody:
+      "Your email, name and photo are deleted, and your backing withdrawn. Your reports and replies stay online but no longer carry your name, so the conversations other people took part in are not torn up. Withdraw the ones you do not want to leave behind first. This cannot be undone.",
+    close: "Close my account",
+    closing: "Closing…",
+    confirmWord: "close",
+    confirmPrompt: "Type “close” to confirm.",
+    confirmYes: "Close permanently",
+    cancel: "Cancel",
+    failed: "Closing failed. Try again, or write to the responsible person.",
+  },
+  privacy: {
+    title: "Privacy",
+    updated: "Up to date as of",
+    contactHeading: "Exercising your rights",
+    contactBody:
+      "To get a copy of your information, have an error corrected, ask for a refused message to be reviewed, or close your account, write to the person responsible for access to documents and the protection of personal information.",
+    contactMissing:
+      "The responsible person's contact details are not yet on this page. In the meantime, address your request to the borough office.",
+    contactCai:
+      "If our answer does not satisfy you, you can take it to the Commission d'accès à l'information du Québec:",
+  },
   moderation: {
     title: "Flagged messages",
     intro:
@@ -765,6 +825,8 @@ const en: Dictionary = {
     copied: "Link copied",
     backToIssue: "← Back to the topic",
     cancelEdit: "Cancel",
+    collectionNotice:
+      "Your name, the text, the photo and the pin will be public and stay online until you withdraw them. If you post from home, the pin says where you live.",
     editedByAuthor: (date: string) => `edited on ${date}`,
     editedByOfficial: (date: string) => `edited by an official on ${date}`,
     withdraw: "Withdraw",
@@ -825,6 +887,8 @@ const en: Dictionary = {
     email: "Email",
     submitSignIn: "Continue",
     submitSignUp: "Create account",
+    collectionNotice:
+      "Your first and last name will be public beside anything you post. Your email only signs you in and is never displayed.",
     working: "One moment…",
     noAccount: "Don't have an account?",
     hasAccount: "Already have an account?",
@@ -890,7 +954,7 @@ const en: Dictionary = {
     locationOutside:
       "That spot is outside Côte-des-Neiges–Notre-Dame-de-Grâce. Pick a point inside the borough.",
     messageRefused:
-      "This message was not published: an automatic filter found abusive or threatening language in it. Rewrite it without targeting anyone, or write to moderation@cdn-ndg.ca to have a person review it.",
+      "This message was not published: an automatic filter found abusive or threatening language in it. Rewrite it without targeting anyone, or ask for a person to review it — see the Privacy page.",
   },
 };
 

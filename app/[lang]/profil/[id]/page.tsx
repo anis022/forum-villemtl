@@ -16,6 +16,7 @@ import { getDictionary, isLocale, dateLocale } from "@/utils/i18n";
 import { CARD, CONTAINER, MUTED } from "@/components/ui/styles";
 import { Avatar } from "@/components/ui/avatar";
 import { AvatarUpload } from "@/components/profile/avatar-upload";
+import { AccountControls } from "@/components/profile/account-controls";
 import { OfficialAbout } from "@/components/profile/official-about";
 import { OfficialBadge } from "@/components/issues/issue-meta";
 
@@ -240,6 +241,30 @@ export default async function ProfilePage({
             })}
           </ol>
         )}
+
+        {/* Only on your own profile, and last. Nobody arrives here to leave —
+            but somebody who wants to should not have to write an email. */}
+        {isSelf && (
+          <AccountControls
+            lang={lang}
+            labels={{
+              heading: t.account.heading,
+              downloadTitle: t.account.downloadTitle,
+              downloadBody: t.account.downloadBody,
+              download: t.account.download,
+              closeTitle: t.account.closeTitle,
+              closeBody: t.account.closeBody,
+              close: t.account.close,
+              closing: t.account.closing,
+              confirmWord: t.account.confirmWord,
+              confirmPrompt: t.account.confirmPrompt,
+              confirmYes: t.account.confirmYes,
+              cancel: t.account.cancel,
+              failed: t.account.failed,
+            }}
+          />
+        )}
+
       </main>
       <SiteFooter lang={lang} />
     </div>

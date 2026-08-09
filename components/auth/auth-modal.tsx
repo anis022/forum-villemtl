@@ -469,6 +469,21 @@ export function AuthModal({
                       ? t.auth.submitSignUp
                       : t.auth.submitCode}
               </button>
+
+              {/* Only on the form that actually collects something. Signing in
+                  hands over an address the account already has; creating one is
+                  the moment a name enters the site, and it is the moment the
+                  law wants the purposes said out loud. Under the button rather
+                  than above it: nobody reads a preamble, and everybody looks at
+                  what sits next to the thing they are about to press. */}
+              {view === "signup" && (
+                <p className="mt-3 text-[13px] leading-[19px] text-[#5d6b66]">
+                  {t.auth.collectionNotice}{" "}
+                  <a href={`/${lang}/confidentialite`} className={LINK}>
+                    {t.privacy.title}
+                  </a>
+                </p>
+              )}
             </form>
 
             {/* `inline-block py-2` on the switches: these are the last thing

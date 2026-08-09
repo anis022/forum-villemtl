@@ -42,6 +42,9 @@ export function SiteFooter({ lang }: { lang: Locale }) {
       links: [
         { href: `/${lang}/sujets/nouveau`, label: t.home.report },
         { href: `/${lang}?tri=recents`, label: t.home.sortNew },
+        // The policy has to be reachable from every page, which on this site
+        // means the footer — there is nowhere else that appears on all of them.
+        { href: `/${lang}/confidentialite`, label: t.privacy.title },
       ],
     },
   ];

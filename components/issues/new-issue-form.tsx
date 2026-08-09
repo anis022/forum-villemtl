@@ -4,7 +4,7 @@ import { useActionState, useState } from "react";
 import { createIssue, type ActionState } from "@/app/actions/issues";
 import { CATEGORY_KEYS } from "@/utils/issues";
 import { getDictionary, type Locale } from "@/utils/i18n";
-import { ALERT, BTN_PRIMARY, CARD, FIELD, LABEL, MUTED } from "@/components/ui/styles";
+import { ALERT, BTN_PRIMARY, CARD, FIELD, LABEL, LINK, MUTED } from "@/components/ui/styles";
 import { LocationPicker } from "./location-picker";
 
 const initial: ActionState = { error: null };
@@ -118,6 +118,17 @@ export function NewIssueForm({ lang }: { lang: Locale }) {
           />
         )}
       </div>
+
+      {/* Last thing before the error slot and the publish button. A report
+          carries more than words — a photograph and a pin precise enough to be
+          a home address — and this is the only place a resident is looking at
+          all three at once. */}
+      <p className={`mb-5 text-[14px] leading-[21px] ${MUTED}`}>
+        {t.issue.collectionNotice}{" "}
+        <a href={`/${lang}/confidentialite`} className={LINK}>
+          {t.privacy.title}
+        </a>
+      </p>
 
       {state.error && (
         <p role="alert" className={`mb-5 ${ALERT}`}>

@@ -79,3 +79,31 @@ export async function removeAvatar(): Promise<ProfileResult> {
   revalidatePath("/", "layout");
   return { ok: true };
 }
+
+/**
+ * Close the caller's account.
+ *
+ * The work happens in `public.close_my_account` (migration 0021), which reads
+ * `auth.uid()` itself — there is no id to pass and therefore none to forge. All
+ * this does is call it, sign the browser out, and send the person to the home
+ * page, because the session it was holding now points at a user that no longer
+ * exists.
+ *
+ * Nothing about it is undoable, which is why the button that reaches it makes
+ * you type the word first.
+ */
+export async function closeAccount(): Promise<ProfileResult> {
+  const supabase = createClient(await cookies());
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "notSignedIn" };
+
+  const { error } = await supabase.rpc("close_my_account");
+  if (error) return { ok: false, error: "publishFailed" };
+
+  await supabase.auth.signOut();
+  revalidatePath("/", "layout");
+  return { ok: true };
+}

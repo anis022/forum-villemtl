@@ -1,6 +1,10 @@
-import Link from "next/link";
 import { Avatar } from "@/components/ui/avatar";
-import { OfficialBadge, authorName, formatDate } from "@/components/issues/issue-meta";
+import {
+  OfficialBadge,
+  ProfileLink,
+  authorName,
+  formatDate,
+} from "@/components/issues/issue-meta";
 import { CommentActions } from "@/components/issues/comment-actions";
 import { Translated, TranslationProvider } from "@/components/translate";
 import {
@@ -96,9 +100,9 @@ export function CommentThread({
       }
     >
       <div className="flex gap-3">
-        <Link href={`/${lang}/profil/${comment.author.id}`} className="shrink-0">
+        <ProfileLink author={comment.author} lang={lang} className="shrink-0">
           <Avatar person={comment.author} size={top ? "md" : "sm"} />
-        </Link>
+        </ProfileLink>
 
         {/* Scoped to this comment's own words, not to the exchange under it:
             every reply carries its own provider, so translating one does not
@@ -106,9 +110,9 @@ export function CommentThread({
         <TranslationProvider kind="comment" id={comment.id} lang={lang}>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[14px]">
-            <Link href={`/${lang}/profil/${comment.author.id}`} className="font-bold hover:underline">
+            <ProfileLink author={comment.author} lang={lang} className="font-bold hover:underline">
               {name}
-            </Link>
+            </ProfileLink>
             {comment.author.isOfficial && <OfficialBadge lang={lang} />}
             <span aria-hidden="true" className={MUTED}>
               ·

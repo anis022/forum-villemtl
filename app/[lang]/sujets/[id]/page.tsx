@@ -12,6 +12,7 @@ import { StatusControls } from "@/components/issues/status-controls";
 import {
   CategoryTag,
   OfficialBadge,
+  ProfileLink,
   StatusTag,
   authorName,
   formatDate,
@@ -65,17 +66,18 @@ export default async function IssuePage({
             {/* Same shape as the feed card: pills in the top right corner, and
                 the author block truncates rather than pushing them off. */}
             <div className="flex items-start gap-3">
-              <Link href={`/${lang}/profil/${issue.author.id}`} className="shrink-0">
+              <ProfileLink author={issue.author} lang={lang} className="shrink-0">
                 <Avatar person={issue.author} size="md" />
-              </Link>
+              </ProfileLink>
               <div className="min-w-0 flex-1">
                 <p className="flex min-w-0 items-center gap-1.5 text-[15px] font-bold leading-[20px]">
-                  <Link
-                    href={`/${lang}/profil/${issue.author.id}`}
+                  <ProfileLink
+                    author={issue.author}
+                    lang={lang}
                     className="truncate hover:underline"
                   >
                     {authorName(issue.author, t.issue.anonymousAuthor)}
-                  </Link>
+                  </ProfileLink>
                   {issue.author.isOfficial && <OfficialBadge lang={lang} />}
                 </p>
                 <p className={`mt-0.5 truncate text-[13px] leading-[18px] ${MUTED}`}>

@@ -1,8 +1,37 @@
+import Link from "next/link";
 import type { Author, Category, Status } from "@/utils/issues";
 import { dateLocale, getDictionary, type Locale } from "@/utils/i18n";
 
 export function authorName(author: Author, fallback: string) {
   return [author.firstName, author.lastName].filter(Boolean).join(" ") || fallback;
+}
+
+/**
+ * An author's name or avatar, linked to their profile only when there is one to
+ * link to.
+ *
+ * Closing an account detaches the posts from the person rather than deleting
+ * them (migration 0021), so `author.id` comes back empty and `/fr/profil/` is a
+ * link to nowhere. Rendering the children bare in that case is what keeps a
+ * withdrawn neighbour's report readable instead of studded with dead links.
+ */
+export function ProfileLink({
+  author,
+  lang,
+  className,
+  children,
+}: {
+  author: Author;
+  lang: Locale;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  if (!author.id) return <span className={className}>{children}</span>;
+  return (
+    <Link href={`/${lang}/profil/${author.id}`} className={className}>
+      {children}
+    </Link>
+  );
 }
 
 export function formatDate(iso: string, lang: Locale) {
