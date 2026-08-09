@@ -52,3 +52,7 @@ events-seed.sql
 # local ingestion artifacts (PDFs, audio, transcripts) - regenerate with scripts/py
 /data
 .venv-asr/
+
+# Python bytecode from scripts/py
+__pycache__/
+*.pyc
