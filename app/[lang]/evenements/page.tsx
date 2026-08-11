@@ -19,12 +19,12 @@ export default async function EventsPage({
   const [user, events] = await Promise.all([getSessionUser(), listEvents()]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#f8faf9] text-[#16241f]">
+    <div className="flex min-h-screen flex-col bg-[#fef7f0] text-[#1a1a1a]">
       <SiteHeader user={user} lang={lang} />
 
       <div className={HERO_BAND}>
         <div className={`${CONTAINER} py-8 md:py-12`}>
-          <h1 className="text-[28px] font-bold leading-[36px] md:text-[40px] md:leading-[56px]">
+          <h1 className="text-[28px] leading-[36px] md:text-[40px] md:leading-[56px]">
             {t.pages.eventsTitle}
           </h1>
           <p className={`mt-3 max-w-[760px] text-[16px] leading-[24px] ${MUTED}`}>

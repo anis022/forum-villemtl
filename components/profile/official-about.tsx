@@ -23,13 +23,13 @@ export function OfficialAbout({ person, lang }: { person: Official; lang: Locale
 
   return (
     <section className={`${CARD} mt-6 p-5 md:p-6`}>
-      <h2 className="text-[20px] font-bold leading-[28px] md:text-[22px] md:leading-[30px]">
+      <h2 className="text-[20px] leading-[28px] md:text-[22px] md:leading-[30px]">
         {t.officials.mandatesTitle}
       </h2>
 
       {/* Rows, not a table: two columns of short text is a table in name only,
           and on a phone it would be two words per line. */}
-      <ul className="mt-3 divide-y divide-[#eef2f0]">
+      <ul className="mt-3 divide-y divide-[#f2ece4]">
         {person.mandates.map((mandate) => (
           <li key={say(mandate.body, lang)} className="py-3 first:pt-0 last:pb-0">
             <p className="text-[15px] font-bold leading-[22px] break-words">
@@ -46,7 +46,7 @@ export function OfficialAbout({ person, lang }: { person: Official; lang: Locale
               {say(mandate.title, lang)}
             </p>
             {mandate.portfolio && (
-              <p className="mt-1 text-[14px] leading-[20px] text-[#097d6c]">
+              <p className="mt-1 text-[14px] leading-[20px] text-[#fa3250]">
                 {say(mandate.portfolio, lang)}
               </p>
             )}

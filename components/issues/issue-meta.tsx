@@ -66,7 +66,7 @@ export function CategoryTag({ category, lang }: { category: Category; lang: Loca
     /* A shade tighter on phones. These two pills sit in the corner of a card
        whose other half is a person's name, and at full size they left that name
        too little room to be worth reading. */
-    <span className="inline-flex max-w-[11ch] items-center truncate rounded-full border border-[#dde5e1] px-2 py-0.5 text-[11px] font-bold text-[#5d6b66] sm:max-w-none sm:px-2.5 sm:py-1 sm:text-[12px]">
+    <span className="inline-flex max-w-[11ch] items-center truncate rounded-full border border-[#e9e0d6] px-2 py-0.5 text-[11px] font-bold text-[#6e6a72] sm:max-w-none sm:px-2.5 sm:py-1 sm:text-[12px]">
       {getDictionary(lang).categories[category]}
     </span>
   );
@@ -77,9 +77,9 @@ export function CategoryTag({ category, lang }: { category: Category; lang: Loca
  * anyone who cannot separate these hues.
  */
 const STATUS_STYLES: Record<Status, { pill: string; dot: string }> = {
-  open: { pill: "bg-[#f2f6f4] text-[#5d6b66]", dot: "bg-[#93a19c]" },
-  answered: { pill: "bg-[#e2f0ec] text-[#097d6c]", dot: "bg-[#097d6c]" },
-  resolved: { pill: "bg-[#e8eef9] text-[#1c4fa1]", dot: "bg-[#1c4fa1]" },
+  open: { pill: "bg-[#faf1e8] text-[#6e6a72]", dot: "bg-[#a09a94]" },
+  answered: { pill: "bg-[#e8e8f6] text-[#2a2a86]", dot: "bg-[#2a2a86]" },
+  resolved: { pill: "bg-[#e4f2eb] text-[#0b6042]", dot: "bg-[#0b6042]" },
 };
 
 export function StatusTag({ status, lang }: { status: Status; lang: Locale }) {
@@ -100,7 +100,7 @@ export function OfficialBadge({ lang }: { lang: Locale }) {
   return (
     <span title={label} aria-label={label} className="inline-flex shrink-0 align-middle">
       <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
-        <circle cx="8" cy="8" r="8" fill="#097d6c" />
+        <circle cx="8" cy="8" r="8" fill="#fa3250" />
         <path
           d="M4.6 8.3l2.2 2.2 4.6-4.7"
           stroke="#fff"

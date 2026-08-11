@@ -89,10 +89,10 @@ export function CommentActions({
         /* Asked inline rather than through `window.confirm`: a native dialog
            cannot say that the replies underneath go too, and removing someone
            else's words should not be completable by reflex. */
-        <div className="mt-2 rounded-[14px] border border-[#f3ccc8] bg-[#fdeceb] p-3">
+        <div className="mt-2 rounded-[14px] border border-[#f5ccd6] bg-[#fdeaf2] p-3">
           {actingAsOfficial && <ModerationNote text={t.issue.moderateNote} />}
           <p className="text-[14px] font-bold leading-[20px]">{t.issue.deleteReplyTitle}</p>
-          <p className="mt-1 text-[13px] leading-[19px] text-[#5d6b66]">
+          <p className="mt-1 text-[13px] leading-[19px] text-[#6e6a72]">
             {t.issue.deleteReplyBody}
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -100,7 +100,7 @@ export function CommentActions({
               type="button"
               onClick={remove}
               disabled={removing}
-              className="rounded-[10px] border border-[#c0392f] bg-[#c0392f] px-4 py-2 text-[14px] font-bold text-white transition-colors hover:bg-[#a4231f] disabled:opacity-60"
+              className="rounded-[10px] border border-[#ab1f5c] bg-[#ab1f5c] px-4 py-2 text-[14px] font-bold text-white transition-colors hover:bg-[#b3122c] disabled:opacity-60"
             >
               {removing ? t.issue.deleting : t.issue.deleteReplyYes}
             </button>
@@ -108,7 +108,7 @@ export function CommentActions({
               type="button"
               onClick={() => setConfirming(false)}
               disabled={removing}
-              className="rounded-[10px] border border-[#dde5e1] bg-white px-4 py-2 text-[14px] font-bold text-[#5d6b66] transition-colors hover:border-[#637381] hover:text-[#16241f] disabled:opacity-60"
+              className="rounded-[10px] border border-[#e9e0d6] bg-white px-4 py-2 text-[14px] font-bold text-[#6e6a72] transition-colors hover:border-[#6e6a72] hover:text-[#1a1a1a] disabled:opacity-60"
             >
               {t.issue.cancelEdit}
             </button>
@@ -128,7 +128,7 @@ export function CommentActions({
           <button
             type="button"
             onClick={() => setConfirming(true)}
-            className={`${BTN_GHOST} hover:bg-[#fdeceb] hover:text-[#a4231f]`}
+            className={`${BTN_GHOST} hover:bg-[#fdeaf2] hover:text-[#b3122c]`}
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path

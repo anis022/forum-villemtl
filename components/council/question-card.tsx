@@ -1,5 +1,10 @@
 import { getDictionary, dateLocale, type Locale } from "@/utils/i18n";
-import { formatTimestamp, youtubeDeepLink, type QuestionHit } from "@/utils/council";
+import {
+  formatMeetingDate,
+  formatTimestamp,
+  youtubeDeepLink,
+  type QuestionHit,
+} from "@/utils/council";
 import { BARE_CONTROL, CARD, MUTED } from "@/components/ui/styles";
 
 /** Play glyph — the control opens the recording at this person's moment. */
@@ -54,11 +59,7 @@ function DocIcon() {
 export function QuestionCard({ hit, lang }: { hit: QuestionHit; lang: Locale }) {
   const t = getDictionary(lang);
 
-  const date = new Intl.DateTimeFormat(dateLocale(lang), {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  }).format(new Date(hit.meetingDate + "T00:00:00"));
+  const date = formatMeetingDate(hit.meetingDate, lang, dateLocale(lang));
 
   return (
     <article className={`${CARD} p-4`}>
@@ -67,7 +68,7 @@ export function QuestionCard({ hit, lang }: { hit: QuestionHit; lang: Locale }) 
           Lévesque" beside "Question écrite" leaves neither one legible. */}
       <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1.5">
         <p className="min-w-0 text-[17px] font-bold leading-[24px] break-words">{hit.name}</p>
-        <span className="shrink-0 rounded-full bg-[#e2f0ec] px-2.5 py-1 text-[12px] font-bold text-[#097d6c]">
+        <span className="shrink-0 rounded-full bg-[#fde8eb] px-2.5 py-1 text-[12px] font-bold text-[#fa3250]">
           {hit.mode === "orale" ? t.council.badgeOrale : t.council.badgeEcrite}
         </span>
       </div>
@@ -91,15 +92,15 @@ export function QuestionCard({ hit, lang }: { hit: QuestionHit; lang: Locale }) 
       </p>
       <p className="mt-1 text-[16px] leading-[24px] break-words">{hit.subject}</p>
 
-      {hit.transcript && (
+      {hit.excerpt && (
         <>
           <p className={`mt-3 text-[12px] font-bold uppercase tracking-wide ${MUTED}`}>
             {t.council.verbatimLabel}
           </p>
           {/* Verbatim, set apart by a rule rather than quotation marks so the
               machine's reading is never mistaken for the official record. */}
-          <blockquote className="mt-1 border-l-2 border-[#cbd9d4] pl-3 text-[15px] leading-[24px] break-words">
-            {hit.transcript}
+          <blockquote className="mt-1 border-l-2 border-[#ddd2c5] pl-3 text-[15px] leading-[24px] break-words">
+            {hit.excerpt}
           </blockquote>
         </>
       )}
@@ -112,7 +113,7 @@ export function QuestionCard({ hit, lang }: { hit: QuestionHit; lang: Locale }) 
             href={youtubeDeepLink(hit.youtubeId, hit.startS)}
             target="_blank"
             rel="noreferrer"
-            className={`${BARE_CONTROL} -mx-2 inline-flex min-h-[44px] items-center gap-1.5 px-2 text-[14px] font-bold text-[#097d6c] hover:underline`}
+            className={`${BARE_CONTROL} -mx-2 inline-flex min-h-[44px] items-center gap-1.5 px-2 text-[14px] font-bold text-[#fa3250] hover:underline`}
           >
             <PlayIcon />
             {t.council.watch}
@@ -128,7 +129,7 @@ export function QuestionCard({ hit, lang }: { hit: QuestionHit; lang: Locale }) 
             href={hit.pvUrl}
             target="_blank"
             rel="noreferrer"
-            className={`${BARE_CONTROL} -mx-2 inline-flex min-h-[44px] items-center gap-1.5 px-2 text-[14px] font-bold text-[#097d6c] hover:underline`}
+            className={`${BARE_CONTROL} -mx-2 inline-flex min-h-[44px] items-center gap-1.5 px-2 text-[14px] font-bold text-[#fa3250] hover:underline`}
           >
             <DocIcon />
             {t.council.readPv}

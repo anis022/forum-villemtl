@@ -40,7 +40,7 @@ export function ReplyBox({
 
   if (open) {
     return (
-      <div className="mt-2 w-full rounded-[14px] border border-[#dde5e1] bg-[#f8faf9] p-3 sm:p-4">
+      <div className="mt-2 w-full rounded-[14px] border border-[#e9e0d6] bg-[#fef7f0] p-3 sm:p-4">
         <CommentForm
           issueId={issueId}
           parentId={parentId}

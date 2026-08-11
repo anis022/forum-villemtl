@@ -23,13 +23,14 @@ export function LanguageToggle({ lang, label }: { lang: Locale; label: string })
   };
 
   return (
+    /* Their "ENGLISH": uppercase, letterspaced, white on the aubergine strip.
+       No radius of its own — a word in a utility bar is a link, not a button,
+       so it takes the small base-layer floor for its focus ring. */
     <button
       type="button"
       onClick={switchTo}
       lang={other}
-      /* No radius of its own: an underlined word in the utility bar is a link,
-         not a button, so it takes the small base-layer floor for its ring. */
-      className="px-2.5 py-0.5 text-[14px] font-bold leading-[20px] text-white hover:underline"
+      className="inline-flex h-10 shrink-0 items-center px-2.5 text-[13px] font-bold uppercase leading-[20px] tracking-[0.06em] text-white transition-opacity hover:opacity-75 hover:underline"
     >
       {label}
     </button>

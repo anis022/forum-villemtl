@@ -54,15 +54,17 @@ export function HeaderSearchButton({ lang, label }: { lang: Locale; label: strin
       aria-label={label}
       aria-expanded={expanded ?? undefined}
       aria-controls={expanded === null ? undefined : SEARCH_PANEL_ID}
-      className={`flex h-10 shrink-0 items-center gap-2 ${BARE_CONTROL} px-2 text-[16px] font-bold leading-[24px] transition-colors sm:px-3 ${
-        expanded ? "text-[#097d6c]" : "text-[#16241f] hover:text-[#097d6c]"
+      /* Lives in the aubergine utility strip, alongside the language toggle —
+         white, and quiet, because it is not navigation. */
+      className={`flex h-10 shrink-0 items-center gap-2 ${BARE_CONTROL} px-2.5 text-[13px] font-bold uppercase leading-[20px] tracking-[0.06em] text-white transition-opacity hover:opacity-75 ${
+        expanded ? "opacity-75 underline" : ""
       }`}
     >
-      <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" fill="none" className="shrink-0">
-        <circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" strokeWidth="1.7" />
-        <path d="M15.5 15.5L21 21" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+      <svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true" fill="none" className="shrink-0">
+        <circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" strokeWidth="2" />
+        <path d="M15.5 15.5L21 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
       </svg>
-      <span className="hidden md:inline">{label}</span>
+      <span className="hidden sm:inline">{label}</span>
     </button>
   );
 }

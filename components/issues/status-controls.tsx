@@ -31,8 +31,8 @@ export function StatusControls({
   };
 
   return (
-    <div className="mt-6 rounded-[14px] border border-[#097d6c] bg-[#e2f0ec] p-5">
-      <p className="font-bold text-[#097d6c]">{t.issue.officialSpace}</p>
+    <div className="mt-6 rounded-[14px] border border-[#fa3250] bg-[#fde8eb] p-5">
+      <p className="font-bold text-[#fa3250]">{t.issue.officialSpace}</p>
       <p className={`mt-1 text-[15px] ${MUTED}`}>
         {t.issue.officialSpaceHint}
       </p>

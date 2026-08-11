@@ -47,7 +47,20 @@ OUT = DOCS / "parsed"
 
 # --- shapes in the document ------------------------------------------------
 
-SEPARATOR = re.compile(r"^_{10,}$")
+# The clerk rules off with two different lengths, and they mean opposite things:
+#
+#     ____________________________   28 — end of a resolution or a section
+#     __________________             18 — wraps "Un débat s'engage" *inside* one
+#     ______________________         22 — introduces the annexes of one
+#
+# Treating any run of underscores as a block end stopped every debated
+# resolution at its first inline rule, before the verdict printed below it. That
+# is why 79 of 142 resolutions had no recorded outcome and why not one of them
+# recorded a debate: the parser never read that far.
+SEPARATOR = re.compile(r"^_{25,}$")
+
+# Shorter rules are punctuation within a block: skipped, never a boundary.
+INLINE_RULE = re.compile(r"^_{5,24}$")
 RESOLUTION = re.compile(r"^R[EÉ]SOLUTION\s+((?:CA|OCA)\d{2})\s+(\d{5,7})\s*$", re.I)
 # The clerk files each item under its agenda code, optionally with the
 # decision-record number the city uses internally: "20.04 1268524001".
@@ -57,22 +70,67 @@ MOVED_BY = re.compile(r"^Il est propos[ée]\s+par\s+(.+?)\s*$", re.I)
 SECONDED_BY = re.compile(r"^appuy[ée]\s+par\s+(.+?)\s*$", re.I)
 DEBATE = re.compile(r"^Un d[ée]bat s'engage", re.I)
 
-# Outcomes, longest first so "ADOPTÉE À LA MAJORITÉ DES VOIX" is not truncated
-# to the unanimous form by an eager prefix match.
-OUTCOMES = [
-    "ADOPTÉE À L'UNANIMITÉ",
-    "ADOPTÉE À LA MAJORITÉ DES VOIX",
-    "ADOPTÉE À LA MAJORITÉ",
-    "ADOPTÉE TELLE QUE MODIFIÉE",
-    "ADOPTÉE",
-    "REJETÉE À LA MAJORITÉ DES VOIX",
-    "REJETÉE À LA MAJORITÉ",
-    "REJETÉE",
-    "RETIRÉE",
-    "REPORTÉE",
-]
+# How a decision is recorded.
+#
+# Matched by shape rather than against a list of exact strings, because the
+# clerk writes the same verdict several ways: "ADOPTÉ" as often as "ADOPTÉE",
+# and a resolution that survived an amendment closes with "LA PROPOSITION
+# PRINCIPALE EST ADOPTÉE À LA MAJORITÉ." rather than the bare verdict. Exact
+# matching read those as body text and left the resolution with no outcome.
+#
+# Deliberately anchored to the whole line: "adoptée" appears inside the prose of
+# many resolutions ("les mesures adoptées reflètent..."), and matching that
+# would record a verdict where there is none.
+OUTCOME_RE = re.compile(
+    r"^(?:(?:LA|L')\s*(?:PROPOSITION\s+PRINCIPALE|AMENDEMENT[^.]*?)\s+EST\s+)?"
+    r"(ADOPT[EÉ]E?|REJET[EÉ]E?|RETIR[EÉ]E?|REPORT[EÉ]E?)"
+    r"(\s+(?:[AÀ]\s+L'UNANIMIT[EÉ]|[AÀ]\s+LA\s+MAJORIT[EÉ](?:\s+DES\s+VOIX)?"
+    r"|TELLE\s+QUE\s+MODIFI[EÉ]E?))?\s*\.?$",
+    re.I,
+)
+
+# Canonical spellings, so a count can group by outcome without seeing the same
+# decision under three labels.
+VERDICT_CANON = {
+    "adopt": "ADOPTÉE",
+    "rejet": "REJETÉE",
+    "retir": "RETIRÉE",
+    "report": "REPORTÉE",
+}
+
+
+def read_outcome(text: str) -> str | None:
+    """The verdict on this line, in canonical form, or None."""
+    m = OUTCOME_RE.match(text.strip())
+    if not m:
+        return None
+    stem = deaccent(m.group(1)).lower().rstrip("e")
+    verdict = VERDICT_CANON.get(stem)
+    if not verdict:
+        return None
+
+    qualifier = (m.group(2) or "").strip()
+    if not qualifier:
+        return verdict
+    q = norm(qualifier)
+    if "unanimit" in q:
+        return f"{verdict} À L'UNANIMITÉ"
+    if "majorit" in q:
+        return f"{verdict} À LA MAJORITÉ"
+    return f"{verdict} TELLE QUE MODIFIÉE"
 
 QUESTION_HEADER = re.compile(r"^Nom\s+Sujet de la question\s*$", re.I)
+
+# "40.04 - Parcomètres sur la rue Sherbrooke Ouest" -> the subject alone.
+SUBJECT_AGENDA_PREFIX = re.compile(r"^\d{2}\.\d{2}\s*[-–—]\s*")
+
+# A role written after the name rather than before it. Anchored to the end so
+# it cannot bite into a name that merely contains one of these words.
+TRAILING_TITLE = re.compile(
+    r"\s+(le|la)\s+(maire|mairesse)(\s+suppl[ée]ant(e)?)?\s*$"
+    r"|\s+(le|la)\s+conseill(er|[èe]re)\s*$",
+    re.I,
+)
 
 # The clerk sometimes writes in the name column rather than a name -- most often
 # "Personne non entendue faute de temps" when the period ran out. Counting that
@@ -87,6 +145,20 @@ CLERK_NOTE = re.compile(
 # No resident's name runs this long; past it the cell holds prose, not a person.
 MAX_NAME_WORDS = 6
 
+# The clerk's notes are written as sentences that begin in the name column and
+# run on into the subject column, so the name cell reads as a single innocuous
+# word:
+#
+#     Personne | ayant quitté la séance ou ayant retiré sa question
+#     Personne | non entendue faute de temps
+#
+# Judged on the name alone these look like a resident called "Personne", and
+# seven of them were being counted as people across the 2026 sittings. No real
+# name is one of these words, so the word itself is the signal -- safer than
+# scanning subjects for note-like phrasing, which would eventually discard a
+# genuine question about, say, personnes itinérantes.
+GENERIC_NAME = re.compile(r"^(personnes?|aucune?|aucun|nul(le)?|neant)$", re.I)
+
 # Through 2022 the clerk bulleted the speakers' names with a Wingdings glyph,
 # which survives extraction as U+F0B7 and would otherwise become part of the
 # name -- " Gale Pettus" and "Gale Pettus" are two different residents as
@@ -94,6 +166,22 @@ MAX_NAME_WORDS = 6
 BULLET = re.compile(r"^[•●▪\-–—\*\s]+")
 
 PUBLIC_PERIOD = re.compile(r"p[ée]riode de (questions|demandes)", re.I)
+
+# The council's own two periods, 10.04 and 10.07. Distinct from the public ones
+# and from each other: one is what the elected members chose to raise, the other
+# is what they asked the administration.
+COUNCIL_PERIOD = re.compile(
+    r"p[ée]riode de (commentaires|questions).{0,40}(membres du conseil|conseillers|mairesse)",
+    re.I,
+)
+
+# The clerk's bullet, a Wingdings glyph that survives extraction as U+F0B7.
+# It is the structural signal in these sections: it opens each new item, and a
+# line without one continues the item above.
+BULLET_GLYPH = re.compile(r"^[•●▪·-]$")
+
+REMARK_COMMENT = "commentaire"
+REMARK_QUESTION = "question"
 
 # A bare page number sits alone on its line; it would otherwise land inside a
 # resolution body and corrupt the text.
@@ -137,7 +225,17 @@ def read_lines(path: Path) -> list[Line]:
     with pdfplumber.open(path) as pdf:
         for pno, page in enumerate(pdf.pages):
             buckets: dict[int, list[dict]] = defaultdict(list)
-            for w in page.extract_words():
+            # x_tolerance=2 rather than pdfplumber's default 3.
+            #
+            # A PDF stores no spaces: the reader decides where one word ends by
+            # how wide the gap between glyphs is. At the default, tightly set
+            # lines in these minutes come back fused --
+            # "stationnementssurl'avenueRidgewood", "5754UpperLachine" -- and a
+            # fused word is invisible to full-text search forever after.
+            # Dropping the threshold splits those correctly; measured over the
+            # 2026 sittings it takes the fused-word count from 17 to near zero
+            # without breaking ordinary words apart.
+            for w in page.extract_words(x_tolerance=2):
                 # Round to the nearest 3pt so a word sitting a hair proud of its
                 # neighbours still joins the same line.
                 buckets[round(w["top"] / 3)].append(w)
@@ -231,7 +329,8 @@ def parse_questions(
             or QUESTION_HEADER.match(text)
         ):
             break
-        body.append(lines[i])
+        if not INLINE_RULE.match(text):
+            body.append(lines[i])
         i += 1
 
     split_x = split_column(body)
@@ -253,10 +352,17 @@ def parse_questions(
 
         name = BULLET.sub("", name).strip()
         subject = BULLET.sub("", subject).strip()
+        # The clerk sometimes files the subject under the agenda item it relates
+        # to ("40.04 - Parcomètres sur la rue Sherbrooke Ouest"). The code is
+        # useful to the clerk and noise to a reader, and it splits one subject
+        # into two when only some rows carry it.
+        subject = SUBJECT_AGENDA_PREFIX.sub("", subject).strip()
 
         # The clerk records who could not be reached; it is not a question.
         if name and (
-            CLERK_NOTE.search(deaccent(name)) or len(name.split()) > MAX_NAME_WORDS
+            GENERIC_NAME.match(deaccent(name).strip())
+            or CLERK_NOTE.search(deaccent(name))
+            or len(name.split()) > MAX_NAME_WORDS
         ):
             notes.append(" ".join(filter(None, [name, subject])))
             continue
@@ -288,6 +394,88 @@ def parse_questions(
     return rows, notes, i
 
 
+def parse_remarks(
+    lines: list[Line], start: int, kind: str, order0: int
+) -> tuple[list[dict], int]:
+    """
+    Read a council comment or question period (10.04 / 10.07).
+
+    Laid out on three x positions rather than two, which is what makes it
+    readable without guessing:
+
+        Peter McQueen   •  Marquage de la piste cyclable Notre-Dame-de-Grâce
+                        •  Augmentation des actes racistes – affiches face au LCC
+                           et événement à Shawinigan
+                        •  Circulation des piétons
+
+    The bullet opens an item, the name column names its owner, and a line with
+    neither continues the item above. One councillor raises several things in a
+    sitting, so this yields a row per item rather than a row per person: "what
+    did McQueen say about bike lanes" has to be able to match one bullet without
+    dragging in the other five.
+    """
+    body: list[Line] = []
+    i = start + 1
+    while i < len(lines):
+        text = lines[i].text
+        if SEPARATOR.match(text) or RESOLUTION.match(text) or SECTION_HEAD.match(text):
+            break
+        if not INLINE_RULE.match(text):
+            body.append(lines[i])
+        i += 1
+
+    # The bullet column, taken from the document rather than assumed.
+    bullet_xs = [
+        w["x0"] for line in body for w in line.words if BULLET_GLYPH.match(w["text"])
+    ]
+    if not bullet_xs:
+        return [], i
+    bullet_x = statistics.median(bullet_xs)
+
+    rows: list[dict] = []
+    current_name: str | None = None
+    pending_name: list[str] = []
+
+    for line in body:
+        words = line.words
+        bullet_at = next(
+            (k for k, w in enumerate(words) if BULLET_GLYPH.match(w["text"])), None
+        )
+
+        if bullet_at is None:
+            text = " ".join(w["text"] for w in words).strip()
+            if not text:
+                continue
+            # Right of the bullet column: the tail of the item above.
+            if words[0]["x0"] >= bullet_x and rows:
+                rows[-1]["topic"] = f"{rows[-1]['topic']} {text}".strip()
+            elif words[0]["x0"] < bullet_x:
+                # A name too long for its line ("Gracia Kasoki" / "Katahwa").
+                pending_name.append(text)
+            continue
+
+        before = " ".join(w["text"] for w in words[:bullet_at]).strip()
+        topic = " ".join(w["text"] for w in words[bullet_at + 1 :]).strip()
+
+        if before or pending_name:
+            current_name = " ".join([*pending_name, before]).strip() or current_name
+            pending_name = []
+
+        if not topic:
+            continue
+        rows.append(
+            {
+                "name": current_name or "",
+                "topic": topic,
+                "kind": kind,
+                "order": order0 + len(rows),
+                "page": line.page,
+            }
+        )
+
+    return [r for r in rows if r["name"]], i
+
+
 def parse_resolution(lines: list[Line], start: int) -> tuple[dict, int]:
     """Read one RÉSOLUTION block; returns it and the index just past it."""
     m = RESOLUTION.match(lines[start].text)
@@ -306,6 +494,11 @@ def parse_resolution(lines: list[Line], start: int) -> tuple[dict, int]:
 
         if SEPARATOR.match(text) or RESOLUTION.match(text):
             break
+
+        # An inline rule is punctuation, not content and not a boundary.
+        if INLINE_RULE.match(text):
+            i += 1
+            continue
 
         code = AGENDA_CODE.match(text)
         if code:
@@ -330,8 +523,7 @@ def parse_resolution(lines: list[Line], start: int) -> tuple[dict, int]:
             i += 1
             continue
 
-        stripped = text.strip().rstrip(".")
-        hit = next((o for o in OUTCOMES if norm(stripped) == norm(o)), None)
+        hit = read_outcome(text)
         if hit:
             outcome = hit
             i += 1
@@ -375,6 +567,18 @@ def parse_presences(lines: list[Line]) -> dict:
     )
     if mp:
         president = mp.group(1).strip()
+        # The clerk puts the title before the name when the mayor presides
+        # ("madame la mairesse Stephanie Valenzuela") but after it when a
+        # stand-in does ("monsieur Sonny Moroz le maire suppléant"). Only the
+        # leading form is consumed above, so the trailing one has to come off
+        # here or four sittings out of five name a person who does not exist.
+        president = TRAILING_TITLE.sub("", president).strip(" ,;")
+
+    # Whether the chair was the borough mayor or a councillor standing in. Worth
+    # keeping rather than flattening to "mayor": Sonny Moroz chaired four of the
+    # five 2026 sittings as maire suppléant, and recording that as his role
+    # would list the Snowdon councillor as borough mayor everywhere on the site.
+    acting = bool(re.search(r"suppl[ée]ant", header, re.I))
 
     councillors: list[dict] = []
     for m in re.finditer(
@@ -392,7 +596,12 @@ def parse_presences(lines: list[Line]) -> dict:
     ):
         staff.append({"name": m.group(1).strip(), "role": m.group(2).strip()})
 
-    return {"president": president, "councillors": councillors, "staff": staff}
+    return {
+        "president": president,
+        "presidentActing": acting,
+        "councillors": councillors,
+        "staff": staff,
+    }
 
 
 def parse_pv(path: Path) -> dict:
@@ -402,6 +611,7 @@ def parse_pv(path: Path) -> dict:
     questions: list[dict] = []
     sections: list[dict] = []
     notes: list[str] = []
+    remarks: list[dict] = []
 
     current_mode: str | None = None
     oral_n = written_n = 0
@@ -414,6 +624,21 @@ def parse_pv(path: Path) -> dict:
         if sec:
             title = sec.group(2)
             sections.append({"code": sec.group(1), "title": title, "page": lines[i].page})
+
+            # The council's own periods are read here, before the public-period
+            # branch below: "PÉRIODE DE QUESTIONS DES MEMBRES DU CONSEIL" would
+            # otherwise look like a public question period to it.
+            if COUNCIL_PERIOD.search(deaccent(title)):
+                kind = (
+                    REMARK_COMMENT
+                    if "commentaire" in norm(title)
+                    else REMARK_QUESTION
+                )
+                order0 = sum(1 for r in remarks if r["kind"] == kind)
+                rows, i = parse_remarks(lines, i, kind, order0)
+                remarks.extend(rows)
+                continue
+
             mode = question_mode(title)
             if mode:
                 current_mode = mode
@@ -457,9 +682,11 @@ def parse_pv(path: Path) -> dict:
         "sections": sections,
         "resolutions": resolutions,
         "publicQuestions": questions,
+        "councilRemarks": remarks,
         "notes": notes,
         "counts": {
             "resolutions": len(resolutions),
+            "remarks": len(remarks),
             "oral": sum(1 for q in questions if q["mode"] == ORAL),
             "written": sum(1 for q in questions if q["mode"] == WRITTEN),
         },

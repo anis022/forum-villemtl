@@ -158,7 +158,7 @@ export function LocationPicker({
 
       <div
         ref={containerRef}
-        className="h-[280px] w-full overflow-hidden rounded-[12px] border border-[#dde5e1] md:h-[340px]"
+        className="h-[280px] w-full overflow-hidden rounded-[12px] border border-[#e9e0d6] md:h-[340px]"
       />
 
       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
@@ -166,7 +166,7 @@ export function LocationPicker({
           type="button"
           onClick={useMyPosition}
           disabled={disabled || locating}
-          className="inline-flex items-center gap-1.5 rounded-[10px] border border-[#dde5e1] bg-white px-3.5 py-1.5 text-[13px] font-bold text-[#097d6c] transition-colors hover:border-[#097d6c] hover:bg-[#e2f0ec] disabled:opacity-60"
+          className="inline-flex items-center gap-1.5 rounded-[10px] border border-[#e9e0d6] bg-white px-3.5 py-1.5 text-[13px] font-bold text-[#fa3250] transition-colors hover:border-[#fa3250] hover:bg-[#fde8eb] disabled:opacity-60"
         >
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <circle cx="12" cy="12" r="3.2" stroke="currentColor" strokeWidth="1.7" />
@@ -182,22 +182,22 @@ export function LocationPicker({
 
         {point ? (
           <>
-            <span className="text-[13px] font-bold text-[#097d6c]">{labels.chosen}</span>
+            <span className="text-[13px] font-bold text-[#fa3250]">{labels.chosen}</span>
             <button
               type="button"
               onClick={clear}
-              className="text-[13px] font-bold text-[#5d6b66] underline hover:text-[#c0392f]"
+              className="text-[13px] font-bold text-[#6e6a72] underline hover:text-[#ab1f5c]"
             >
               {labels.clear}
             </button>
           </>
         ) : (
-          <span className="text-[13px] text-[#5d6b66]">{labels.hint}</span>
+          <span className="text-[13px] text-[#6e6a72]">{labels.hint}</span>
         )}
       </div>
 
       {notice && (
-        <p role="alert" className="mt-2 text-[13px] font-bold text-[#a4231f]">
+        <p role="alert" className="mt-2 text-[13px] font-bold text-[#b3122c]">
           {notice}
         </p>
       )}
@@ -209,9 +209,9 @@ export function LocationPicker({
 function pinIcon(L: typeof import("leaflet")) {
   return L.divIcon({
     className: "",
-    html: `<svg width="32" height="32" viewBox="0 0 24 24" style="filter:drop-shadow(0 1px 2px rgba(22,36,31,.35))">
+    html: `<svg width="32" height="32" viewBox="0 0 24 24" style="filter:drop-shadow(0 1px 2px rgba(26,26,26,.35))">
       <path d="M12 2.2c-4 0-7.2 3.2-7.2 7.2 0 5.2 7.2 12.4 7.2 12.4s7.2-7.2 7.2-12.4c0-4-3.2-7.2-7.2-7.2z"
-            fill="#d94f45" stroke="#fff" stroke-width="1.6"/>
+            fill="#d6337a" stroke="#fff" stroke-width="1.6"/>
       <circle cx="12" cy="9.4" r="2.6" fill="#fff"/>
     </svg>`,
     iconSize: [32, 32],

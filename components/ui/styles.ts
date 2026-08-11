@@ -1,50 +1,65 @@
 // Single source of truth for control styling, so every surface on the site
 // renders identically.
 //
-// The palette stays anchored on the borough's own teal (#097d6c) — this is a
-// civic site and that colour is its identity. Everything around it is warmed:
-// the neutrals carry a green bias so text sits in the same world as the accent
-// instead of floating in default grey, and the rosette red is reserved for
-// backing a neighbour, so support reads warm rather than administrative.
+// The palette is Ensemble Montréal's, sampled off ensemblemtl.org rather than
+// guessed from the wordmark — the logo is blue and aubergine, but almost
+// nothing on their site is: the ground is a warm cream, every action is red,
+// navigation is indigo, and the dark bars are aubergine.
 //
-//   ink #16241f · muted #5d6b66 · line #dde5e1 · wash #f2f6f4
-//   accent #097d6c · accent soft #e2f0ec · rose #d94f45
+//   ink #1a1a1a · muted #6e6a72 · line #e9e0d6
+//   cream #fef7f0 (page) · butter #fffbe5 (bands) · wash #faf1e8 (hovers)
+//   accent #fa3250 · accent soft #fde8eb
+//   indigo #2a2a86 · deep #32004a · pink #d6337a
 //
-// Corners are generous on purpose. A 4px radius reads as a government form; a
-// 16px card reads as somewhere people talk to each other.
+// Before this the site was built on the borough teal with montreal.ca's
+// near-black, which made it read as an arm of the city. It is not one, and the
+// city's palette is not ours to use — so nothing here descends from it.
 //
-// Buttons are the exception, and they used to be pills. A fully round button is
-// friendly at small sizes and gets less so the wider it is: "Créer mon compte"
-// across a 400px dialog came out as a lozenge, which reads as a marketing page
-// rather than as a municipal service. They are 10px now — softer than the card
-// they sit on is not possible, tighter than the 12px field above them is
-// deliberate, and nothing about them is square. Chips keep the pill: a filter
-// is not a button, and the two shapes are how you tell them apart at a glance.
+// Corners stay generous. A 4px radius reads as a government form; a 16px card
+// reads as somewhere people talk to each other. Their site runs closer to
+// square, and that is the one place this deliberately does not follow it.
 
-export const INK = "#16241f";
-export const MUTED_HEX = "#5d6b66";
-export const LINE = "#dde5e1";
-export const ACCENT = "#097d6c";
-export const ACCENT_SOFT = "#e2f0ec";
-export const ROSE = "#d94f45";
+export const INK = "#1a1a1a";
+export const MUTED_HEX = "#6e6a72";
+export const LINE = "#e9e0d6";
 
-/** montreal.ca's `.container`: max-width 1200px with 16px side padding. */
+/** Every action on their site is this red. Buttons, links, selected chips. */
+export const ACCENT = "#fa3250";
+export const ACCENT_SOFT = "#fde8eb";
+
+/** Their navigation colour. Carries "an official spoke" here. */
+export const INDIGO = "#2a2a86";
+export const INDIGO_SOFT = "#e8e8f6";
+
+/** The aubergine of the wordmark and of their utility bar. */
+export const DEEP = "#32004a";
+
+/** The page itself — warm cream, not white and not grey. */
+export const CREAM = "#fef7f0";
+
+/** Their second band colour, for the one section that needs to lift off it. */
+export const BUTTER = "#fffbe5";
+
+/** Backing a neighbour. Warm, and not the red every button already uses. */
+export const PINK = "#d6337a";
+
+/** Page measure: 1200px with 16px side padding. */
 export const CONTAINER = "mx-auto w-full max-w-[1200px] px-4";
 
 /** Narrower measure for reading: long body text past ~70 characters tires. */
 export const READABLE = "mx-auto w-full max-w-[720px]";
 
-export const LABEL = "mb-2 block text-[15px] font-bold text-[#16241f]";
+export const LABEL = "mb-2 block text-[15px] font-bold text-[#1a1a1a]";
 
 // No `outline-none`: the global :focus-visible ring is the keyboard indicator.
 export const FIELD =
-  "w-full rounded-[12px] border border-[#dde5e1] bg-white px-4 py-[12px] text-[16px] leading-[24px] text-[#16241f] placeholder:text-[#93a19c] transition-colors focus:border-[#097d6c] disabled:bg-[#f2f6f4]";
+  "w-full rounded-[12px] border border-[#e9e0d6] bg-white px-4 py-[12px] text-[16px] leading-[24px] text-[#1a1a1a] placeholder:text-[#a09a94] transition-colors focus:border-[#fa3250] disabled:bg-[#faf1e8]";
 
 export const BTN_PRIMARY =
-  "inline-flex items-center justify-center gap-2 rounded-[10px] border border-[#097d6c] bg-[#097d6c] px-5 py-[10px] text-[15px] font-bold leading-[22px] text-white transition-all hover:bg-[#075f53] hover:border-[#075f53] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60";
+  "inline-flex items-center justify-center gap-2 rounded-[10px] border border-[#fa3250] bg-[#fa3250] px-5 py-[10px] text-[15px] font-bold leading-[22px] text-white transition-all hover:bg-[#d81f3c] hover:border-[#d81f3c] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60";
 
 export const BTN_SECONDARY =
-  "inline-flex items-center justify-center gap-2 rounded-[10px] border border-[#dde5e1] bg-white px-5 py-[10px] text-[15px] font-bold leading-[22px] text-[#097d6c] transition-all hover:border-[#097d6c] hover:bg-[#e2f0ec] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60";
+  "inline-flex items-center justify-center gap-2 rounded-[10px] border border-[#e9e0d6] bg-white px-5 py-[10px] text-[15px] font-bold leading-[22px] text-[#fa3250] transition-all hover:border-[#fa3250] hover:bg-[#fde8eb] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60";
 
 /**
  * Radius for controls that have no shell of their own — header nav items, text
@@ -57,7 +72,7 @@ export const BARE_CONTROL = "rounded-[8px]";
 
 /** Quiet button for row actions — comment, share. Reads as a control on hover. */
 export const BTN_GHOST =
-  "inline-flex items-center justify-center gap-2 rounded-[10px] px-3.5 py-2 text-[14px] font-bold leading-[20px] text-[#5d6b66] transition-colors hover:bg-[#f2f6f4] hover:text-[#16241f]";
+  "inline-flex items-center justify-center gap-2 rounded-[10px] px-3.5 py-2 text-[14px] font-bold leading-[20px] text-[#6e6a72] transition-colors hover:bg-[#faf1e8] hover:text-[#1a1a1a]";
 
 /**
  * `py-2.5` rather than `py-2`: a 20px line plus 16px of padding is a 36px
@@ -65,38 +80,43 @@ export const BTN_GHOST =
  * the token instead of being patched back on at each call site.
  */
 export const CHIP =
-  "inline-flex items-center rounded-full border border-[#dde5e1] bg-white px-4 py-2.5 text-[14px] font-bold leading-[20px] text-[#097d6c] transition-colors hover:border-[#097d6c] hover:bg-[#e2f0ec]";
+  "inline-flex items-center rounded-full border border-[#e9e0d6] bg-white px-4 py-2.5 text-[14px] font-bold leading-[20px] text-[#fa3250] transition-colors hover:border-[#fa3250] hover:bg-[#fde8eb]";
 
 /** Selected state of a CHIP — filled, matching the primary button. */
 export const CHIP_ACTIVE =
-  "inline-flex items-center rounded-full border border-[#097d6c] bg-[#097d6c] px-4 py-2.5 text-[14px] font-bold leading-[20px] text-white transition-colors hover:bg-[#075f53] hover:border-[#075f53]";
+  "inline-flex items-center rounded-full border border-[#fa3250] bg-[#fa3250] px-4 py-2.5 text-[14px] font-bold leading-[20px] text-white transition-colors hover:bg-[#d81f3c] hover:border-[#d81f3c]";
 
-export const LINK = "font-bold text-[#097d6c] underline hover:text-[#075f53]";
+export const LINK = "font-bold text-[#fa3250] underline hover:text-[#d81f3c]";
 
+/**
+ * Errors sit in the same red family as the accent, a shade deeper. On their
+ * site red is simply the loud colour; a separate error hue would be a fourth
+ * red on the page rather than a clearer signal.
+ */
 export const ALERT =
-  "rounded-[12px] border border-[#f3ccc8] bg-[#fdeceb] px-4 py-3 text-[15px] text-[#a4231f]";
+  "rounded-[12px] border border-[#f8c9d0] bg-[#fdeaed] px-4 py-3 text-[15px] text-[#b3122c]";
 
 /**
  * The card. A hairline border plus a whisper of shadow, rather than the heavy
  * 0.8px grey box: on a feed of thirty posts the border is what you notice, and
- * it should not be.
+ * it should not be. White on the cream ground, so it lifts without a shadow
+ * doing the work.
  */
 export const CARD =
-  "rounded-[16px] border border-[#dde5e1] bg-white shadow-[0_1px_2px_rgba(22,36,31,0.04)]";
+  "rounded-[16px] border border-[#e9e0d6] bg-white shadow-[0_1px_2px_rgba(26,26,26,0.04)]";
 
 /** Same card, raised on hover — used where the whole card is a target. */
-export const CARD_INTERACTIVE = `${CARD} transition-shadow hover:shadow-[0_4px_16px_rgba(22,36,31,0.08)]`;
+export const CARD_INTERACTIVE = `${CARD} transition-shadow hover:shadow-[0_4px_16px_rgba(26,26,26,0.08)]`;
 
-export const MUTED = "text-[#5d6b66]";
+export const MUTED = "text-[#6e6a72]";
 
 /**
- * The rule a threaded reply hangs off. A shade darker than `line` (#dde5e1),
+ * The rule a threaded reply hangs off. A shade darker than `line` (#e9e0d6),
  * because this one has a different job: a card border only ever sits on white,
- * while a thread line has to stay legible over the accent-soft tint of an
- * official answer as well — and unlike a border it is carrying meaning, not
- * just an edge. Still quiet enough that a thread of thirty replies does not
- * read as a table.
+ * while a thread line has to stay legible over the tint of an official answer
+ * as well — and unlike a border it is carrying meaning, not just an edge.
  */
-export const THREAD_LINE = "border-[#cbd9d4]";
+export const THREAD_LINE = "border-[#ddd2c5]";
 
-export const HERO_BAND = "bg-[#f2f6f4]";
+/** The one band allowed to lift off the cream page: their pale butter. */
+export const HERO_BAND = "bg-[#fffbe5]";

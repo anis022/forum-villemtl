@@ -16,16 +16,21 @@ export type AvatarPerson = {
   avatarUrl: string | null;
 };
 
-/** Muted, accessible-on-white palette drawn from the montreal.ca accents. */
+/**
+ * Eight colours that carry white initials and stay apart from each other in a
+ * thread. Weighted toward the brand's purples and blues without ever being the
+ * accent itself: a face the exact colour of the primary button reads as a
+ * control, and the whole point of the fallback is that it reads as a person.
+ */
 const PALETTE = [
-  "#097d6c",
-  "#1c4fa1",
-  "#a4231f",
-  "#6b3fa0",
+  "#3b2a8f",
+  "#7a2f8f",
+  "#a41f3c",
   "#b8660a",
-  "#2d6a4f",
-  "#7a3b6d",
-  "#0f5c73",
+  "#0b6042",
+  "#1f6f8b",
+  "#5c4a7d",
+  "#8f2f5e",
 ];
 
 function colorFor(id: string): string {
@@ -61,7 +66,7 @@ export function Avatar({
         alt=""
         width={px}
         height={px}
-        className={`${shared} border-[0.8px] border-[#ced4da]`}
+        className={`${shared} border-[0.8px] border-[#e9e0d6]`}
         style={{ width: px, height: px }}
       />
     );
@@ -112,7 +117,7 @@ export function FacePile({
         ))}
       </span>
       {extra > 0 && (
-        <span className="ml-2 text-[13px] text-[#637381]">+{extra}</span>
+        <span className="ml-2 text-[13px] text-[#6e6a72]">+{extra}</span>
       )}
     </span>
   );

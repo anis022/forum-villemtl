@@ -7,7 +7,7 @@ import type { Locale } from "@/utils/i18n";
 
 /**
  * The montreal.ca search field: a 56px pill with the magnifier inset on the
- * left (border 0.8px #637381, radius 28px).
+ * left (border 0.8px #6e6a72, radius 28px).
  *
  * It is **folded away until asked for**. A field that is only used when someone
  * has a specific thing to look for was taking the best row of the hero on every
@@ -138,13 +138,13 @@ export function ForumSearch({
         }}
         className="relative"
       >
-        <span className="pointer-events-none absolute left-6 top-1/2 -translate-y-1/2 text-[#637381]">
+        <span className="pointer-events-none absolute left-6 top-1/2 -translate-y-1/2 text-[#6e6a72]">
           {isPending ? (
             <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true" className="search-spinner">
-              <circle cx="10" cy="10" r="7" stroke="#ced4da" strokeWidth="2" fill="none" />
+              <circle cx="10" cy="10" r="7" stroke="#e9e0d6" strokeWidth="2" fill="none" />
               <path
                 d="M10 3a7 7 0 0 1 7 7"
-                stroke="#097d6c"
+                stroke="#fa3250"
                 strokeWidth="2"
                 strokeLinecap="round"
                 fill="none"
@@ -167,7 +167,7 @@ export function ForumSearch({
           onChange={(event) => setValue(event.target.value)}
           placeholder={placeholder}
           aria-label={placeholder}
-          className="h-14 w-full rounded-[28px] border-[0.8px] border-[#637381] bg-white pl-14 pr-14 text-[16px] leading-[24px] text-[#212529] transition-[border-color] duration-150 focus:border-[#097d6c] [&::-webkit-search-cancel-button]:appearance-none"
+          className="h-14 w-full rounded-[28px] border-[0.8px] border-[#6e6a72] bg-white pl-14 pr-14 text-[16px] leading-[24px] text-[#1a1a1a] transition-[border-color] duration-150 focus:border-[#fa3250] [&::-webkit-search-cancel-button]:appearance-none"
         />
 
         {/* One control, always there, always doing the next obvious thing: it
@@ -178,7 +178,7 @@ export function ForumSearch({
           type="button"
           onClick={() => (value ? setValue("") : close())}
           aria-label={value ? clearLabel : closeLabel}
-          className="clear-btn absolute right-5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-[#637381] hover:bg-[#f8f9fa] hover:text-[#212529]"
+          className="clear-btn absolute right-5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-[#6e6a72] hover:bg-[#faf1e8] hover:text-[#1a1a1a]"
         >
           <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
             <path

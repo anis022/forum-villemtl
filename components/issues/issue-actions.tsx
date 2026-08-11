@@ -57,7 +57,7 @@ export function IssueActions({
   };
 
   return (
-    <div className="mt-5 rounded-[14px] border border-[#dde5e1] bg-[#f8faf9] p-4">
+    <div className="mt-5 rounded-[14px] border border-[#e9e0d6] bg-[#fef7f0] p-4">
       {actingAsOfficial && (
         <p className="mb-3 flex items-start gap-2 text-[13px] leading-[19px] text-[#b8660a]">
           <svg
@@ -83,13 +83,13 @@ export function IssueActions({
       {confirming ? (
         <div>
           <p className="text-[15px] font-bold leading-[22px]">{labels.confirmTitle}</p>
-          <p className="mt-1 text-[14px] leading-[20px] text-[#5d6b66]">{labels.confirmBody}</p>
+          <p className="mt-1 text-[14px] leading-[20px] text-[#6e6a72]">{labels.confirmBody}</p>
           <div className="mt-3 flex flex-wrap gap-2">
             <button
               type="button"
               onClick={withdraw}
               disabled={pending}
-              className="rounded-[10px] border border-[#c0392f] bg-[#c0392f] px-4 py-2 text-[14px] font-bold text-white transition-colors hover:bg-[#a4231f] disabled:opacity-60"
+              className="rounded-[10px] border border-[#ab1f5c] bg-[#ab1f5c] px-4 py-2 text-[14px] font-bold text-white transition-colors hover:bg-[#b3122c] disabled:opacity-60"
             >
               {pending ? labels.withdrawing : labels.confirmYes}
             </button>
@@ -97,7 +97,7 @@ export function IssueActions({
               type="button"
               onClick={() => setConfirming(false)}
               disabled={pending}
-              className="rounded-[10px] border border-[#dde5e1] bg-white px-4 py-2 text-[14px] font-bold text-[#5d6b66] transition-colors hover:border-[#637381] hover:text-[#16241f] disabled:opacity-60"
+              className="rounded-[10px] border border-[#e9e0d6] bg-white px-4 py-2 text-[14px] font-bold text-[#6e6a72] transition-colors hover:border-[#6e6a72] hover:text-[#1a1a1a] disabled:opacity-60"
             >
               {labels.cancel}
             </button>
@@ -108,7 +108,7 @@ export function IssueActions({
           <button
             type="button"
             onClick={() => setConfirming(true)}
-            className="inline-flex items-center gap-2 rounded-[10px] border border-[#dde5e1] bg-white px-4 py-2 text-[14px] font-bold text-[#5d6b66] transition-colors hover:border-[#c0392f] hover:text-[#c0392f]"
+            className="inline-flex items-center gap-2 rounded-[10px] border border-[#e9e0d6] bg-white px-4 py-2 text-[14px] font-bold text-[#6e6a72] transition-colors hover:border-[#ab1f5c] hover:text-[#ab1f5c]"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path

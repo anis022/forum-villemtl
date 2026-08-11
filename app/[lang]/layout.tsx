@@ -1,12 +1,22 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist_Mono, Inter, Nunito_Sans } from "next/font/google";
 import { notFound } from "next/navigation";
 import "../globals.css";
 import { LOCALES, isLocale } from "@/utils/i18n";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// ensemblemtl.org's two faces: Inter for everything, Nunito Sans for the
+// navigation only. The site used to be set in the Ville de Montréal brand
+// typeface, self-hosted from montreal.ca — not a typeface this site has any
+// business using.
+const sans = Inter({
+  variable: "--font-sans",
   subsets: ["latin"],
+});
+
+const nav = Nunito_Sans({
+  variable: "--font-nav",
+  subsets: ["latin"],
+  weight: ["400", "700"],
 });
 
 const geistMono = Geist_Mono({
@@ -46,7 +56,7 @@ export default async function RootLayout({
   return (
     <html
       lang={lang}
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${sans.variable} ${nav.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         {/* Page content lives in its own root so the auth modal can blur it.

@@ -1,29 +1,18 @@
 @import "tailwindcss";
 
-/* Ville de Montréal brand typeface, self-hosted from montreal.ca. */
-@font-face {
-  font-family: "Montreal";
-  src: url("/fonts/Montreal-Web-Regulier.woff2") format("woff2");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Montreal";
-  src: url("/fonts/Montreal-Web-Gras.woff2") format("woff2");
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
+/* The Ville de Montréal brand typeface used to be declared here, self-hosted
+   from montreal.ca. It is gone with the rest of the city's identity: this is
+   not a city service and its typeface is not ours to set text in. The site is
+   set in ensemblemtl.org's two faces instead — Inter throughout, Nunito Sans
+   for navigation — both loaded in `app/[lang]/layout.tsx`. */
 
 :root {
-  /* The page background, not white: every screen sits on #f8faf9, so the
+  /* The page background, not white: every screen sits on #fef7f0, so the
      document itself has to be that colour. Anything the content does not paint
      — the strip revealed by an overscroll, the area below a short page — then
      matches the page instead of flashing a different surface. */
-  --background: #f8faf9;
-  --foreground: #16241f;
+  --background: #fef7f0;
+  --foreground: #1a1a1a;
 
   /* This site is light-only. Declaring it stops mobile browsers (Chrome's
      auto-dark theme on Android in particular) from inventing a dark version of
@@ -31,24 +20,31 @@
      scrollbars from rendering dark against white cards. */
   color-scheme: light;
 
-  /* Design tokens read off montreal.ca */
-  --vdm-green: #097d6c;
-  --vdm-green-dark: #076456;
-  --vdm-text: #212529;
-  --vdm-muted: #637381;
-  --vdm-border: #ced4da;
+  /* Ensemble Montréal, sampled off ensemblemtl.org rather than off the logo:
+     the wordmark is blue and aubergine, but their site is cream, red and
+     indigo. Mirrors `components/ui/styles.ts`, which is the source of truth. */
+  --brand-red: #fa3250;
+  --brand-red-dark: #d81f3c;
+  --brand-indigo: #2a2a86;
+  --brand-aubergine: #32004a;
+  --brand-cream: #fef7f0;
+  --brand-butter: #fffbe5;
+  --brand-ink: #1a1a1a;
+  --brand-muted: #6e6a72;
+  --brand-line: #e9e0d6;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-sans);
+  --font-nav: var(--font-nav);
   --font-mono: var(--font-geist-mono);
 }
 
 /* There is deliberately no `prefers-color-scheme: dark` block. The starter
    shipped one that flipped the background to #0a0a0a, and since the site has no
-   dark theme — white cards, #16241f text, teal accent — a phone in dark mode
+   dark theme — white cards on cream, #1a1a1a text, red accent — a phone in dark mode
    got a black page behind light content: dragging sideways or overscrolling
    revealed black bars, and the layout read as if it had come loose from the
    screen. A dark theme is a whole palette, not one variable. */
@@ -68,8 +64,7 @@ body {
 
 body {
   color: var(--foreground);
-  /* Same stack montreal.ca declares. */
-  font-family: "Montreal", Helvetica, Arial, sans-serif;
+  font-family: var(--font-sans), Helvetica, Arial, sans-serif;
   font-size: 16px;
   line-height: 24px;
   /* Phones inflate text in landscape unless told not to; the type scale is
@@ -81,21 +76,20 @@ body {
 }
 
 /* Keeps focused/anchored elements clear of the sticky masthead.
-   --masthead-h must match the rendered height of `.sticky` in SiteHeader
-   (32px utility bar + the white nav, which is sized by the logo). If the logo
-   height changes, update this. */
+   --masthead-h must match the rendered height of `.sticky` in SiteHeader —
+   the aubergine utility strip plus the cream nav row, which is sized by the
+   logo. If the logo height changes, update this. */
 :root {
   /* The masthead is not one height: the logo steps up at `md`, and a phone
-     carries a 97px bar where a desktop carries 125px. Reserving the desktop
-     figure on a phone pushed anchored content a whole card's worth of empty
-     space down the screen. Measured, not guessed — if the logo height in
-     SiteHeader changes, re-measure both. */
-  --masthead-h: 97px;
+     carries a 105px bar where a desktop carries 113px. Reserving the desktop
+     figure on a phone pushed anchored content down the screen. Measured, not
+     guessed — if the logo height in SiteHeader changes, re-measure both. */
+  --masthead-h: 105px;
 }
 
 @media (min-width: 768px) {
   :root {
-    --masthead-h: 125px;
+    --masthead-h: 113px;
   }
 }
 
@@ -103,23 +97,18 @@ html {
   scroll-padding-top: calc(var(--masthead-h) + 16px);
 }
 
-/* Focus indicators. Two of them, on purpose.
+/* One focus indicator, everywhere.
  *
- * The masthead keeps montreal.ca's own: box-shadow 0 0 0 2px #fff, 0 0 0 4px
- * #0079c4, hanging off `:focus` rather than `:focus-visible` so it appears on
- * mouse clicks too. That bar is a copy of the city's, down to the pixel, and
- * its focus behaviour is part of what makes it read as the same object.
+ * There used to be two: the masthead carried montreal.ca's #0079c4 ring on
+ * plain `:focus` because that bar was a pixel copy of the city's and its focus
+ * behaviour was part of the impression. The masthead is ours now, so the split
+ * has no reason to exist — and firing a ring on every mouse click left a bright
+ * box around whatever you last touched, which read as an error state.
  *
- * The rest of the site does not. That blue is the only blue on the page, it is
- * not a colour this design uses anywhere else, and firing it on every mouse
- * click meant a bright box appearing around whatever you last touched — a vote
- * arrow, a card, a chip — and staying there. It looked like an error state.
- *
- * So below the masthead the ring is the borough teal and only answers
- * `:focus-visible`: keyboard navigation gets a clear indicator, a mouse click
- * gets nothing. It is never removed outright — a focusable control with no
- * visible focus is unusable by keyboard, and this is a public service. Never
- * replace either of these with a bare `outline: none`. */
+ * So: the brand blue, on `:focus-visible` only. Keyboard navigation gets a
+ * clear indicator, a mouse click gets nothing. It is never removed outright — a
+ * focusable control with no visible focus is unusable by keyboard, and this is
+ * a public service. Never replace it with a bare `outline: none`. */
 a,
 button,
 input,
@@ -127,11 +116,10 @@ select,
 textarea,
 summary,
 [tabindex] {
-  /* montreal.ca fades the ring in and out rather than snapping it. */
+  /* Faded in and out rather than snapped. */
   transition: box-shadow 0.15s ease-in-out;
 }
 
-/* Everywhere: keyboard only, in the site's own accent. */
 a:focus-visible,
 button:focus-visible,
 input:focus-visible,
@@ -142,22 +130,7 @@ summary:focus-visible,
   outline: none;
   box-shadow:
     0 0 0 2px #ffffff,
-    0 0 0 3px #097d6c;
-}
-
-/* The masthead, and only the masthead: the city's blue, on plain `:focus`.
-   Two selectors deep, so it outranks the rule above on the same element. */
-[data-masthead] a:focus,
-[data-masthead] button:focus,
-[data-masthead] input:focus,
-[data-masthead] select:focus,
-[data-masthead] textarea:focus,
-[data-masthead] summary:focus,
-[data-masthead] [tabindex]:focus {
-  outline: none;
-  box-shadow:
-    0 0 0 2px #ffffff,
-    0 0 0 4px #0079c4;
+    0 0 0 3px #fa3250;
 }
 
 /* The ring is a box-shadow, so it traces whatever radius the element already
@@ -249,9 +222,8 @@ summary:focus-visible,
   }
 }
 
-/* Mega-menu panel. montreal.ca centres it in the viewport (measured:
-   left 484px at a 2048px viewport for a 1080px panel — dead centre) and
-   drops it from the bottom edge of the header.
+/* Mega-menu panel: a 1080px sheet centred in the viewport, dropping from the
+   bottom edge of the header.
 
    Transitioned rather than keyframed, and driven by `display` through
    `allow-discrete`, so the panel animates BOTH ways. A keyframe animation can
@@ -341,25 +313,28 @@ summary:focus-visible,
   isolation: isolate;
   z-index: 0;
   /* Leaflet ships its own font stack; without this the map labels are the only
-     text on the page not set in the city typeface. */
+     text on the page not set in the site's typeface. */
   font-family: inherit;
-  background: #eef2f0;
+  background: #f2ece4;
 }
 
 /* Pull the basemap into the site's palette: drop most of the remaining colour,
-   rotate the leftover grey-blue toward the green-biased neutrals used
+   rotate the leftover grey-blue toward the purple-biased neutrals used
    everywhere else, and lift it slightly so the pins sit clearly on top.
    Applied to the tile layer alone, so markers, popups and controls keep their
-   real colours. */
+   real colours.
+
+   A touch of sepia rather than a hue rotation: the page is a warm cream now,
+   and a neutral grey basemap sitting on it reads as a hole. */
 .map-tiles {
-  filter: saturate(0.55) hue-rotate(-12deg) brightness(1.04) contrast(0.94);
+  filter: saturate(0.35) sepia(0.18) brightness(1.05) contrast(0.92);
 }
 
 /* Leaflet's default popup is a white box with a hard 12px radius and a tight
    shadow. Bring it onto the same system as the cards. */
 .leaflet-popup-content-wrapper {
   border-radius: 14px;
-  box-shadow: 0 4px 16px rgba(22, 36, 31, 0.14);
+  box-shadow: 0 4px 16px rgba(26, 26, 26, 0.14);
 }
 
 .leaflet-popup-content {
@@ -369,7 +344,7 @@ summary:focus-visible,
 
 .leaflet-control-zoom a {
   border-radius: 10px !important;
-  color: #16241f;
+  color: #1a1a1a;
 }
 
 .leaflet-control-attribution {

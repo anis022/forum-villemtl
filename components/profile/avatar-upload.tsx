@@ -66,7 +66,7 @@ export function AvatarUpload({
       {/* inline-flex, not inline-block: an avatar is an inline box, so an
           inline-block ring also contains the line box's descender space and
           comes out an oval taller than it is wide. */}
-      <span className="inline-flex rounded-full bg-white p-1 shadow-[0_2px_8px_rgba(22,36,31,0.10)]">
+      <span className="inline-flex rounded-full bg-white p-1 shadow-[0_2px_8px_rgba(26,26,26,0.10)]">
         <span className="relative block">
           <span className={`flex transition-opacity ${pending ? "opacity-50" : ""}`}>
             <Avatar person={shown} size="lg" />
@@ -81,7 +81,7 @@ export function AvatarUpload({
             /* The badge is drawn at 32px so it stays a badge on a 64px avatar,
                and its hit area is grown to 40px with a transparent ::after
                rather than by enlarging the circle. */
-            className="absolute -bottom-0.5 -right-0.5 inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-[#097d6c] text-white shadow-[0_1px_4px_rgba(22,36,31,0.25)] transition-transform after:absolute after:-inset-1 after:content-[''] hover:scale-105 active:scale-95 disabled:opacity-60"
+            className="absolute -bottom-0.5 -right-0.5 inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-[#fa3250] text-white shadow-[0_1px_4px_rgba(26,26,26,0.25)] transition-transform after:absolute after:-inset-1 after:content-[''] hover:scale-105 active:scale-95 disabled:opacity-60"
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path
@@ -110,7 +110,7 @@ export function AvatarUpload({
               onClick={onRemove}
               /* Padded out to a 40px row: as bare 12px text this is the hardest
                  thing on the page to hit with a thumb. */
-              className="inline-flex min-h-[40px] items-center text-[#5d6b66] underline transition-colors hover:text-[#c0392f]"
+              className="inline-flex min-h-[40px] items-center text-[#6e6a72] underline transition-colors hover:text-[#ab1f5c]"
             >
               {labels.remove}
             </button>
@@ -119,13 +119,13 @@ export function AvatarUpload({
           {/* Same 40px row as the button it stands in for, so the heading below
               does not jump while an upload is in flight. */}
           {pending && (
-            <p className="flex min-h-[40px] items-center text-[#5d6b66]">{labels.saving}</p>
+            <p className="flex min-h-[40px] items-center text-[#6e6a72]">{labels.saving}</p>
           )}
 
           {error && (
             <p
               role="alert"
-              className="rounded-[10px] bg-[#fdeceb] px-3 py-1.5 text-[#a4231f]"
+              className="rounded-[10px] bg-[#fdeaf2] px-3 py-1.5 text-[#b3122c]"
             >
               {labels.errors[error]}
             </p>

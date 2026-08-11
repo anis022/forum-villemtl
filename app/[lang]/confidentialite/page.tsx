@@ -33,13 +33,13 @@ export default async function PrivacyPage({
   const policy = POLICY[lang];
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#f8faf9] text-[#16241f]">
+    <div className="flex min-h-screen flex-col bg-[#fef7f0] text-[#1a1a1a]">
       <SiteHeader user={user} lang={lang} />
 
       <div className={HERO_BAND}>
         <div className={`${CONTAINER} py-8 md:py-12`}>
           <div className="mx-auto w-full max-w-[720px]">
-            <h1 className="text-[26px] font-bold leading-[34px] break-words sm:text-[28px] sm:leading-[36px] md:text-[40px] md:leading-[52px]">
+            <h1 className="text-[26px] leading-[34px] break-words sm:text-[28px] sm:leading-[36px] md:text-[40px] md:leading-[52px]">
               {t.privacy.title}
             </h1>
             <p className={`mt-3 text-[16px] leading-[25px] ${MUTED}`}>{policy.intro}</p>
@@ -53,8 +53,8 @@ export default async function PrivacyPage({
       <main className={`${CONTAINER} flex-1 py-8 md:py-12`}>
         <div className="mx-auto w-full max-w-[720px]">
           {policy.sections.map((section) => (
-            <section key={section.id} id={section.id} className="scroll-mt-24 border-t border-[#dde5e1] pt-7 first:border-t-0 first:pt-0 [&+section]:mt-9">
-              <h2 className="text-[21px] font-bold leading-[29px] break-words md:text-[24px] md:leading-[32px]">
+            <section key={section.id} id={section.id} className="scroll-mt-24 border-t border-[#e9e0d6] pt-7 first:border-t-0 first:pt-0 [&+section]:mt-9">
+              <h2 className="text-[21px] leading-[29px] break-words md:text-[24px] md:leading-[32px]">
                 {section.heading}
               </h2>
               <div className="mt-3 space-y-3">
@@ -67,8 +67,8 @@ export default async function PrivacyPage({
 
           {/* Last, and its own card: this is the only part of the page that is
               an instruction rather than a description. */}
-          <section id="contact" className="mt-9 scroll-mt-24 border-t border-[#dde5e1] pt-7">
-            <h2 className="text-[21px] font-bold leading-[29px] md:text-[24px] md:leading-[32px]">
+          <section id="contact" className="mt-9 scroll-mt-24 border-t border-[#e9e0d6] pt-7">
+            <h2 className="text-[21px] leading-[29px] md:text-[24px] md:leading-[32px]">
               {t.privacy.contactHeading}
             </h2>
             <div className={`${CARD} mt-3 p-4 md:p-5`}>
@@ -119,7 +119,7 @@ function Rendered({ block }: { block: Block }) {
       <ul className="space-y-2">
         {block.items.map((item, i) => (
           <li key={i} className="grid grid-cols-[0.9rem_minmax(0,1fr)] gap-x-2 text-[16px] leading-[25px]">
-            <span aria-hidden="true" className="text-[#097d6c]">
+            <span aria-hidden="true" className="text-[#fa3250]">
               —
             </span>
             <span>{item}</span>
@@ -138,7 +138,7 @@ function Rendered({ block }: { block: Block }) {
               <th
                 key={cell}
                 scope="col"
-                className="border-b border-[#c7d5d0] py-2 pr-4 text-left text-[13px] font-bold text-[#5d6b66]"
+                className="border-b border-[#ddd2c5] py-2 pr-4 text-left text-[13px] font-bold text-[#6e6a72]"
               >
                 {cell}
               </th>
@@ -151,7 +151,7 @@ function Rendered({ block }: { block: Block }) {
               {row.map((cell, j) => (
                 <td
                   key={j}
-                  className="border-b border-[#dde5e1] py-2 pr-4 align-top leading-[22px]"
+                  className="border-b border-[#e9e0d6] py-2 pr-4 align-top leading-[22px]"
                 >
                   {cell}
                 </td>

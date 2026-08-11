@@ -105,7 +105,7 @@ export function NewIssueForm({ lang }: { lang: Locale }) {
             const file = event.target.files?.[0];
             setPreview(file ? URL.createObjectURL(file) : null);
           }}
-          className="block w-full text-[15px] file:mr-4 file:rounded-[10px] file:border file:border-[#ced4da] file:bg-white file:px-4 file:py-2 file:text-[15px] file:font-bold file:text-[#097d6c] hover:file:bg-[#f5f5f5]"
+          className="block w-full text-[15px] file:mr-4 file:rounded-[10px] file:border file:border-[#e9e0d6] file:bg-white file:px-4 file:py-2 file:text-[15px] file:font-bold file:text-[#fa3250] hover:file:bg-[#faf1e8]"
         />
         <p className={`mt-1 text-[14px] ${MUTED}`}>{t.issue.fieldPhotoHint}</p>
 
@@ -114,7 +114,7 @@ export function NewIssueForm({ lang }: { lang: Locale }) {
           <img
             src={preview}
             alt={t.issue.photoPreviewAlt}
-            className="mt-3 max-h-64 rounded-[14px] border border-[#dde5e1]"
+            className="mt-3 max-h-64 rounded-[14px] border border-[#e9e0d6]"
           />
         )}
       </div>

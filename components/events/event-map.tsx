@@ -266,9 +266,9 @@ export function EventMap({
         const place = [e.venueName, e.address].filter(Boolean).join(" · ");
         marker.bindPopup(
           `<strong style="font-size:14px">${escapeHtml(e.title)}</strong>` +
-            `<br><span style="color:#5d6b66">${escapeHtml(formatDateRange(e.startsOn, e.endsOn, locale))}</span>` +
-            (place ? `<br><span style="color:#5d6b66">${escapeHtml(place)}</span>` : "") +
-            `<br><a href="${escapeHtml(e.sourceUrl)}" target="_blank" rel="noreferrer" style="color:#097d6c;font-weight:700">${escapeHtml(labels.details)}</a>`,
+            `<br><span style="color:#6e6a72">${escapeHtml(formatDateRange(e.startsOn, e.endsOn, locale))}</span>` +
+            (place ? `<br><span style="color:#6e6a72">${escapeHtml(place)}</span>` : "") +
+            `<br><a href="${escapeHtml(e.sourceUrl)}" target="_blank" rel="noreferrer" style="color:#fa3250;font-weight:700">${escapeHtml(labels.details)}</a>`,
           { maxWidth: popupMaxWidth },
         );
         marker.on("mouseover", () => setActive(e.id));
@@ -371,7 +371,7 @@ export function EventMap({
           <select
             value={type}
             onChange={(e) => chooseType(e.target.value)}
-            className="min-h-[40px] min-w-0 max-w-full flex-1 rounded-[10px] border border-[#dde5e1] bg-white px-3.5 py-2 text-[14px] font-bold text-[#16241f] transition-colors hover:border-[#097d6c] sm:flex-none"
+            className="min-h-[40px] min-w-0 max-w-full flex-1 rounded-[10px] border border-[#e9e0d6] bg-white px-3.5 py-2 text-[14px] font-bold text-[#1a1a1a] transition-colors hover:border-[#fa3250] sm:flex-none"
           >
             <option value="">{labels.allTypes}</option>
             {types.map((tp) => (
@@ -389,7 +389,7 @@ export function EventMap({
           <select
             value={setting}
             onChange={(e) => chooseSetting(e.target.value as Setting | "")}
-            className="min-h-[40px] min-w-0 max-w-full flex-1 rounded-[10px] border border-[#dde5e1] bg-white px-3.5 py-2 text-[14px] font-bold text-[#16241f] transition-colors hover:border-[#097d6c] sm:flex-none"
+            className="min-h-[40px] min-w-0 max-w-full flex-1 rounded-[10px] border border-[#e9e0d6] bg-white px-3.5 py-2 text-[14px] font-bold text-[#1a1a1a] transition-colors hover:border-[#fa3250] sm:flex-none"
           >
             <option value="">{labels.allSettings}</option>
             {(Object.keys(labels.settings) as Setting[]).map((key) => (
@@ -406,7 +406,7 @@ export function EventMap({
               pair is kept unbreakable — "sans lieu sur la carte" is long
               enough that refusing to wrap it would set the width of the row. */}
           <span className="whitespace-nowrap">
-            <span className="font-bold text-[#16241f] tabular-nums">{filtered.length}</span>{" "}
+            <span className="font-bold text-[#1a1a1a] tabular-nums">{filtered.length}</span>{" "}
             {filtered.length === 1 ? labels.eventOne : labels.eventMany}
           </span>
           {hidden > 0 ? ` · ${hidden} ${labels.unmapped}` : ""}
@@ -416,7 +416,7 @@ export function EventMap({
           <button
             type="button"
             onClick={clearAll}
-            className="inline-flex min-h-[40px] items-center text-[14px] font-bold text-[#097d6c] underline hover:text-[#075f53]"
+            className="inline-flex min-h-[40px] items-center text-[14px] font-bold text-[#fa3250] underline hover:text-[#d81f3c]"
           >
             {labels.showAll}
           </button>
@@ -441,7 +441,7 @@ export function EventMap({
             <button
               type="button"
               onClick={clearOrigin}
-              className="inline-flex min-h-[40px] items-center text-[14px] font-bold text-[#097d6c] underline hover:text-[#075f53]"
+              className="inline-flex min-h-[40px] items-center text-[14px] font-bold text-[#fa3250] underline hover:text-[#d81f3c]"
             >
               {labels.nearbyClear}
             </button>
@@ -468,7 +468,7 @@ export function EventMap({
           ref={containerRef}
           role="application"
           aria-label={labels.mapLabel}
-          className="h-[320px] w-full cursor-crosshair overflow-hidden rounded-[16px] border border-[#dde5e1] sm:h-[400px] md:h-[620px]"
+          className="h-[320px] w-full cursor-crosshair overflow-hidden rounded-[16px] border border-[#e9e0d6] sm:h-[400px] md:h-[620px]"
         />
 
         {filtered.length === 0 ? (
@@ -504,8 +504,8 @@ export function EventMap({
                       onBlur={() => setActive(null)}
                       className={`flex gap-3 rounded-[14px] border p-3 transition-colors ${
                         active === e.id
-                          ? "border-[#097d6c] bg-[#f2f6f4]"
-                          : "border-[#dde5e1] bg-white hover:border-[#097d6c]"
+                          ? "border-[#fa3250] bg-[#faf1e8]"
+                          : "border-[#e9e0d6] bg-white hover:border-[#fa3250]"
                       }`}
                     >
                       {/* The bar used to carry the district's colour, which
@@ -535,17 +535,17 @@ export function EventMap({
                               320px would wrap the venue onto a line of its
                               own. */}
                           {origin && isMappable(e) && (
-                            <span className="inline-block rounded-full bg-[#e2f0ec] px-2 py-0.5 text-[11px] font-bold tabular-nums text-[#075f53]">
+                            <span className="inline-block rounded-full bg-[#fde8eb] px-2 py-0.5 text-[11px] font-bold tabular-nums text-[#d81f3c]">
                               {formatDistance(distanceMeters(origin, e.lat!, e.lon!), locale)}
                             </span>
                           )}
                           {isOngoing(e, today) && (
-                            <span className="inline-block rounded-full bg-[#fdeceb] px-2 py-0.5 text-[11px] font-bold text-[#a4231f]">
+                            <span className="inline-block rounded-full bg-[#fdeaf2] px-2 py-0.5 text-[11px] font-bold text-[#b3122c]">
                               {labels.todayPill}
                             </span>
                           )}
                           {e.setting === "online" && (
-                            <span className="inline-block rounded-full bg-[#e8eef9] px-2 py-0.5 text-[11px] font-bold text-[#1c4fa1]">
+                            <span className="inline-block rounded-full bg-[#e4f2eb] px-2 py-0.5 text-[11px] font-bold text-[#0b6042]">
                               {labels.online}
                             </span>
                           )}
@@ -569,7 +569,7 @@ export function EventMap({
                   />
                   <div
                     aria-hidden="true"
-                    className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#f8faf9] via-[#f8faf9]/85 to-transparent"
+                    className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#fef7f0] via-[#fef7f0]/85 to-transparent"
                   />
                 </>
               )}
@@ -619,7 +619,7 @@ function pin(L: typeof import("leaflet"), color: string, raised: boolean) {
   const size = raised ? 34 : 28;
   return L.divIcon({
     className: "",
-    html: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" style="filter:drop-shadow(0 1px 2px rgba(22,36,31,.35))">
+    html: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" style="filter:drop-shadow(0 1px 2px rgba(26,26,26,.35))">
       <path d="M12 2.2c-4 0-7.2 3.2-7.2 7.2 0 5.2 7.2 12.4 7.2 12.4s7.2-7.2 7.2-12.4c0-4-3.2-7.2-7.2-7.2z"
             fill="${color}" stroke="#fff" stroke-width="1.6"/>
       <circle cx="12" cy="9.4" r="2.6" fill="#fff"/>
@@ -649,8 +649,8 @@ function FilterChip({
       aria-pressed={active}
       className={`inline-flex min-h-[40px] max-w-full items-center gap-2 rounded-full border px-3.5 py-2 text-[14px] font-bold leading-[20px] transition-colors ${
         active
-          ? "border-[#097d6c] bg-[#097d6c] text-white"
-          : "border-[#dde5e1] bg-white text-[#5d6b66] hover:border-[#097d6c] hover:text-[#16241f]"
+          ? "border-[#fa3250] bg-[#fa3250] text-white"
+          : "border-[#e9e0d6] bg-white text-[#6e6a72] hover:border-[#fa3250] hover:text-[#1a1a1a]"
       }`}
     >
       {children}

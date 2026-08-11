@@ -3,9 +3,17 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { QuestionCard } from "@/components/council/question-card";
 import { ResolutionCard } from "@/components/council/resolution-card";
+import { RemarkCard } from "@/components/council/remark-card";
+import { MeetingCard } from "@/components/council/meeting-card";
 import { getSessionUser } from "@/utils/supabase/auth";
 import { getDictionary, isLocale } from "@/utils/i18n";
-import { answerAboutQuestions, searchResolutions, corpusStats } from "@/utils/supabase/council";
+import {
+  answerAboutQuestions,
+  searchResolutions,
+  searchRemarks,
+  corpusStats,
+  listMeetingSummaries,
+} from "@/utils/supabase/council";
 import { isSection, type Section } from "@/utils/council";
 import {
   BTN_PRIMARY,
@@ -69,14 +77,18 @@ export default async function CouncilPage({
 
   const wantsQuestions = section === "all" || section === "questions";
   const wantsResolutions = section === "all" || section === "resolutions";
+  const wantsRemarks = section === "all" || section === "elus";
 
-  const [user, stats, answer, resolutions] = await Promise.all([
+  const [user, stats, meetings, answer, resolutions, remarks] = await Promise.all([
     getSessionUser(),
     corpusStats(),
+    // Only needed for the landing view; a search replaces it.
+    query ? Promise.resolve([]) : listMeetingSummaries(),
     query && wantsQuestions
       ? answerAboutQuestions(query, mode)
       : Promise.resolve(null),
     query && wantsResolutions ? searchResolutions(query) : Promise.resolve(null),
+    query && wantsRemarks ? searchRemarks(query) : Promise.resolve(null),
   ]);
 
   /** Preserve the rest of the query string when one control changes. */
@@ -102,10 +114,11 @@ export default async function CouncilPage({
   const nothingCounted =
     !!query &&
     (answer?.counted.length ?? 0) === 0 &&
-    (resolutions?.counted.length ?? 0) === 0;
+    (resolutions?.counted.length ?? 0) === 0 &&
+    (remarks?.counted.length ?? 0) === 0;
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#f8faf9] text-[#16241f]">
+    <div className="flex min-h-screen flex-col bg-[#fef7f0] text-[#1a1a1a]">
       <SiteHeader user={user} lang={lang} />
 
       <div className={HERO_BAND}>
@@ -113,7 +126,7 @@ export default async function CouncilPage({
           {/* The title steps down to 26px below the `sm` breakpoint: at 28px the
               single word "d'arrondissement" already runs the full width of a
               320px screen, so the heading has nothing left to give. */}
-          <h1 className="text-[26px] font-bold leading-[34px] break-words sm:text-[28px] sm:leading-[36px] md:text-[40px] md:leading-[56px]">
+          <h1 className="text-[26px] leading-[34px] break-words sm:text-[28px] sm:leading-[36px] md:text-[40px] md:leading-[56px]">
             {t.council.title}
           </h1>
           <p className={`mt-3 max-w-[760px] text-[16px] leading-[24px] ${MUTED}`}>
@@ -154,6 +167,7 @@ export default async function CouncilPage({
                 { value: "all", label: t.council.sectionAll },
                 { value: "questions", label: t.council.sectionQuestions },
                 { value: "resolutions", label: t.council.sectionResolutions },
+                { value: "elus", label: t.council.sectionElus },
               ]}
             />
             {/* Spoken versus written only means anything once the public
@@ -182,7 +196,12 @@ export default async function CouncilPage({
         ) : !query ? (
           <div className="max-w-[760px]">
             <p className={`text-[15px] ${MUTED}`}>
-              {t.council.corpusNote(stats.meetings, stats.questions, stats.resolutions)}
+              {t.council.corpusNote(
+                stats.meetings,
+                stats.questions,
+                stats.resolutions,
+                stats.remarks,
+              )}
             </p>
             <p className="mt-6 text-[15px] font-bold">{t.council.examplesLabel}</p>
             <ul className="mt-3 flex flex-wrap gap-2">
@@ -195,7 +214,33 @@ export default async function CouncilPage({
               ))}
             </ul>
           </div>
-        ) : (
+        ) : null}
+
+        {/* The sittings themselves, below the search rather than behind it.
+            Someone who has not come with a question still has a reason to be
+            here: they want to know what happened last month. */}
+        {!query && meetings.length > 0 && (
+          <section className="mt-10">
+            <h2 className="text-[22px] leading-[30px] md:text-[26px]">
+              {t.council.meetingsTitle}
+            </h2>
+            <p className={`mt-2 max-w-[760px] text-[15px] leading-[22px] ${MUTED}`}>
+              {t.council.meetingsIntro}
+            </p>
+            {/* One column on a phone, two from `sm`, three on a desktop. The
+                cards carry figures, and three across is where they stop being
+                comparable at a glance. */}
+            <ul className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {meetings.map((m) => (
+                <li key={m.youtubeId}>
+                  <MeetingCard m={m} lang={lang} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {query && (
           <div className="max-w-[860px] space-y-10">
             {/* Said first and said plainly, before any consolation prizes. */}
             {nothingCounted && (
@@ -211,7 +256,7 @@ export default async function CouncilPage({
               <section>
                 {/* The number, said plainly. This is the whole point of the
                     page: not "here are some passages", but "three people". */}
-                <p className="text-[24px] font-bold leading-[32px] tabular-nums md:text-[28px] md:leading-[36px]">
+                <p className="text-[24px] leading-[32px] tabular-nums md:text-[28px] md:leading-[36px]">
                   {t.council.peopleCount(answer.people)}
                 </p>
                 <p className={`mt-1 text-[15px] ${MUTED}`}>
@@ -240,7 +285,7 @@ export default async function CouncilPage({
 
             {resolutions && resolutions.counted.length > 0 && (
               <section>
-                <h2 className="text-[20px] font-bold leading-[28px] md:text-[24px]">
+                <h2 className="text-[20px] leading-[28px] md:text-[24px]">
                   {t.council.resolutionsCount(resolutions.counted.length)}
                 </h2>
                 <ul className="mt-5 space-y-3">
@@ -253,10 +298,25 @@ export default async function CouncilPage({
               </section>
             )}
 
+            {remarks && remarks.counted.length > 0 && (
+              <section>
+                <h2 className="text-[20px] leading-[28px] md:text-[24px]">
+                  {t.council.remarksCount(remarks.counted.length)}
+                </h2>
+                <ul className="mt-5 space-y-3">
+                  {remarks.counted.map((hit) => (
+                    <li key={hit.id}>
+                      <RemarkCard hit={hit} lang={lang} />
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
             {/* Kept below, and kept apart. These are worth reading and are not
                 part of any number stated above. */}
             {answer && answer.related.length > 0 && (
-              <section className="border-t border-[#dde5e1] pt-8">
+              <section className="border-t border-[#e9e0d6] pt-8">
                 <h2 className="text-[20px] font-bold leading-[28px]">{t.council.relatedLabel}</h2>
                 <p className={`mt-1 text-[14px] leading-[20px] ${MUTED}`}>
                   {t.council.relatedNote}

@@ -22,21 +22,21 @@ import { OfficialBadge } from "@/components/issues/issue-meta";
 
 /**
  * Each activity kind gets its own mark and colour, so the timeline is
- * scannable without reading every line: a rosette-red arrow for backing, teal
- * for replying, ink for opening a topic.
+ * scannable without reading every line: a rosette-red arrow for backing, brand
+ * blue for replying, ink for opening a topic.
  */
 const KINDS = {
   issue: {
     path: "M12 5v14M5 12h14",
-    tint: "bg-[#f2f6f4] text-[#16241f]",
+    tint: "bg-[#faf1e8] text-[#1a1a1a]",
   },
   comment: {
     path: "M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.3-.6L3 21l1.8-5.1A8.2 8.2 0 0 1 3.6 11.5 8.4 8.4 0 0 1 12 3.1a8.4 8.4 0 0 1 9 8.4z",
-    tint: "bg-[#e2f0ec] text-[#097d6c]",
+    tint: "bg-[#fde8eb] text-[#fa3250]",
   },
   vote: {
     path: "M12 4.5l7.2 7.6h-4.1V19H8.9v-6.9H4.8L12 4.5z",
-    tint: "bg-[#fdeceb] text-[#c0392f]",
+    tint: "bg-[#fdeaf2] text-[#ab1f5c]",
   },
 } as const;
 
@@ -101,14 +101,14 @@ export default async function ProfilePage({
   ];
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#f8faf9] text-[#16241f]">
+    <div className="flex min-h-screen flex-col bg-[#fef7f0] text-[#1a1a1a]">
       <SiteHeader user={viewer} lang={lang} />
 
       <main className={`${CONTAINER} flex-1 py-6 md:py-10`}>
         {/* Identity card, overlapping a tinted banner — the shape people
             already read as "this is a person" rather than "this is a record". */}
         <section className={`${CARD} overflow-hidden`}>
-          <div className="h-24 bg-gradient-to-r from-[#097d6c] to-[#0f9c85] md:h-32" />
+          <div className="h-24 bg-gradient-to-r from-[#fa3250] to-[#32004a] md:h-32" />
 
           <div className="px-4 pb-5 sm:px-6">
             {/* Only the avatar breaks the banner line. Anything else placed
@@ -133,7 +133,7 @@ export default async function ProfilePage({
                 // inline-flex, not inline-block: an avatar is an inline box, so
                 // an inline-block ring also contains the line box's descender
                 // space and comes out an oval taller than it is wide.
-                <span className="inline-flex rounded-full bg-white p-1 shadow-[0_2px_8px_rgba(22,36,31,0.10)]">
+                <span className="inline-flex rounded-full bg-white p-1 shadow-[0_2px_8px_rgba(26,26,26,0.10)]">
                   <Avatar person={profile} size="lg" />
                 </span>
               )}
@@ -145,7 +145,7 @@ export default async function ProfilePage({
                     from its min-content width, so a long family name refuses to
                     wrap and drags a 320px screen sideways; in inline flow the
                     name breaks and the badge follows it onto the last line. */}
-                <h1 className="break-words text-[26px] font-bold leading-[32px] md:text-[30px] md:leading-[36px]">
+                <h1 className="break-words text-[26px] leading-[32px] md:text-[30px] md:leading-[36px]">
                   {fullName || t.issue.anonymousAuthor}
                   {profile.isOfficial && (
                     <span className="ml-2 inline-flex align-middle">
@@ -173,7 +173,7 @@ export default async function ProfilePage({
               <dl className="flex flex-wrap gap-x-5 gap-y-2 sm:gap-x-7">
                 {stats.map((s) => (
                   <div key={s.label}>
-                    <dd className="text-[22px] font-bold leading-[26px] tabular-nums">{s.n}</dd>
+                    <dd className="text-[22px] leading-[26px] tabular-nums">{s.n}</dd>
                     <dt className={`text-[12px] uppercase tracking-[0.06em] ${MUTED}`}>{s.label}</dt>
                   </div>
                 ))}
@@ -184,7 +184,7 @@ export default async function ProfilePage({
 
         {official && <OfficialAbout person={official} lang={lang} />}
 
-        <h2 className="mt-8 text-[20px] font-bold leading-[28px] md:text-[22px]">
+        <h2 className="mt-8 text-[20px] leading-[28px] md:text-[22px]">
           {isSelf ? t.profile.yourActivity : t.profile.activityOf(fullName)}
         </h2>
 
@@ -199,14 +199,14 @@ export default async function ProfilePage({
           // A single timeline rather than three tabs: the point is to see one
           // person's involvement at a glance, not to audit it by category. The
           // connecting rail is what turns a list of cards into a history.
-          <ol className="relative mt-4 max-w-[760px] space-y-2 before:absolute before:left-[19px] before:top-3 before:bottom-3 before:w-px before:bg-[#dde5e1]">
+          <ol className="relative mt-4 max-w-[760px] space-y-2 before:absolute before:left-[19px] before:top-3 before:bottom-3 before:w-px before:bg-[#e9e0d6]">
             {activity.map((item, i) => {
               const kind = KINDS[item.kind];
               return (
                 <li key={`${item.kind}-${item.issueId}-${i}`} className="relative flex gap-3">
                   <span
                     aria-hidden="true"
-                    className={`relative z-10 mt-2 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full ring-4 ring-[#f8faf9] ${kind.tint}`}
+                    className={`relative z-10 mt-2 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full ring-4 ring-[#fef7f0] ${kind.tint}`}
                   >
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
                       <path
@@ -224,7 +224,7 @@ export default async function ProfilePage({
                       <span className={MUTED}>{t.profile.verbs[item.kind]}</span>{" "}
                       <Link
                         href={`/${lang}/sujets/${item.issueId}`}
-                        className="font-bold hover:text-[#097d6c] hover:underline"
+                        className="font-bold hover:text-[#fa3250] hover:underline"
                       >
                         {item.issueTitle}
                       </Link>

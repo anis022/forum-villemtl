@@ -32,7 +32,7 @@ export function IssuePhoto({
   sizes: string;
 }) {
   return (
-    <div className="relative overflow-hidden border-y border-[#eef2f0] bg-[#f2f6f4]">
+    <div className="relative overflow-hidden border-y border-[#f2ece4] bg-[#faf1e8]">
       {/* Decorative, and already on screen in full beside it: hidden from
           assistive technology so a screen reader is not handed the same
           photo twice. `sizes` keeps it to a thumbnail — at this blur radius

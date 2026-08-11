@@ -45,11 +45,12 @@ const OVERLAP_S = 8;
 
 type Word = { start: number; end: number; word: string; p: number };
 
+// No `language`: the transcriber cannot report one per segment, so it no longer
+// writes the field. See `detectLanguage` below.
 type Segment = {
   start: number;
   end: number;
   text: string;
-  language: string | null;
   avgLogprob: number;
   words: Word[];
 };
@@ -85,6 +86,36 @@ type Window = {
   words: Word[];
 };
 
+/**
+ * Which language a window is in, read off the words themselves.
+ *
+ * Not taken from the transcriber. faster-whisper's `Segment` carries no
+ * language field — `multilingual` switches the decoder internally but never
+ * reports what it chose — so every segment inherited the single file-level
+ * guess. On a bilingual sitting that guess is right for part of the evening and
+ * wrong for the rest: the 6 July recording came back with all 2352 segments
+ * labelled English while most of it is French.
+ *
+ * Function words are the giveaway and they are the most common words in both
+ * languages, so a 40-second window always contains several. Anything genuinely
+ * mixed, or too short to call, stays null rather than being guessed at.
+ */
+const FR_MARKERS =
+  /\b(le|la|les|des|une|un|du|et|est|que|qui|pour|dans|avec|sur|nous|vous|je|il|elle|ce|cette|pas|plus|monsieur|madame|merci|oui|non|alors|donc)\b/gi;
+const EN_MARKERS =
+  /\b(the|and|is|are|that|this|for|with|you|we|they|have|has|will|would|there|their|what|about|thank|yes|please|going|just)\b/gi;
+
+function detectLanguage(text: string): string | null {
+  const fr = text.match(FR_MARKERS)?.length ?? 0;
+  const en = text.match(EN_MARKERS)?.length ?? 0;
+  if (fr + en < 3) return null;
+  // A clear majority, not a bare edge — "le" appears in English quotations and
+  // "the" in French ones.
+  if (fr >= en * 2) return "fr";
+  if (en >= fr * 2) return "en";
+  return null;
+}
+
 function toWindows(segments: Segment[]): Window[] {
   const windows: Window[] = [];
   let i = 0;
@@ -105,17 +136,17 @@ function toWindows(segments: Segment[]): Window[] {
     }
 
     const words = parts.flatMap((p) => p.words);
-    // Majority language: a window is one language even when a sentence inside
-    // it switched, and the index only needs to know which one to lean on.
-    const langs = new Map<string, number>();
-    for (const p of parts) if (p.language) langs.set(p.language, (langs.get(p.language) ?? 0) + 1);
-    const lang = [...langs.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+    const text = parts
+      .map((p) => p.text)
+      .join(" ")
+      .replace(/\s+/g, " ")
+      .trim();
 
     windows.push({
       startS,
       endS: parts[parts.length - 1].end,
-      text: parts.map((p) => p.text).join(" ").replace(/\s+/g, " ").trim(),
-      lang,
+      text,
+      lang: detectLanguage(text),
       avgLogprob: parts.reduce((s, p) => s + p.avgLogprob, 0) / parts.length,
       words,
     });
@@ -222,6 +253,19 @@ try {
     }
 
     // Carry the alignment back onto the record the minutes produced.
+    //
+    // Cleared first. This stage owns these three columns, so it has to write
+    // all of them every run, nulls included — skipping the rows the aligner no
+    // longer places left their previous timestamps sitting there. After the
+    // roll-call fix cut 4 May from 21 placements to 17, the database still
+    // served 21, four of them still pointing at the chair reading a list.
+    await client.query(
+      `update council_questions
+          set start_s = null, end_s = null, transcript = null
+        where meeting_id = $1`,
+      [meetingId],
+    );
+
     let aligned = 0;
     for (const q of t.alignment?.questions ?? []) {
       if (q.startS === null) continue;

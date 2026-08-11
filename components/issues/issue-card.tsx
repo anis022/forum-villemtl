@@ -76,7 +76,7 @@ export function IssueCard({
         </header>
 
         <Link href={href} className="group mt-3 block">
-          <h3 className="text-[19px] font-bold leading-[27px] break-words group-hover:text-[#097d6c]">
+          <h3 className="text-[19px] font-bold leading-[27px] break-words group-hover:text-[#fa3250]">
             <Translated field="title">{issue.title}</Translated>
           </h3>
           <p className={`mt-1.5 line-clamp-3 text-[15px] leading-[23px] ${MUTED}`}>
@@ -112,7 +112,7 @@ export function IssueCard({
           </div>
         )}
 
-        <footer className="flex items-center gap-1.5 border-t border-[#eef2f0] pt-3.5">
+        <footer className="flex items-center gap-1.5 border-t border-[#f2ece4] pt-3.5">
           <VoteButton
             issueId={issue.id}
             voteCount={issue.voteCount}
@@ -122,7 +122,7 @@ export function IssueCard({
           />
           <Link
             href={href}
-            className="inline-flex items-center gap-2 rounded-[10px] px-3.5 py-2 text-[14px] font-bold leading-[20px] text-[#5d6b66] transition-colors hover:bg-[#f2f6f4] hover:text-[#16241f]"
+            className="inline-flex items-center gap-2 rounded-[10px] px-3.5 py-2 text-[14px] font-bold leading-[20px] text-[#6e6a72] transition-colors hover:bg-[#faf1e8] hover:text-[#1a1a1a]"
           >
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path

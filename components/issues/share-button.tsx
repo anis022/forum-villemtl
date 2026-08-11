@@ -55,7 +55,7 @@ export function ShareButton({
       type="button"
       onClick={share}
       aria-label={t.issue.share}
-      className={`inline-flex items-center gap-2 rounded-[10px] px-3 py-2 text-[14px] font-bold leading-[20px] text-[#5d6b66] transition-colors hover:bg-[#f2f6f4] hover:text-[#16241f] ${className}`}
+      className={`inline-flex items-center gap-2 rounded-[10px] px-3 py-2 text-[14px] font-bold leading-[20px] text-[#6e6a72] transition-colors hover:bg-[#faf1e8] hover:text-[#1a1a1a] ${className}`}
     >
       {copied ? (
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">

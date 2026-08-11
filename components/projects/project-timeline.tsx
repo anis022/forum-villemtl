@@ -10,10 +10,10 @@ import { MUTED } from "@/components/ui/styles";
  * is different on purpose — a report is answered, a project is decided.
  */
 const STATUS_STYLE: Record<ProjectStatus, { pill: string; dot: string }> = {
-  study: { pill: "bg-[#f2f6f4] text-[#5d6b66]", dot: "bg-[#5d6b66]" },
+  study: { pill: "bg-[#faf1e8] text-[#6e6a72]", dot: "bg-[#6e6a72]" },
   decided: { pill: "bg-[#fdf1e3] text-[#8a4d06]", dot: "bg-[#b8660a]" },
-  underway: { pill: "bg-[#e8eef9] text-[#1c4fa1]", dot: "bg-[#1c4fa1]" },
-  done: { pill: "bg-[#e2f0ec] text-[#075f53]", dot: "bg-[#097d6c]" },
+  underway: { pill: "bg-[#e4f2eb] text-[#0b6042]", dot: "bg-[#0b6042]" },
+  done: { pill: "bg-[#e4f2eb] text-[#0b6042]", dot: "bg-[#0b6042]" },
 };
 
 export function ProjectStatusTag({ status, lang }: { status: ProjectStatus; lang: Locale }) {
@@ -106,15 +106,15 @@ export function ProjectTimeline({
                   first and last dot instead of running off both ends. */}
               <div className="relative flex h-3 items-center">
                 {i > 0 && (
-                  <span aria-hidden="true" className="absolute left-0 right-1/2 h-px bg-[#dde5e1]" />
+                  <span aria-hidden="true" className="absolute left-0 right-1/2 h-px bg-[#e9e0d6]" />
                 )}
                 {i < last && (
-                  <span aria-hidden="true" className="absolute left-1/2 right-0 h-px bg-[#dde5e1]" />
+                  <span aria-hidden="true" className="absolute left-1/2 right-0 h-px bg-[#e9e0d6]" />
                 )}
                 <span
                   aria-hidden="true"
                   className={`relative left-1/2 z-10 h-[11px] w-[11px] -translate-x-1/2 rounded-full ${
-                    done ? "bg-[#097d6c]" : "border-2 border-[#93a19c] bg-white"
+                    done ? "bg-[#fa3250]" : "border-2 border-[#a09a94] bg-white"
                   }`}
                 />
               </div>
@@ -124,7 +124,7 @@ export function ProjectTimeline({
                   {milestoneDate(m, lang)}
                 </span>
                 {!done && (
-                  <span className="rounded-full bg-[#f2f6f4] px-1.5 py-0.5 text-[10px] font-bold text-[#5d6b66]">
+                  <span className="rounded-full bg-[#faf1e8] px-1.5 py-0.5 text-[10px] font-bold text-[#6e6a72]">
                     {t.projects.upcoming}
                   </span>
                 )}
@@ -151,7 +151,7 @@ export function ProjectTimeline({
               {(m.resolution || m.source) && (
                 <p className="mt-2 flex flex-col items-start gap-1 text-[12px]">
                   {m.resolution && (
-                    <span className="rounded-[6px] bg-[#f2f6f4] px-1.5 py-0.5 font-bold tabular-nums text-[#5d6b66]">
+                    <span className="rounded-[6px] bg-[#faf1e8] px-1.5 py-0.5 font-bold tabular-nums text-[#6e6a72]">
                       {t.projects.resolutionLabel(m.resolution)}
                     </span>
                   )}
@@ -160,7 +160,7 @@ export function ProjectTimeline({
                       href={m.source.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="font-bold text-[#097d6c] underline hover:text-[#075f53]"
+                      className="font-bold text-[#fa3250] underline hover:text-[#d81f3c]"
                     >
                       {say(m.source.label, lang)}
                     </a>

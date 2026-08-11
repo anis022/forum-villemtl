@@ -35,11 +35,36 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
 import time
 from pathlib import Path
+
+def _enable_cuda_dlls() -> None:
+    """
+    Let ctranslate2 find the CUDA libraries pip put in the virtualenv.
+
+    `nvidia-cublas-cu12` and `nvidia-cudnn-cu12` install their DLLs under
+    site-packages/nvidia/*/bin, which is not on the Windows loader path. Without
+    this the model loads, reports a CUDA device, and then dies on the first
+    encode with "Library cublas64_12.dll is not found or cannot be loaded" --
+    after the VAD pass has already chewed through the whole recording.
+
+    A no-op anywhere the directories do not exist, which covers Linux and a
+    CPU-only machine.
+    """
+    if not hasattr(os, "add_dll_directory"):
+        return
+    nvidia = Path(sys.prefix) / "Lib" / "site-packages" / "nvidia"
+    for path in sorted(nvidia.glob("*/bin")):
+        os.add_dll_directory(str(path))
+        # ctranslate2 consults PATH too, depending on how it was built.
+        os.environ["PATH"] = f"{path}{os.pathsep}{os.environ.get('PATH', '')}"
+
+
+_enable_cuda_dlls()
 
 ROOT = Path(__file__).resolve().parents[2]
 AUDIO = ROOT / "data" / "audio"
@@ -226,7 +251,14 @@ def transcribe(model, audio: Path, prompt: str, hotwords: str) -> dict:
                 "start": round(seg.start, 3),
                 "end": round(seg.end, 3),
                 "text": seg.text.strip(),
-                "language": getattr(seg, "language", None) or info.language,
+                # Deliberately not recorded per segment. faster-whisper's
+                # Segment carries no language field: `multilingual` lets the
+                # decoder switch languages but never reports which one it used,
+                # so the only value available here is the single file-level
+                # guess. Stamping that on every segment produced a 6 July
+                # transcript labelled English from end to end while most of it
+                # is French. The ingest reads the language off the words
+                # instead, where a 40-second window gives it something to go on.
                 "avgLogprob": round(seg.avg_logprob, 4),
                 "noSpeechProb": round(seg.no_speech_prob, 4),
                 "compressionRatio": round(seg.compression_ratio, 3),

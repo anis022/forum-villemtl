@@ -52,11 +52,11 @@ export default async function IssuePage({
   const isAuthor = Boolean(user) && user!.id === issue.author.id;
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#f8faf9] text-[#16241f]">
+    <div className="flex min-h-screen flex-col bg-[#fef7f0] text-[#1a1a1a]">
       <SiteHeader user={user} lang={lang} />
 
       <main className={`${CONTAINER} flex-1 py-8 md:py-10`}>
-        <Link href={`/${lang}`} className="text-[14px] font-bold text-[#097d6c] hover:underline">
+        <Link href={`/${lang}`} className="text-[14px] font-bold text-[#fa3250] hover:underline">
           {t.issue.back}
         </Link>
 
@@ -112,7 +112,7 @@ export default async function IssuePage({
               </p>
             )}
 
-            <h1 className="mt-4 text-[24px] font-bold leading-[32px] break-words md:text-[30px] md:leading-[38px]">
+            <h1 className="mt-4 text-[24px] leading-[32px] break-words md:text-[30px] md:leading-[38px]">
               <Translated field="title">{issue.title}</Translated>
             </h1>
 
@@ -133,7 +133,7 @@ export default async function IssuePage({
           )}
 
           <div className="p-4 md:p-6">
-            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-2 border-t border-[#eef2f0] pt-4">
+            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-2 border-t border-[#f2ece4] pt-4">
               <VoteButton
                 issueId={issue.id}
                 voteCount={issue.voteCount}
@@ -179,7 +179,7 @@ export default async function IssuePage({
         </TranslationProvider>
 
         <section className="mt-10">
-          <h2 className="border-b border-[#dde5e1] pb-4 text-[24px] font-bold leading-[32px] md:text-[32px] md:leading-[40px]">
+          <h2 className="border-b border-[#e9e0d6] pb-4 text-[24px] leading-[32px] md:text-[32px] md:leading-[40px]">
             {issue.commentCount}{" "}
             {issue.commentCount === 1 ? t.issue.replyOne : t.issue.replyMany}
           </h2>

@@ -11,9 +11,9 @@ import { getDictionary, type Locale } from "@/utils/i18n";
  * side by side it reads as one action with its tally, which is what it is —
  * and it sits naturally in a row of actions next to comment and share.
  *
- * Backed state uses the rosette red rather than the site teal: supporting a
+ * Backed state uses the rosette red rather than the brand blue: supporting a
  * neighbour should feel warm, and it separates "I did this" from every other
- * teal control on the page.
+ * blue control on the page.
  */
 export function VoteButton({
   issueId,
@@ -62,8 +62,8 @@ export function VoteButton({
       title={canVote ? undefined : t.vote.signInFirst}
       className={`group inline-flex shrink-0 items-center gap-2 rounded-[10px] border px-3.5 py-2 text-[14px] font-bold leading-[20px] transition-all active:scale-[0.97] ${
         state.voted
-          ? "border-[#d94f45] bg-[#fdeceb] text-[#c0392f]"
-          : "border-[#dde5e1] bg-white text-[#5d6b66] hover:border-[#d94f45] hover:bg-[#fdeceb] hover:text-[#c0392f]"
+          ? "border-[#d6337a] bg-[#fdeaf2] text-[#ab1f5c]"
+          : "border-[#e9e0d6] bg-white text-[#6e6a72] hover:border-[#d6337a] hover:bg-[#fdeaf2] hover:text-[#ab1f5c]"
       }`}
     >
       <svg

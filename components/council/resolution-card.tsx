@@ -1,5 +1,10 @@
 import { getDictionary, dateLocale, type Locale } from "@/utils/i18n";
-import { formatTimestamp, youtubeDeepLink, type ResolutionHit } from "@/utils/council";
+import {
+  formatMeetingDate,
+  formatTimestamp,
+  youtubeDeepLink,
+  type ResolutionHit,
+} from "@/utils/council";
 import { BARE_CONTROL, CARD, MUTED } from "@/components/ui/styles";
 
 /**
@@ -11,9 +16,9 @@ import { BARE_CONTROL, CARD, MUTED } from "@/components/ui/styles";
 function OutcomeTag({ outcome }: { outcome: string }) {
   const rejected = /rejet|retir/i.test(outcome);
   const tone = rejected
-    ? "bg-[#fdeceb] text-[#a4231f]"
-    : "bg-[#e2f0ec] text-[#097d6c]";
-  const dot = rejected ? "bg-[#d94f45]" : "bg-[#097d6c]";
+    ? "bg-[#fdeaf2] text-[#b3122c]"
+    : "bg-[#fde8eb] text-[#fa3250]";
+  const dot = rejected ? "bg-[#d6337a]" : "bg-[#fa3250]";
 
   return (
     <span
@@ -35,16 +40,12 @@ function OutcomeTag({ outcome }: { outcome: string }) {
 export function ResolutionCard({ hit, lang }: { hit: ResolutionHit; lang: Locale }) {
   const t = getDictionary(lang);
 
-  const date = new Intl.DateTimeFormat(dateLocale(lang), {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  }).format(new Date(hit.meetingDate + "T00:00:00"));
+  const date = formatMeetingDate(hit.meetingDate, lang, dateLocale(lang));
 
   return (
     <article className={`${CARD} p-4`}>
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 text-[13px]">
-        <span className="font-bold tabular-nums text-[#097d6c]">{hit.number}</span>
+        <span className="font-bold tabular-nums text-[#fa3250]">{hit.number}</span>
         {hit.agendaCode && (
           <span className={`tabular-nums ${MUTED}`}>{hit.agendaCode}</span>
         )}
@@ -81,7 +82,7 @@ export function ResolutionCard({ hit, lang }: { hit: ResolutionHit; lang: Locale
             href={youtubeDeepLink(hit.youtubeId, hit.startS)}
             target="_blank"
             rel="noreferrer"
-            className={`${BARE_CONTROL} -mx-2 inline-flex min-h-[44px] items-center gap-1.5 px-2 text-[14px] font-bold text-[#097d6c] hover:underline`}
+            className={`${BARE_CONTROL} -mx-2 inline-flex min-h-[44px] items-center gap-1.5 px-2 text-[14px] font-bold text-[#fa3250] hover:underline`}
           >
             {t.council.watch}
             <span className={MUTED}>{formatTimestamp(hit.startS)}</span>
@@ -92,7 +93,7 @@ export function ResolutionCard({ hit, lang }: { hit: ResolutionHit; lang: Locale
             href={hit.pvUrl}
             target="_blank"
             rel="noreferrer"
-            className={`${BARE_CONTROL} -mx-2 inline-flex min-h-[44px] items-center px-2 text-[14px] font-bold text-[#097d6c] hover:underline`}
+            className={`${BARE_CONTROL} -mx-2 inline-flex min-h-[44px] items-center px-2 text-[14px] font-bold text-[#fa3250] hover:underline`}
           >
             {t.council.readPv}
           </a>
@@ -102,7 +103,7 @@ export function ResolutionCard({ hit, lang }: { hit: ResolutionHit; lang: Locale
             href={hit.odjUrl}
             target="_blank"
             rel="noreferrer"
-            className={`${BARE_CONTROL} -mx-2 inline-flex min-h-[44px] items-center px-2 text-[14px] font-bold text-[#097d6c] hover:underline`}
+            className={`${BARE_CONTROL} -mx-2 inline-flex min-h-[44px] items-center px-2 text-[14px] font-bold text-[#fa3250] hover:underline`}
           >
             {t.council.readOdj}
           </a>

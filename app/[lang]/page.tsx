@@ -103,7 +103,7 @@ export default async function Home({
   return (
     // The feed sits on a tint, not on white: cards need a ground to read as
     // cards, and a page of white boxes on white is what made this look flat.
-    <div className="flex min-h-screen flex-col bg-[#f8faf9] text-[#16241f]">
+    <div className="flex min-h-screen flex-col bg-[#fef7f0] text-[#1a1a1a]">
       <SiteHeader user={user} lang={lang} />
 
       <div className={HERO_BAND}>
@@ -111,7 +111,7 @@ export default async function Home({
           <p className="text-[18px] font-bold leading-[26px] md:text-[20px] md:leading-[28px]">
             {t.home.welcome}
           </p>
-          <h1 className="mt-2 max-w-[860px] text-[28px] font-bold leading-[36px] md:text-[40px] md:leading-[56px]">
+          <h1 className="mt-2 max-w-[860px] text-[28px] leading-[36px] md:text-[40px] md:leading-[56px]">
             {t.home.title}
           </h1>
           <p className={`mt-4 max-w-[780px] text-[16px] leading-[24px] ${MUTED}`}>
@@ -149,7 +149,7 @@ export default async function Home({
             have looked for their issue and not found it, which is exactly the
             moment to offer reporting it. The button lines up over the sort
             control, so the column of actions reads as one edge. */}
-        <section className="mb-6 flex flex-wrap items-center justify-between gap-x-6 gap-y-4 rounded-[16px] border border-[#cfe4de] bg-[#e9f3f0] p-5 md:p-6">
+        <section className="mb-6 flex flex-wrap items-center justify-between gap-x-6 gap-y-4 rounded-[16px] border border-[#f8c4cd] bg-[#fde8eb] p-5 md:p-6">
           <div className="min-w-0 max-w-[60ch]">
             <h2 className="text-[18px] font-bold leading-[26px] md:text-[20px] md:leading-[28px]">
               {t.home.ctaTitle}
@@ -178,7 +178,7 @@ export default async function Home({
           {/* The category is named here as well as on the chip: once the hero
               has scrolled away, this heading is the only thing left saying why
               the feed is short. */}
-          <h2 className="text-[22px] font-bold leading-[30px] md:text-[26px] md:leading-[34px]">
+          <h2 className="text-[22px] leading-[30px] md:text-[26px] md:leading-[34px]">
             {mapView ? t.home.mapTitle : sort === "top" ? t.home.topTitle : t.home.newTitle}
             {category && <span className={MUTED}> · {t.categories[category]}</span>}
           </h2>
@@ -199,12 +199,12 @@ export default async function Home({
               /* `mr-auto` rather than `justify-between` on the row: on the map
                  view this control is not rendered at all, and space-between
                  would drop the lone view switch back to the left edge. */
-              <div className="mr-auto inline-flex shrink-0 rounded-full border border-[#dde5e1] bg-white p-0.5 sm:mr-0 sm:p-1">
+              <div className="mr-auto inline-flex shrink-0 rounded-full border border-[#e9e0d6] bg-white p-0.5 sm:mr-0 sm:p-1">
                 <Link
                   href={feedHref({ tri: null })}
                   aria-current={sort === "top" ? "true" : undefined}
                   className={`rounded-full px-2.5 py-1.5 text-[13px] font-bold transition-colors sm:px-4 sm:text-[14px] ${
-                    sort === "top" ? "bg-[#097d6c] text-white" : "text-[#5d6b66] hover:text-[#16241f]"
+                    sort === "top" ? "bg-[#fa3250] text-white" : "text-[#6e6a72] hover:text-[#1a1a1a]"
                   }`}
                 >
                   {t.home.sortTop}
@@ -213,7 +213,7 @@ export default async function Home({
                   href={feedHref({ tri: "recents" })}
                   aria-current={sort === "new" ? "true" : undefined}
                   className={`rounded-full px-2.5 py-1.5 text-[13px] font-bold transition-colors sm:px-4 sm:text-[14px] ${
-                    sort === "new" ? "bg-[#097d6c] text-white" : "text-[#5d6b66] hover:text-[#16241f]"
+                    sort === "new" ? "bg-[#fa3250] text-white" : "text-[#6e6a72] hover:text-[#1a1a1a]"
                   }`}
                 >
                   {t.home.sortNew}
@@ -221,12 +221,12 @@ export default async function Home({
               </div>
             )}
 
-            <div className="inline-flex shrink-0 rounded-full border border-[#dde5e1] bg-white p-0.5 sm:p-1">
+            <div className="inline-flex shrink-0 rounded-full border border-[#e9e0d6] bg-white p-0.5 sm:p-1">
               <Link
                 href={feedHref({ vue: null })}
                 aria-current={!mapView ? "true" : undefined}
                 className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[13px] font-bold transition-colors sm:px-3.5 sm:text-[14px] ${
-                  !mapView ? "bg-[#16241f] text-white" : "text-[#5d6b66] hover:text-[#16241f]"
+                  !mapView ? "bg-[#1a1a1a] text-white" : "text-[#6e6a72] hover:text-[#1a1a1a]"
                 }`}
               >
                 <svg
@@ -250,7 +250,7 @@ export default async function Home({
                 href={feedHref({ vue: "carte" })}
                 aria-current={mapView ? "true" : undefined}
                 className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[13px] font-bold transition-colors sm:px-3.5 sm:text-[14px] ${
-                  mapView ? "bg-[#16241f] text-white" : "text-[#5d6b66] hover:text-[#16241f]"
+                  mapView ? "bg-[#1a1a1a] text-white" : "text-[#6e6a72] hover:text-[#1a1a1a]"
                 }`}
               >
                 <svg

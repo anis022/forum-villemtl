@@ -55,13 +55,13 @@ export default async function ProjectPage({
     );
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#f8faf9] text-[#16241f]">
+    <div className="flex min-h-screen flex-col bg-[#fef7f0] text-[#1a1a1a]">
       <SiteHeader user={user} lang={lang} />
 
       <main className={`${CONTAINER} flex-1 py-6 md:py-10`}>
         <Link
           href={`/${lang}/projets`}
-          className="text-[14px] font-bold text-[#097d6c] hover:underline"
+          className="text-[14px] font-bold text-[#fa3250] hover:underline"
         >
           {t.projects.back}
         </Link>
@@ -73,7 +73,7 @@ export default async function ProjectPage({
             thing stands and what happens next. */}
         <header className="mt-4 flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <h1 className="text-[26px] font-bold leading-[34px] break-words md:text-[34px] md:leading-[42px]">
+            <h1 className="text-[26px] leading-[34px] break-words md:text-[34px] md:leading-[42px]">
               {say(project.title, lang)}
             </h1>
             <p className={`mt-1 text-[15px] ${MUTED}`}>{project.address}</p>
@@ -121,7 +121,7 @@ export default async function ProjectPage({
 
         {rest.length > 0 && (
           <section className="mt-10">
-            <h2 className="text-[22px] font-bold leading-[30px] md:text-[26px]">
+            <h2 className="text-[22px] leading-[30px] md:text-[26px]">
               {t.projects.photos}
             </h2>
             <ul className="mt-4 grid gap-5 sm:grid-cols-2">
@@ -147,7 +147,7 @@ export default async function ProjectPage({
             about it. Only rendered when there is something in it. */}
         {project.councilTerm && mentions.questions.length > 0 && (
           <section className="mt-10">
-            <h2 className="text-[22px] font-bold leading-[30px] md:text-[26px]">
+            <h2 className="text-[22px] leading-[30px] md:text-[26px]">
               {t.projects.atCouncil}
             </h2>
             <p className={`mt-2 max-w-[68ch] text-[15px] leading-[23px] ${MUTED}`}>
@@ -162,7 +162,7 @@ export default async function ProjectPage({
                     <span aria-hidden="true" className={MUTED}>
                       ·
                     </span>
-                    <span className="rounded-full bg-[#f2f6f4] px-2 py-0.5 text-[11px] font-bold text-[#5d6b66]">
+                    <span className="rounded-full bg-[#faf1e8] px-2 py-0.5 text-[11px] font-bold text-[#6e6a72]">
                       {q.mode === "orale" ? t.projects.questionOrale : t.projects.questionEcrite}
                     </span>
                   </div>
@@ -181,7 +181,7 @@ export default async function ProjectPage({
                         href={youtubeDeepLink(q.youtubeId, q.startS)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="font-bold text-[#097d6c] underline hover:text-[#075f53]"
+                        className="font-bold text-[#fa3250] underline hover:text-[#d81f3c]"
                       >
                         {formatTimestamp(q.startS)}
                       </a>
@@ -191,7 +191,7 @@ export default async function ProjectPage({
                         href={q.pvUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="font-bold text-[#097d6c] underline hover:text-[#075f53]"
+                        className="font-bold text-[#fa3250] underline hover:text-[#d81f3c]"
                       >
                         {t.projects.readMinutes}
                       </a>
@@ -210,17 +210,17 @@ export default async function ProjectPage({
         )}
 
         <section className="mt-10">
-          <h2 className="text-[22px] font-bold leading-[30px] md:text-[26px]">
+          <h2 className="text-[22px] leading-[30px] md:text-[26px]">
             {t.projects.sources}
           </h2>
-          <ul className={`${CARD} mt-4 divide-y divide-[#eef2f0]`}>
+          <ul className={`${CARD} mt-4 divide-y divide-[#f2ece4]`}>
             {project.sources.map((source) => (
               <li key={source.url}>
                 <a
                   href={source.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block break-words px-4 py-3.5 text-[15px] font-bold text-[#097d6c] hover:bg-[#f2f6f4] hover:text-[#075f53]"
+                  className="block break-words px-4 py-3.5 text-[15px] font-bold text-[#fa3250] hover:bg-[#faf1e8] hover:text-[#d81f3c]"
                 >
                   {say(source.label, lang)}
                 </a>

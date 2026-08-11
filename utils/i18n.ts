@@ -56,6 +56,17 @@ const fr = {
     eventsDesc: "Repérez les activités et les événements à venir près de chez vous.",
     councilDesc: "Explorez ce qui a été dit lors des séances du conseil, avec liens vers la vidéo.",
     officialsDesc: "Voyez qui vous représente, dans quel district, et comment les joindre.",
+    // The inline navigation in the masthead is one line of six links; the long
+    // labels above are what the mega-menu panel shows, where there is room to
+    // say what each section actually is.
+    short: {
+      forum: "Forum",
+      officials: "Élus",
+      council: "Conseils",
+      projects: "Projets",
+      events: "Événements",
+      moderation: "Modération",
+    },
   },
   officials: {
     title: "Personnes élues de l'arrondissement",
@@ -85,14 +96,49 @@ const fr = {
       "déneigement",
       "sécurité aux abords des écoles",
     ],
-    corpusNote: (meetings: number, questions: number, resolutions: number) =>
-      `${meetings} séance${meetings > 1 ? "s" : ""} de 2026 — ${questions} interventions citoyennes et ${resolutions} résolutions, tirées des procès-verbaux officiels.`,
+    corpusNote: (meetings: number, questions: number, resolutions: number, remarks: number) =>
+      `${meetings} séance${meetings > 1 ? "s" : ""} de 2026 — ${questions} interventions citoyennes, ${resolutions} résolutions et ${remarks} prises de parole d'élus, tirées des procès-verbaux officiels.`,
 
     // The filter residents asked for: what the public raised, or what the
     // council decided.
     sectionAll: "Tout",
     sectionQuestions: "Questions du public",
     sectionResolutions: "Ordre du jour et résolutions",
+    sectionElus: "Prises de parole des élus",
+    councilQuestions: "Questions des élus à l'administration",
+
+    // La section « séances » : un résumé par soirée, tiré du procès-verbal.
+    meetingsTitle: "Les séances de 2026",
+    meetingsIntro:
+      "Chaque séance en un coup d'œil : qui est venu parler, ce qui a été décidé, et les sujets qui ont rassemblé plusieurs personnes. Tous les chiffres sont des décomptes du procès-verbal officiel — rien n'est résumé par une machine.",
+    inBrief: "En bref",
+    pvPending: "Procès-verbal pas encore publié — il est approuvé à la séance suivante.",
+    presidedBy: "Présidée par",
+    actingMayor: "(maire suppléant)",
+    sitting: "Séance",
+    backToCouncil: "Toutes les séances",
+    watchFull: "Voir l'enregistrement",
+    mostRaised: "Sujets soulevés par plusieurs personnes",
+    statPeople: "personnes",
+    statResolutions: "résolutions",
+    statRemarks: "prises de parole d'élus",
+    statDebates: "débats",
+    dividedCount: (n: number) =>
+      n === 1 ? "1 décision non unanime" : `${n} décisions non unanimes`,
+    briefLine: (oral: number, written: number, unanimous: number, divided: number) =>
+      `${oral} question${oral > 1 ? "s" : ""} orale${oral > 1 ? "s" : ""} et ${written} écrite${written > 1 ? "s" : ""}. ` +
+      `${unanimous} résolution${unanimous > 1 ? "s" : ""} adoptée${unanimous > 1 ? "s" : ""} à l'unanimité` +
+      (divided > 0
+        ? `, ${divided} après un vote partagé.`
+        : ", aucun vote partagé."),
+    alignedNote: (aligned: number, oral: number) =>
+      `${aligned} des ${oral} interventions orales sont repérées dans l'enregistrement et s'ouvrent à la bonne seconde. Les autres ne sont pas nommées à voix haute.`,
+    badgeComment: "Commentaire d'élu",
+    badgeElusQuestion: "Question d'élu",
+    remarksCount: (n: number) =>
+      n === 1
+        ? "1 prise de parole d'élu correspond"
+        : `${n} prises de parole d'élus correspondent`,
     modeAll: "Orales et écrites",
     modeOrale: "Questions orales",
     modeEcrite: "Questions écrites",
@@ -449,6 +495,11 @@ const fr = {
     sourceCode: "Code source",
     follow: "Nous suivre",
     newWindow: "(nouvelle fenêtre)",
+    tagline:
+      "Un espace pour parler de Côte-des-Neiges–Notre-Dame-de-Grâce : soulevez un enjeu, appuyez celui d'une voisine ou d'un voisin, suivez ce que fait l'arrondissement.",
+    // Said plainly and on every page, because the site used to wear the city's
+    // masthead and someone who saw it then could reasonably still think so.
+    legal: "Forum CDN-NDG — projet à code ouvert. Ce site n'est pas un service de la Ville de Montréal.",
   },
   translate: {
     action: "Traduire",
@@ -528,6 +579,14 @@ const en: Dictionary = {
     eventsDesc: "Find activities and upcoming events near you.",
     councilDesc: "Explore what was said at council meetings, with links to the video.",
     officialsDesc: "See who represents you, in which district, and how to reach them.",
+    short: {
+      forum: "Forum",
+      officials: "Officials",
+      council: "Councils",
+      projects: "Projects",
+      events: "Events",
+      moderation: "Moderation",
+    },
   },
   officials: {
     title: "Your elected officials",
@@ -557,12 +616,42 @@ const en: Dictionary = {
       "snow removal",
       "safety around schools",
     ],
-    corpusNote: (meetings: number, questions: number, resolutions: number) =>
-      `${meetings} sitting${meetings > 1 ? "s" : ""} from 2026 — ${questions} resident interventions and ${resolutions} resolutions, taken from the official minutes.`,
+    corpusNote: (meetings: number, questions: number, resolutions: number, remarks: number) =>
+      `${meetings} sitting${meetings > 1 ? "s" : ""} from 2026 — ${questions} resident interventions, ${resolutions} resolutions and ${remarks} councillor items, taken from the official minutes.`,
 
     sectionAll: "Everything",
     sectionQuestions: "Public questions",
     sectionResolutions: "Agenda and resolutions",
+    sectionElus: "What councillors raised",
+    councilQuestions: "Councillor questions to the administration",
+
+    meetingsTitle: "The 2026 sittings",
+    meetingsIntro:
+      "Each sitting at a glance: who came to speak, what was decided, and the subjects several people turned up about. Every figure is a count from the official minutes — nothing here is summarised by a machine.",
+    inBrief: "In brief",
+    pvPending: "Minutes not published yet — they are approved at the following sitting.",
+    presidedBy: "Chaired by",
+    actingMayor: "(acting mayor)",
+    sitting: "Sitting",
+    backToCouncil: "All sittings",
+    watchFull: "Watch the recording",
+    mostRaised: "Subjects raised by more than one person",
+    statPeople: "people",
+    statResolutions: "resolutions",
+    statRemarks: "councillor items",
+    statDebates: "debates",
+    dividedCount: (n: number) =>
+      n === 1 ? "1 split decision" : `${n} split decisions`,
+    briefLine: (oral: number, written: number, unanimous: number, divided: number) =>
+      `${oral} spoken question${oral > 1 ? "s" : ""} and ${written} written. ` +
+      `${unanimous} resolution${unanimous > 1 ? "s" : ""} passed unanimously` +
+      (divided > 0 ? `, ${divided} on a split vote.` : ", with no split votes."),
+    alignedNote: (aligned: number, oral: number) =>
+      `${aligned} of the ${oral} spoken interventions are located in the recording and open at the right second. The rest are never named aloud.`,
+    badgeComment: "Councillor comment",
+    badgeElusQuestion: "Councillor question",
+    remarksCount: (n: number) =>
+      n === 1 ? "1 councillor item matches" : `${n} councillor items match`,
     modeAll: "Spoken and written",
     modeOrale: "Spoken questions",
     modeEcrite: "Written questions",
@@ -908,6 +997,9 @@ const en: Dictionary = {
     sourceCode: "Source code",
     follow: "Follow us",
     newWindow: "(opens in a new window)",
+    tagline:
+      "A place to talk about Côte-des-Neiges–Notre-Dame-de-Grâce: raise an issue, back a neighbour's, and follow what the borough is doing.",
+    legal: "Forum CDN-NDG — an open-source project. This site is not a Ville de Montréal service.",
   },
   translate: {
     action: "Translate",

@@ -85,16 +85,16 @@ export function CommentThread({
   return (
     <article
       id={`c-${comment.id}`}
-      /* The teal shell marks an official *answer to the report* — the thing
+      /* The indigo shell marks an official *answer to the report* — the thing
          residents came to the page for. An official taking part further down
          the thread is a participant in a conversation, not a ruling on it, and
-         a green band beside every one of their remarks nested inside a thread
+         an indigo band beside every one of their remarks nested inside a thread
          that already draws its own line is two rules saying different things in
          the same 4px. Below the top level the badge and the label carry it. */
       className={
         top
           ? comment.isOfficial
-            ? "rounded-[16px] border-l-4 border-[#097d6c] bg-[#e2f0ec] p-4 sm:p-5"
+            ? "rounded-[16px] border-l-4 border-[#2a2a86] bg-[#e8e8f6] p-4 sm:p-5"
             : `${CARD} p-4 sm:p-5`
           : ""
       }
@@ -121,7 +121,7 @@ export function CommentThread({
           </div>
 
           {comment.isOfficial && (
-            <p className="mt-1 text-[14px] font-bold text-[#097d6c]">{t.issue.officialAnswer}</p>
+            <p className="mt-1 text-[14px] font-bold text-[#2a2a86]">{t.issue.officialAnswer}</p>
           )}
 
           {/* Only on replies written before editing was removed in migration
@@ -172,7 +172,7 @@ export function CommentThread({
              summary has drawn is how a column gets down to three words wide. */
           <details className="group mt-3">
             <summary
-              className={`${BARE_CONTROL} inline-flex cursor-pointer list-none items-center gap-1.5 py-2 pr-2 text-[14px] font-bold leading-[20px] text-[#097d6c] transition-colors hover:text-[#075f53] [&::-webkit-details-marker]:hidden`}
+              className={`${BARE_CONTROL} inline-flex cursor-pointer list-none items-center gap-1.5 py-2 pr-2 text-[14px] font-bold leading-[20px] text-[#fa3250] transition-colors hover:text-[#d81f3c] [&::-webkit-details-marker]:hidden`}
             >
               <svg
                 aria-hidden="true"

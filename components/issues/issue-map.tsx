@@ -38,7 +38,7 @@ type Filter = "all" | "open" | "settled";
  *
  * A list answers "what is being discussed"; a map answers "what is broken near
  * me", which is the question a resident actually arrives with. Warm pins are
- * unresolved, teal ones are done, so the state of a street reads before any
+ * unresolved, green ones are done, so the state of a street reads before any
  * label is looked at.
  *
  * Reports filed before locations were asked for have no pin. They are counted
@@ -120,8 +120,8 @@ export function IssueMap({
         });
         marker.bindPopup(
           `<strong style="font-size:14px">${escapeHtml(issue.title)}</strong>` +
-            `<br><span style="color:#5d6b66">${escapeHtml(labels.statuses[issue.status])} · ${issue.voteCount}</span>` +
-            `<br><a href="/${lang}/sujets/${issue.id}" style="color:#097d6c;font-weight:700">${escapeHtml(labels.open)}</a>`,
+            `<br><span style="color:#6e6a72">${escapeHtml(labels.statuses[issue.status])} · ${issue.voteCount}</span>` +
+            `<br><a href="/${lang}/sujets/${issue.id}" style="color:#fa3250;font-weight:700">${escapeHtml(labels.open)}</a>`,
           // Leaflet's default popup is 300px wide, which is wider than the map
           // frame itself on a small phone — autoPan then has nowhere to put it
           // and it opens clipped. Measured off the frame instead.
@@ -144,10 +144,10 @@ export function IssueMap({
         <Chip active={filter === "all"} onClick={() => setFilter("all")}>
           {labels.showAll}
         </Chip>
-        <Chip active={filter === "open"} onClick={() => setFilter("open")} dot="#d94f45">
+        <Chip active={filter === "open"} onClick={() => setFilter("open")} dot="#d6337a">
           {labels.onlyOpen}
         </Chip>
-        <Chip active={filter === "settled"} onClick={() => setFilter("settled")} dot="#097d6c">
+        <Chip active={filter === "settled"} onClick={() => setFilter("settled")} dot="#fa3250">
           {labels.onlySettled}
         </Chip>
 
@@ -157,7 +157,7 @@ export function IssueMap({
             too would set the width of the whole row. */}
         <p className={`text-[14px] ${MUTED}`}>
           <span className="whitespace-nowrap">
-            <span className="font-bold text-[#16241f] tabular-nums">{shown.length}</span>{" "}
+            <span className="font-bold text-[#1a1a1a] tabular-nums">{shown.length}</span>{" "}
             {labels.located}
           </span>
           {unlocated > 0 ? ` · ${unlocated} ${labels.unlocated}` : ""}
@@ -173,7 +173,7 @@ export function IssueMap({
           <div
             ref={containerRef}
             role="application"
-            className="h-[320px] w-full overflow-hidden rounded-[16px] border border-[#dde5e1] sm:h-[420px] md:h-[600px]"
+            className="h-[320px] w-full overflow-hidden rounded-[16px] border border-[#e9e0d6] sm:h-[420px] md:h-[600px]"
           />
 
           {/* The list is a scroller only when it sits beside the map and has to
@@ -191,8 +191,8 @@ export function IssueMap({
                   onBlur={() => setActive(null)}
                   className={`flex gap-3 rounded-[14px] border p-3 transition-colors ${
                     active === issue.id
-                      ? "border-[#097d6c] bg-[#f2f6f4]"
-                      : "border-[#dde5e1] bg-white hover:border-[#097d6c]"
+                      ? "border-[#fa3250] bg-[#faf1e8]"
+                      : "border-[#e9e0d6] bg-white hover:border-[#fa3250]"
                   }`}
                 >
                   <span
@@ -218,7 +218,7 @@ export function IssueMap({
 
 /**
  * Settled reports get a check inside the pin. Colour alone would leave the
- * split invisible to anyone who cannot separate red from teal.
+ * split invisible to anyone who cannot separate red from green.
  */
 function pin(L: typeof import("leaflet"), color: string, settled: boolean, raised: boolean) {
   const size = raised ? 36 : 30;
@@ -228,7 +228,7 @@ function pin(L: typeof import("leaflet"), color: string, settled: boolean, raise
 
   return L.divIcon({
     className: "",
-    html: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" style="filter:drop-shadow(0 1px 2px rgba(22,36,31,.35))">
+    html: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" style="filter:drop-shadow(0 1px 2px rgba(26,26,26,.35))">
       <path d="M12 2.2c-4 0-7.2 3.2-7.2 7.2 0 5.2 7.2 12.4 7.2 12.4s7.2-7.2 7.2-12.4c0-4-3.2-7.2-7.2-7.2z"
             fill="${color}" stroke="#fff" stroke-width="1.6"/>
       ${glyph}
@@ -257,8 +257,8 @@ function Chip({
       aria-pressed={active}
       className={`inline-flex min-h-[40px] max-w-full items-center gap-2 rounded-full border px-3.5 py-2 text-[14px] font-bold leading-[20px] transition-colors ${
         active
-          ? "border-[#097d6c] bg-[#097d6c] text-white"
-          : "border-[#dde5e1] bg-white text-[#5d6b66] hover:border-[#097d6c] hover:text-[#16241f]"
+          ? "border-[#fa3250] bg-[#fa3250] text-white"
+          : "border-[#e9e0d6] bg-white text-[#6e6a72] hover:border-[#fa3250] hover:text-[#1a1a1a]"
       }`}
     >
       {dot && (

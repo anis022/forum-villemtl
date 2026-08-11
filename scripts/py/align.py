@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import re
 import sys
 import unicodedata
@@ -56,7 +57,57 @@ NAME_WINDOW = 6
 TOKEN_SIMILARITY = 0.78
 
 # Below this fraction of a person's name tokens found, it is not a mention.
-MIN_NAME_SCORE = 0.55
+MIN_NAME_SCORE = 0.5
+
+# The chair opens the question period by reading the list of everyone who
+# registered to speak:
+#
+#   "So we'll start with Alessia Proietti, Jill Murray, Michael Shafter,
+#    Alexander Gorchkov, Marc Gagnon, Hallah... Those are the top ten."
+#
+# Six names in one breath, all of them real mentions, none of them the moment
+# that person actually spoke. Anchoring on the roll call gave the first six
+# residents of the 13 April sitting the same timestamp -- a citation pointing at
+# the chair reading a list -- and, because the assignment has to run in order,
+# it consumed the early part of the recording and left the next three speakers
+# with nowhere to go despite their names being right there in the transcript.
+#
+# A roll call is recognisable without knowing the words: several *different*
+# people named within a breath of each other. Nothing here needs to know how the
+# chair phrases it, which matters because that changes every sitting and between
+# languages.
+#
+# The threshold is measured against the symptom rather than guessed. A roll call
+# betrays itself by giving several residents the *same* timestamp, and people do
+# not speak simultaneously -- so sweeping the threshold and counting how many
+# aligned interventions land on a distinct minute says which value is right:
+#
+#     threshold   aligned   same-minute   distinct
+#       none         73          25          48
+#         3          64           8          56
+#         5          65           8          57
+#         7          67          14          53
+#
+# Unfiltered, a third of the timestamps were wrong: the 4 May sitting reported a
+# flawless 21 of 21 while six of those residents shared 1h37 and five more shared
+# 2h10, all of them pointing at the chair reading a list rather than at anyone
+# speaking. Five is the value that leaves the most citations standing on a moment
+# of their own.
+ROLLCALL_WINDOW = 25
+ROLLCALL_MIN_NAMES = 5
+
+# The floor on how long one person holds the microphone.
+#
+# Two residents cannot start speaking eight seconds apart, so an assignment that
+# says they did has placed at least one of them wrong. Measured across the 2026
+# sittings the two populations do not overlap at all: genuine consecutive turns
+# run 227 to 1834 seconds apart, while the bad ones cluster at 3 to 17 -- the
+# residue of shorter name lists that slip under the roll-call filter.
+#
+# Enforced inside the assignment rather than as a cleanup afterwards, so a
+# speaker crowded out of one position can be given a later one instead of simply
+# being dropped.
+MIN_TURN_S = 60.0
 
 # Leaving a resident unaligned costs this much score. Set below the weakest
 # real match so a genuine mention always beats skipping, and above noise so a
@@ -95,9 +146,20 @@ def similar(a: str, b: str) -> float:
         return 1.0
     if not a or not b:
         return 0.0
-    # An initial against a full name is a real match: "S. Jass" for "Steven".
-    if len(a) == 1 or len(b) == 1:
-        return 1.0 if a[0] == b[0] else 0.0
+
+    # Short tokens must match exactly.
+    #
+    # This used to treat a single letter as an initial, so "S." would match
+    # "Steven". In French that is a disaster: elision and filler leave single
+    # letters scattered through every sentence -- "il y a", "j'ai", "l'avenue" --
+    # and each one matched any name starting with the same letter. Every "y" in
+    # the sitting became Yvan Burman, giving him 78 spurious mentions to Lisa
+    # Freeman's 2, and the ordering pass then had no way to tell which was real.
+    #
+    # Below four characters the ratio test is meaningless anyway: two of three
+    # shared letters already clears any sane threshold.
+    if len(a) < 4 or len(b) < 4:
+        return 0.0
 
     prev = [0] * (len(b) + 1)
     for ca in a:
@@ -128,60 +190,123 @@ def flatten(transcript: dict) -> list[dict]:
     return words
 
 
-def score_at(words: list[dict], i: int, tokens: list[str]) -> tuple[float, int]:
-    """
-    How much of `tokens` appears in the window starting at word `i`, and where
-    the match ended.
-
-    The first token must match at `i` itself -- otherwise every position inside
-    the window scores alike and the timestamp drifts off the actual mention.
-    """
-    if not tokens:
-        return 0.0, i
-    if similar(words[i]["t"], tokens[0]) < TOKEN_SIMILARITY:
-        return 0.0, i
-
-    found = 1
-    j = i + 1
-    last = i
-    limit = min(len(words), i + NAME_WINDOW)
-    for tok in tokens[1:]:
-        k = j
-        while k < limit:
-            if similar(words[k]["t"], tok) >= TOKEN_SIMILARITY:
-                found += 1
-                j, last = k + 1, k
-                break
-            k += 1
-    return found / len(tokens), last
+def match_positions(words: list[dict], token: str) -> list[int]:
+    """Every word index that reads as `token`, allowing for ASR mangling."""
+    return [i for i, w in enumerate(words) if similar(w["t"], token) >= TOKEN_SIMILARITY]
 
 
 def candidates(words: list[dict], people: list[list[str]]) -> list[list[tuple[int, float]]]:
-    """Per person, every position in the recording that looks like their name."""
-    out: list[list[tuple[int, float]]] = []
+    """
+    Per person, every moment in the recording that looks like their name.
+
+    Anchored on the *rarest* part of the name, weighted by how rare each part
+    is. Both details are load-bearing, and getting them wrong cost thirteen of
+    sixteen speakers on the first real run:
+
+      - Anchoring on the first token assumes the given name survives. It often
+        does not: the record's "Joël Coppieters" reaches the transcript as
+        "Coppieters" alone, and "Hartley Barber" as "Hartley" alone. Requiring
+        both parts to sit together threw those away.
+
+      - Weighting by rarity is what keeps that leniency safe. "Marc" occurs
+        twelve times in one sitting and means almost nothing on its own;
+        "Rouleau" occurs three times and means almost everything. Scoring a
+        lone "Marc" as half a match invited exactly the false anchors that
+        ordering then had to clean up.
+
+    A name whose parts are all absent yields no candidates, and that person
+    keeps a null timestamp rather than being placed by guesswork.
+    """
+    # Where each name part occurs, computed once per distinct token.
+    positions: dict[str, list[int]] = {}
     for tokens in people:
+        for tok in tokens:
+            if tok not in positions:
+                positions[tok] = match_positions(words, tok)
+
+    def weight(tok: str) -> float:
+        n = len(positions[tok])
+        # Absent parts cannot be found, so they neither help nor penalise.
+        return 0.0 if n == 0 else 1.0 / (1.0 + math.log(n))
+
+    out: list[list[tuple[int, float]]] = []
+
+    for tokens in people:
+        weights = {t: weight(t) for t in tokens}
+        total = sum(weights.values())
+        present = [t for t in tokens if weights[t] > 0]
+        if total <= 0 or not present:
+            out.append([])
+            continue
+
+        anchor = min(present, key=lambda t: len(positions[t]))
         hits: list[tuple[int, float]] = []
-        ends: list[int] = []
-        for i in range(len(words)):
-            s, last = score_at(words, i, tokens)
-            if s < MIN_NAME_SCORE:
+
+        for p in positions[anchor]:
+            # Look both ways: the anchor may be the surname, with the given
+            # name sitting before it.
+            lo, hi = p - NAME_WINDOW, p + NAME_WINDOW
+            found = sum(
+                w
+                for t, w in weights.items()
+                if w > 0 and any(lo <= q <= hi for q in positions[t])
+            )
+            score = found / total
+            if score < MIN_NAME_SCORE:
                 continue
             # The same name said twice over ("madame Freeman, Lisa Freeman") is
-            # one mention. Two different people are not, so overlap is judged
-            # on the words the match actually consumed rather than on a fixed
-            # gap -- which would merge two speakers announced back to back.
-            if hits and i <= ends[-1]:
-                if s > hits[-1][1]:
-                    hits[-1] = (i, s)
-                    ends[-1] = last
+            # one mention; two speakers announced back to back are not. Judged
+            # on the window actually used.
+            if hits and p - hits[-1][0] <= NAME_WINDOW:
+                if score > hits[-1][1]:
+                    hits[-1] = (p, score)
                 continue
-            hits.append((i, s))
-            ends.append(last)
+            hits.append((p, score))
+
         out.append(hits)
-    return out
+
+    return drop_rollcalls(out)
 
 
-def align(cands: list[list[tuple[int, float]]]) -> list[int | None]:
+def drop_rollcalls(
+    cands: list[list[tuple[int, float]]],
+) -> list[list[tuple[int, float]]]:
+    """
+    Discard mentions that are part of the chair reading the sign-up list.
+
+    Judged by company, not by wording: a position keeps its candidate only if
+    fewer than ROLLCALL_MIN_NAMES *other* people are named within a breath of
+    it. Nothing here needs to know what a roll call sounds like, which matters
+    because the chair introduces it differently every sitting and in either
+    language.
+
+    A person named only in the roll call ends up with no candidates at all, and
+    that is the right outcome: no timestamp is better than one that opens the
+    video on somebody reading a list.
+    """
+    marks: list[tuple[int, int]] = [
+        (pos, person) for person, hits in enumerate(cands) for pos, _ in hits
+    ]
+    marks.sort()
+
+    def crowd(pos: int, person: int) -> int:
+        """Distinct other people named within ROLLCALL_WINDOW words of `pos`."""
+        others = {
+            p
+            for q, p in marks
+            if p != person and abs(q - pos) <= ROLLCALL_WINDOW
+        }
+        return len(others)
+
+    return [
+        [(pos, s) for pos, s in hits if crowd(pos, person) < ROLLCALL_MIN_NAMES]
+        for person, hits in enumerate(cands)
+    ]
+
+
+def align(
+    cands: list[list[tuple[int, float]]], words: list[dict]
+) -> list[int | None]:
     """
     Choose at most one position per person, strictly in order, best total score.
 
@@ -204,7 +329,10 @@ def align(cands: list[list[tuple[int, float]]]) -> list[int | None]:
             # Skip this person.
             nxt.append((last, total - SKIP_PENALTY, path + (None,)))
             for pos, s in cands[person]:
-                if pos > last:
+                # Strictly later, and far enough later to be a separate turn.
+                if pos > last and (
+                    last < 0 or words[pos]["start"] - words[last]["start"] >= MIN_TURN_S
+                ):
                     nxt.append((pos, total + s, path + (pos,)))
 
         # Prune: for a given "last index", only the best score can ever win,
@@ -215,17 +343,27 @@ def align(cands: list[list[tuple[int, float]]]) -> list[int | None]:
             if cur is None or st[1] > cur[1]:
                 best_by_last[st[0]] = st
 
+        # Keep the Pareto frontier over (earliest position, best score).
+        #
+        # One state beats another only when it is better on both counts: it ends
+        # no later in the recording *and* it has scored no worse. An earlier
+        # position is an asset, because it leaves more of the sitting available
+        # to the speakers still to be placed.
+        #
+        # This ran backwards at first, keeping a state only when it beat those
+        # positioned later. That threw away every early, modest-scoring state --
+        # including the one that had just placed Findley at 1h28 with two
+        # matches, discarded in favour of a single lucky match at 4h03. With the
+        # early states gone there was nowhere left for the remaining thirteen
+        # speakers to go, and they all came back unplaced.
         frontier = sorted(best_by_last.values(), key=lambda s: s[0])
         pruned: States = []
         best_so_far = float("-inf")
-        # Walking from the latest index backwards, keep a state only if it beats
-        # everything that starts later -- anything else can be replaced by that
-        # later state without cost.
-        for st in reversed(frontier):
+        for st in frontier:
             if st[1] > best_so_far:
                 pruned.append(st)
                 best_so_far = st[1]
-        frontier = list(reversed(pruned))
+        frontier = pruned
 
     best = max(frontier, key=lambda s: s[1])
     return list(best[2])
@@ -255,7 +393,7 @@ def run_one(path: Path, force: bool) -> None:
         return
 
     people = [name_tokens(q["name"]) for q in oral]
-    chosen = align(candidates(words, people))
+    chosen = align(candidates(words, people), words)
 
     # Each speaker holds the floor until the next one is called.
     starts = [None if c is None else words[c]["start"] for c in chosen]

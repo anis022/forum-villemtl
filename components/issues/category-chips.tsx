@@ -43,7 +43,7 @@ export function CategoryChips({
 
   return (
     <div className="mt-7">
-      <p className="text-[13px] font-bold leading-[18px] text-[#5d6b66]">{label}</p>
+      <p className="text-[13px] font-bold leading-[18px] text-[#6e6a72]">{label}</p>
 
       <ul className="mt-3 flex flex-wrap gap-2">
         <li>
@@ -77,7 +77,7 @@ export function CategoryChips({
 /** `tabular-nums` so a column of counts doesn't shimmy as the digits change. */
 function Count({ value, muted }: { value: number; muted: boolean }) {
   return (
-    <span className={`ml-2 tabular-nums ${muted ? "text-[#5d6b66]" : "text-white/75"}`}>
+    <span className={`ml-2 tabular-nums ${muted ? "text-[#6e6a72]" : "text-white/75"}`}>
       {value}
     </span>
   );

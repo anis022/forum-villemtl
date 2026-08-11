@@ -16,12 +16,12 @@ export default async function OfficialsPage({ params }: { params: Promise<{ lang
   const user = await getSessionUser();
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#f8faf9] text-[#16241f]">
+    <div className="flex min-h-screen flex-col bg-[#fef7f0] text-[#1a1a1a]">
       <SiteHeader user={user} lang={lang} />
 
       <div className={HERO_BAND}>
         <div className={`${CONTAINER} py-8 md:py-12`}>
-          <h1 className="text-[26px] font-bold leading-[34px] break-words sm:text-[28px] sm:leading-[36px] md:text-[40px] md:leading-[56px]">
+          <h1 className="text-[26px] leading-[34px] break-words sm:text-[28px] sm:leading-[36px] md:text-[40px] md:leading-[56px]">
             {t.officials.title}
           </h1>
           <p className={`mt-3 max-w-[640px] text-[16px] leading-[24px] ${MUTED}`}>
@@ -49,7 +49,7 @@ export default async function OfficialsPage({ params }: { params: Promise<{ lang
                   alt=""
                   width={96}
                   height={96}
-                  className="h-16 w-16 shrink-0 rounded-full border-[0.8px] border-[#dde5e1] object-cover sm:h-20 sm:w-20"
+                  className="h-16 w-16 shrink-0 rounded-full border-[0.8px] border-[#e9e0d6] object-cover sm:h-20 sm:w-20"
                 />
 
                 <div className="min-w-0 flex-1">
@@ -60,7 +60,7 @@ export default async function OfficialsPage({ params }: { params: Promise<{ lang
                   {/* The role in the accent, the district under it in plain
                       text: "conseiller de Snowdon" is two facts, and a resident
                       is scanning for the second one. */}
-                  <p className="mt-1 text-[14px] font-bold leading-[20px] text-[#097d6c]">
+                  <p className="mt-1 text-[14px] font-bold leading-[20px] text-[#fa3250]">
                     {t.officials.roles[person.role]}
                   </p>
                   {/* Only when there is one. A borough mayor has no district,

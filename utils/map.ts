@@ -141,13 +141,13 @@ export async function addBoroughOutline(
 
   L.polygon([world, ...outerRings], {
     stroke: false,
-    fillColor: "#f8faf9",
+    fillColor: "#fef7f0",
     fillOpacity: 0.72,
     interactive: false,
   }).addTo(map);
 
   L.polygon(outerRings, {
-    color: "#097d6c",
+    color: "#fa3250",
     weight: 2,
     opacity: 0.75,
     fill: false,

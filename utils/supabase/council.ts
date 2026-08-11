@@ -4,8 +4,12 @@ import { expandQuery } from "@/utils/council-terms";
 import {
   distinctMeetings,
   distinctPeople,
+  excerptAround,
+  searchTerms,
   type CouncilAnswer,
+  type MeetingSummary,
   type QuestionHit,
+  type RemarkHit,
   type ResolutionHit,
   type SearchHit,
   type Section,
@@ -56,7 +60,7 @@ type QuestionRow = {
   similarity: number | null;
 };
 
-function toQuestion(r: QuestionRow): QuestionHit {
+function toQuestion(r: QuestionRow, terms: string[]): QuestionHit {
   return {
     id: r.id,
     meetingTitle: r.meeting_title,
@@ -71,6 +75,7 @@ function toQuestion(r: QuestionRow): QuestionHit {
     startS: r.start_s === null ? null : Number(r.start_s),
     endS: r.end_s === null ? null : Number(r.end_s),
     transcript: r.transcript,
+    excerpt: r.transcript ? excerptAround(r.transcript, terms) : null,
     lexical: r.lexical,
     similarity: r.similarity === null ? null : Number(r.similarity),
   };
@@ -114,7 +119,8 @@ export async function answerAboutQuestions(
     return { ...empty, expanded };
   }
 
-  const hits = (data as QuestionRow[]).map(toQuestion);
+  const terms = searchTerms(expanded);
+  const hits = (data as QuestionRow[]).map((r) => toQuestion(r, terms));
   const counted = hits.filter((h) => h.lexical);
   const related = hits.filter((h) => !h.lexical);
 
@@ -197,6 +203,73 @@ export async function searchResolutions(query: string): Promise<{
   };
 }
 
+type RemarkRow = {
+  id: string;
+  youtube_id: string;
+  meeting_title: string;
+  meeting_date: string;
+  pv_url: string | null;
+  person_id: string | null;
+  name: string;
+  topic: string;
+  kind: "commentaire" | "question";
+  start_s: number | null;
+  lexical: boolean;
+  similarity: number | null;
+};
+
+/**
+ * What the elected members raised themselves (agenda items 10.04 and 10.07).
+ *
+ * Counted the same way as everything else: only rows containing the words are
+ * counted, and here the count that means something is of *items* rather than of
+ * people — five councillors between them raise thirty things a sitting, so
+ * "how many people" would almost always be "five" and say nothing.
+ */
+export async function searchRemarks(
+  query: string,
+  kind?: "commentaire" | "question",
+): Promise<{ counted: RemarkHit[]; related: RemarkHit[]; expanded: string }> {
+  const trimmed = query.trim();
+  if (!trimmed) return { counted: [], related: [], expanded: trimmed };
+
+  const expanded = expandQuery(trimmed);
+  const embedding = await embed(trimmed);
+
+  const supabase = await sb();
+  const { data, error } = await supabase.rpc("search_council_remarks", {
+    query_text: expanded,
+    query_embedding: embedding,
+    p_kind: kind ?? null,
+  });
+
+  if (error) {
+    console.error("[council] search_council_remarks:", error.message);
+    return { counted: [], related: [], expanded };
+  }
+
+  const hits = (data as RemarkRow[]).map((r) => ({
+    id: r.id,
+    meetingTitle: r.meeting_title,
+    meetingDate: r.meeting_date,
+    youtubeId: r.youtube_id,
+    pvUrl: r.pv_url,
+    personId: r.person_id,
+    name: r.name,
+    topic: r.topic,
+    kind: r.kind,
+    startS: r.start_s === null ? null : Number(r.start_s),
+    lexical: r.lexical,
+    similarity: r.similarity === null ? null : Number(r.similarity),
+  }));
+
+  return {
+    counted: hits.filter((h) => h.lexical),
+    related: hits.filter((h) => !h.lexical),
+    expanded,
+  };
+}
+
 type SegmentRow = {
   id: string;
   youtube_id: string;
@@ -252,25 +325,183 @@ export async function searchCouncil(
   return { hits, semantic: embedding !== null };
 }
 
+type SummaryRow = {
+  youtube_id: string;
+  meeting_date: string;
+  title: string;
+  kind: string | null;
+  president: string | null;
+  president_acting: boolean;
+  pv_url: string | null;
+  odj_url: string | null;
+  duration_s: number | null;
+  oral: number;
+  written: number;
+  people: number;
+  aligned: number;
+  resolutions: number;
+  unanimous: number;
+  divided: number;
+  debates: number;
+  remarks: number;
+  top_subjects: string[] | null;
+};
+
+function toSummary(r: SummaryRow): MeetingSummary {
+  return {
+    youtubeId: r.youtube_id,
+    meetingDate: r.meeting_date,
+    title: r.title,
+    kind: r.kind,
+    president: r.president,
+    presidentActing: r.president_acting,
+    pvUrl: r.pv_url,
+    odjUrl: r.odj_url,
+    durationS: r.duration_s,
+    oral: Number(r.oral),
+    written: Number(r.written),
+    people: Number(r.people),
+    aligned: Number(r.aligned),
+    resolutions: Number(r.resolutions),
+    unanimous: Number(r.unanimous),
+    divided: Number(r.divided),
+    debates: Number(r.debates),
+    remarks: Number(r.remarks),
+    topSubjects: r.top_subjects ?? [],
+  };
+}
+
+/** Every sitting, newest first, with the figures the overview shows. */
+export async function listMeetingSummaries(): Promise<MeetingSummary[]> {
+  const supabase = await sb();
+  const { data, error } = await supabase.rpc("council_meeting_summaries");
+  if (error) {
+    console.error("[council] council_meeting_summaries:", error.message);
+    return [];
+  }
+  return (data as SummaryRow[]).map(toSummary);
+}
+
+/** One sitting in full: its summary plus everything said and decided in it. */
+export async function getMeeting(youtubeId: string): Promise<{
+  summary: MeetingSummary;
+  questions: QuestionHit[];
+  resolutions: ResolutionHit[];
+  remarks: RemarkHit[];
+} | null> {
+  const all = await listMeetingSummaries();
+  const summary = all.find((m) => m.youtubeId === youtubeId);
+  if (!summary) return null;
+
+  const supabase = await sb();
+  const { data: meetingRow } = await supabase
+    .from("council_meetings")
+    .select("id")
+    .eq("youtube_id", youtubeId)
+    .maybeSingle();
+  if (!meetingRow) return null;
+  const id = (meetingRow as { id: string }).id;
+
+  const [q, r, k] = await Promise.all([
+    supabase
+      .from("council_questions")
+      .select("id, person_id, name, subject, mode, speaking_order, start_s, end_s, transcript")
+      .eq("meeting_id", id)
+      .order("mode")
+      .order("speaking_order"),
+    supabase
+      .from("council_resolutions")
+      .select(
+        "id, number, title, body, outcome, agenda_code, moved_by, seconded_by, debate, start_s",
+      )
+      .eq("meeting_id", id)
+      .order("speaking_order"),
+    supabase
+      .from("council_remarks")
+      .select("id, person_id, name, topic, kind, start_s")
+      .eq("meeting_id", id)
+      .order("kind")
+      .order("speaking_order"),
+  ]);
+
+  const meta = {
+    meetingTitle: summary.title,
+    meetingDate: summary.meetingDate,
+    youtubeId: summary.youtubeId,
+    pvUrl: summary.pvUrl,
+  };
+
+  return {
+    summary,
+    // No excerpt: on a meeting page the whole turn is the point, not the part
+    // that matched a search nobody ran.
+    questions: ((q.data ?? []) as Record<string, unknown>[]).map((row) => ({
+      ...meta,
+      id: row.id as string,
+      personId: (row.person_id as string | null) ?? null,
+      name: row.name as string,
+      subject: row.subject as string,
+      mode: row.mode as "orale" | "ecrite",
+      speakingOrder: row.speaking_order as number,
+      startS: row.start_s === null ? null : Number(row.start_s),
+      endS: row.end_s === null ? null : Number(row.end_s),
+      transcript: (row.transcript as string | null) ?? null,
+      excerpt: (row.transcript as string | null) ?? null,
+      lexical: true,
+      similarity: null,
+    })),
+    resolutions: ((r.data ?? []) as Record<string, unknown>[]).map((row) => ({
+      ...meta,
+      odjUrl: summary.odjUrl,
+      id: row.id as string,
+      number: row.number as string,
+      title: row.title as string,
+      body: (row.body as string | null) ?? null,
+      outcome: (row.outcome as string | null) ?? null,
+      agendaCode: (row.agenda_code as string | null) ?? null,
+      movedBy: (row.moved_by as string | null) ?? null,
+      secondedBy: (row.seconded_by as string | null) ?? null,
+      debate: Boolean(row.debate),
+      startS: row.start_s === null ? null : Number(row.start_s),
+      lexical: true,
+      similarity: null,
+    })),
+    remarks: ((k.data ?? []) as Record<string, unknown>[]).map((row) => ({
+      ...meta,
+      id: row.id as string,
+      personId: (row.person_id as string | null) ?? null,
+      name: row.name as string,
+      topic: row.topic as string,
+      kind: row.kind as "commentaire" | "question",
+      startS: row.start_s === null ? null : Number(row.start_s),
+      lexical: true,
+      similarity: null,
+    })),
+  };
+}
+
 /** How much of the archive the answer is actually drawn from. */
 export async function corpusStats(): Promise<{
   meetings: number;
   segments: number;
   questions: number;
   resolutions: number;
+  remarks: number;
 }> {
   const supabase = await sb();
-  const [m, s, q, r] = await Promise.all([
+  const [m, s, q, r, k] = await Promise.all([
     supabase.from("council_meetings").select("id", { count: "exact", head: true }),
     supabase.from("council_segments").select("id", { count: "exact", head: true }),
     supabase.from("council_questions").select("id", { count: "exact", head: true }),
     supabase.from("council_resolutions").select("id", { count: "exact", head: true }),
+    supabase.from("council_remarks").select("id", { count: "exact", head: true }),
   ]);
   return {
     meetings: m.count ?? 0,
     segments: s.count ?? 0,
     questions: q.count ?? 0,
     resolutions: r.count ?? 0,
+    remarks: k.count ?? 0,
   };
 }
 
@@ -331,7 +562,8 @@ export async function councilMentions(term: string): Promise<{
       pv_url: row.meeting.pv_url,
       lexical: true,
       similarity: null,
-    }),
+      // The term the caller matched on is what the excerpt should centre on.
+    }, [clean]),
   }));
 
   const resolutions = ((r.data ?? []) as unknown as (Record<string, unknown> & Joined)[]).map(

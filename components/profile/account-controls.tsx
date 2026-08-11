@@ -78,7 +78,7 @@ export function AccountControls({
         </a>
       </div>
 
-      <div className="mt-3 rounded-[16px] border border-[#f3ccc8] bg-white p-4 md:p-5">
+      <div className="mt-3 rounded-[16px] border border-[#f5ccd6] bg-white p-4 md:p-5">
         <h3 className="text-[16px] font-bold leading-[22px]">{labels.closeTitle}</h3>
         <p className={`mt-1 text-[14px] leading-[21px] ${MUTED}`}>{labels.closeBody}</p>
 
@@ -107,7 +107,7 @@ export function AccountControls({
                 type="button"
                 onClick={close}
                 disabled={!armed || pending}
-                className="inline-flex items-center justify-center rounded-[10px] border border-[#c0392f] bg-[#c0392f] px-5 py-[10px] text-[15px] font-bold leading-[22px] text-white transition-all hover:bg-[#a4231f] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex items-center justify-center rounded-[10px] border border-[#ab1f5c] bg-[#ab1f5c] px-5 py-[10px] text-[15px] font-bold leading-[22px] text-white transition-all hover:bg-[#b3122c] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {pending ? labels.closing : labels.confirmYes}
               </button>
@@ -118,7 +118,7 @@ export function AccountControls({
                   setTyped("");
                 }}
                 disabled={pending}
-                className="inline-flex items-center justify-center rounded-[10px] border border-[#dde5e1] bg-white px-5 py-[10px] text-[15px] font-bold leading-[22px] text-[#5d6b66] transition-all hover:border-[#637381] hover:text-[#16241f] disabled:opacity-60"
+                className="inline-flex items-center justify-center rounded-[10px] border border-[#e9e0d6] bg-white px-5 py-[10px] text-[15px] font-bold leading-[22px] text-[#6e6a72] transition-all hover:border-[#6e6a72] hover:text-[#1a1a1a] disabled:opacity-60"
               >
                 {labels.cancel}
               </button>
@@ -128,7 +128,7 @@ export function AccountControls({
           <button
             type="button"
             onClick={() => setConfirming(true)}
-            className="mt-3 inline-flex items-center justify-center rounded-[10px] border border-[#dde5e1] bg-white px-5 py-[10px] text-[15px] font-bold leading-[22px] text-[#5d6b66] transition-all hover:border-[#c0392f] hover:text-[#c0392f] active:scale-[0.98]"
+            className="mt-3 inline-flex items-center justify-center rounded-[10px] border border-[#e9e0d6] bg-white px-5 py-[10px] text-[15px] font-bold leading-[22px] text-[#6e6a72] transition-all hover:border-[#ab1f5c] hover:text-[#ab1f5c] active:scale-[0.98]"
           >
             {labels.close}
           </button>

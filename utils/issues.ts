@@ -28,14 +28,17 @@ export type Status = (typeof STATUS_KEYS)[number];
 export const isSettled = (status: Status) => status === "resolved";
 
 /**
- * Warm for what still needs attention, teal for what is done. The three stay
+ * Warm for what still needs attention, green for what is done. The three stay
  * distinguishable from each other, but the warm/cool split is what carries
  * across a map read from two metres away.
+ *
+ * Answered is the indigo an official's reply is marked with everywhere else,
+ * so the map and the thread agree about who has spoken.
  */
 export const STATUS_MAP_COLORS: Record<Status, string> = {
-  open: "#d94f45",
-  answered: "#b8660a",
-  resolved: "#097d6c",
+  open: "#fa3250",
+  answered: "#2a2a86",
+  resolved: "#0b6042",
 };
 
 // The borough geometry lives in utils/map.ts — it is shared with the events

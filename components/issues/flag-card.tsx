@@ -57,7 +57,7 @@ export function FlagCard({
   return (
     <article className={`${CARD} p-4 md:p-5`}>
       <div className="flex flex-wrap items-center gap-2">
-        <span className="inline-block rounded-full bg-[#f2f6f4] px-2.5 py-0.5 text-[12px] font-bold text-[#5d6b66]">
+        <span className="inline-block rounded-full bg-[#faf1e8] px-2.5 py-0.5 text-[12px] font-bold text-[#6e6a72]">
           {flag.commentId ? labels.replyKind : labels.reportKind}
         </span>
         {flag.authorName && (
@@ -87,7 +87,7 @@ export function FlagCard({
           type="button"
           onClick={dismiss}
           disabled={pending}
-          className="inline-flex items-center justify-center gap-2 rounded-[10px] border border-[#dde5e1] bg-white px-5 py-[10px] text-[15px] font-bold leading-[22px] text-[#5d6b66] transition-all hover:border-[#637381] hover:text-[#16241f] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex items-center justify-center gap-2 rounded-[10px] border border-[#e9e0d6] bg-white px-5 py-[10px] text-[15px] font-bold leading-[22px] text-[#6e6a72] transition-all hover:border-[#6e6a72] hover:text-[#1a1a1a] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {pending ? labels.dismissing : labels.dismiss}
         </button>

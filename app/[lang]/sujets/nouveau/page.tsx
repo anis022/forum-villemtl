@@ -22,15 +22,15 @@ export default async function NewIssuePage({
   if (!user) redirect(`/${lang}`);
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#f8faf9] text-[#16241f]">
+    <div className="flex min-h-screen flex-col bg-[#fef7f0] text-[#1a1a1a]">
       <SiteHeader user={user} lang={lang} />
 
       <div className={HERO_BAND}>
         <div className={`${CONTAINER} py-8 md:py-10`}>
-          <Link href={`/${lang}`} className="text-[14px] font-bold text-[#097d6c] hover:underline">
+          <Link href={`/${lang}`} className="text-[14px] font-bold text-[#fa3250] hover:underline">
             {t.issue.back}
           </Link>
-          <h1 className="mt-3 text-[28px] font-bold leading-[36px] md:text-[40px] md:leading-[56px]">
+          <h1 className="mt-3 text-[28px] leading-[36px] md:text-[40px] md:leading-[56px]">
             {t.issue.newTitle}
           </h1>
           <p className={`mt-2 max-w-[640px] text-[16px] leading-[24px] ${MUTED}`}>

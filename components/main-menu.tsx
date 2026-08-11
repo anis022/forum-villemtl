@@ -22,17 +22,27 @@ type Labels = {
   /** Only rendered for elected officials — see `moderation` below. */
   moderation: string;
   moderationDesc: string;
+  short: {
+    forum: string;
+    officials: string;
+    council: string;
+    projects: string;
+    events: string;
+    moderation: string;
+  };
 };
 
 /**
- * The montreal.ca mega-menu, measured off the live site: a 1080px panel
- * centred in the viewport, dropping from the bottom edge of the header,
- * square corners, shadow 0 2px 8px rgba(0,0,0,.1), a 20px bold heading and
- * 14px bold teal links.
+ * Navigation, in the two shapes ensemblemtl.org uses.
  *
- * Their panel is that wide because it carries ~25 links across four columns.
- * With three, each link gets a one-line description so the width is actually
- * used instead of leaving a third of the panel blank.
+ * From `lg` up it is their masthead nav: the sections spelt out in one line of
+ * indigo links, no panel and no click needed to find out what the site
+ * contains. Below `lg` six links do not fit, so it collapses to the hamburger
+ * and the panel — which is also where the one-line descriptions live, since
+ * that is the only place with room for them.
+ *
+ * The panel started as a copy of montreal.ca's, down to the square corners and
+ * the flat shadow. Both are gone.
  */
 export function MainMenu({
   lang,
@@ -71,13 +81,33 @@ export function MainMenu({
   useEffect(() => setOpen(false), [pathname]);
 
   const items = [
-    { href: `/${lang}`, label: labels.forum, desc: labels.forumDesc },
+    { href: `/${lang}`, label: labels.forum, short: labels.short.forum, desc: labels.forumDesc },
     // Straight after the forum: the point of posting here is that someone is
     // meant to answer, and this is who that someone is.
-    { href: `/${lang}/elus`, label: labels.officials, desc: labels.officialsDesc },
-    { href: `/${lang}/conseils`, label: labels.council, desc: labels.councilDesc },
-    { href: `/${lang}/projets`, label: labels.projects, desc: labels.projectsDesc },
-    { href: `/${lang}/evenements`, label: labels.events, desc: labels.eventsDesc },
+    {
+      href: `/${lang}/elus`,
+      label: labels.officials,
+      short: labels.short.officials,
+      desc: labels.officialsDesc,
+    },
+    {
+      href: `/${lang}/conseils`,
+      label: labels.council,
+      short: labels.short.council,
+      desc: labels.councilDesc,
+    },
+    {
+      href: `/${lang}/projets`,
+      label: labels.projects,
+      short: labels.short.projects,
+      desc: labels.projectsDesc,
+    },
+    {
+      href: `/${lang}/evenements`,
+      label: labels.events,
+      short: labels.short.events,
+      desc: labels.eventsDesc,
+    },
     // Last, and only for the people who can act on it. A queue is work, not a
     // section of the site, and it belongs after the things residents come for.
     ...(moderationCount === null
@@ -87,21 +117,50 @@ export function MainMenu({
             href: `/${lang}/moderation`,
             label:
               moderationCount > 0 ? `${labels.moderation} (${moderationCount})` : labels.moderation,
+            short:
+              moderationCount > 0
+                ? `${labels.short.moderation} (${moderationCount})`
+                : labels.short.moderation,
             desc: labels.moderationDesc,
           },
         ]),
   ];
 
   return (
-    <div ref={containerRef}>
+    <div ref={containerRef} className="flex min-w-0 items-center">
+      {/* Their nav, from `lg`: indigo, bold, spelt out. The current section is
+          underlined rather than recoloured — red would read as a button. */}
+      <nav className="hidden min-w-0 lg:block">
+        <ul className="flex items-center gap-1 xl:gap-2">
+          {items.map((item) => {
+            const current = pathname === item.href;
+            return (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  aria-current={current ? "page" : undefined}
+                  className={`${BARE_CONTROL} inline-flex h-10 items-center whitespace-nowrap px-2.5 font-nav text-[16px] font-bold leading-[24px] transition-colors ${
+                    current
+                      ? "text-[#2a2a86] underline decoration-[#fa3250] decoration-2 underline-offset-[6px]"
+                      : "text-[#2a2a86] hover:text-[#fa3250]"
+                  }`}
+                >
+                  {item.short}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
         aria-controls="main-menu-panel"
         aria-label={labels.menu}
-        className={`flex h-10 shrink-0 items-center gap-2 ${BARE_CONTROL} px-2 text-[16px] font-bold leading-[24px] transition-colors sm:px-3 md:gap-3 ${
-          open ? "text-[#097d6c]" : "text-[#16241f] hover:text-[#097d6c]"
+        className={`flex h-10 shrink-0 items-center gap-2 ${BARE_CONTROL} px-2 font-nav text-[16px] font-bold leading-[24px] transition-colors sm:px-3 lg:hidden ${
+          open ? "text-[#fa3250]" : "text-[#2a2a86] hover:text-[#fa3250]"
         }`}
       >
         <svg
@@ -128,22 +187,20 @@ export function MainMenu({
         id="main-menu-panel"
         data-open={open ? "" : undefined}
         inert={!open}
-        className="menu-panel absolute left-1/2 top-full z-50 w-[min(1080px,calc(100vw-2rem))] bg-white px-4 py-8 shadow-[0_2px_8px_0_rgba(0,0,0,0.1)]"
+        className="menu-panel absolute left-1/2 top-full z-50 w-[min(1080px,calc(100vw-2rem))] rounded-b-[16px] border-x border-b border-[#e9e0d6] bg-white px-4 py-8 shadow-[0_8px_24px_rgba(26,26,26,0.12)] lg:hidden"
       >
-        <p className="mb-4 text-[20px] font-bold leading-[24px] text-[#212529]">
-          {labels.sections}
-        </p>
+        <p className="mb-4 text-[20px] leading-[26px] text-[#1a1a1a]">{labels.sections}</p>
         <ul className="grid gap-x-10 gap-y-6 sm:grid-cols-2">
           {items.map((item) => (
             <li key={item.href}>
               <Link
                 href={item.href}
                 aria-current={pathname === item.href ? "page" : undefined}
-                className="text-[14px] font-bold leading-[20px] text-[#097d6c] hover:underline"
+                className="text-[14px] font-bold leading-[20px] text-[#fa3250] hover:underline"
               >
                 {item.label}
               </Link>
-              <p className="mt-1 text-[14px] leading-[20px] text-[#637381]">{item.desc}</p>
+              <p className="mt-1 text-[14px] leading-[20px] text-[#6e6a72]">{item.desc}</p>
             </li>
           ))}
         </ul>

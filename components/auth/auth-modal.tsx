@@ -326,7 +326,7 @@ export function AuthModal({
       /* `w-full` rather than `w-screen`: 100vw counts the classic scrollbar, so
          on a desktop with one the dialog would be a dozen pixels wider than the
          viewport it is meant to cover. */
-      className="auth-dialog m-0 h-dvh max-h-none w-full max-w-none bg-transparent p-0 text-[#212529]"
+      className="auth-dialog m-0 h-dvh max-h-none w-full max-w-none bg-transparent p-0 text-[#1a1a1a]"
     >
       <div
         className="auth-overlay fixed inset-0 flex items-center justify-center p-4"
@@ -349,7 +349,7 @@ export function AuthModal({
             className="auth-panel max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain"
           >
           {/* Brand bar, echoing the site header. */}
-          <div className="flex items-center justify-center border-b border-[#ced4da] px-5 py-4 sm:px-6 sm:py-5 md:px-8">
+          <div className="flex items-center justify-center border-b border-[#e9e0d6] px-5 py-4 sm:px-6 sm:py-5 md:px-8">
             <Image
               src="/logo-ensemble-mtl.png"
               alt="Ensemble Montréal"
@@ -362,12 +362,12 @@ export function AuthModal({
           {/* Tighter gutters on a phone: at 320px the panel is 288px wide, and
               24px of padding a side leaves the fields visibly cramped. */}
           <div className="px-5 py-6 sm:px-6 sm:py-7 md:px-8">
-            <h2 id="auth-modal-title" className="text-[24px] font-bold leading-[32px]">
+            <h2 id="auth-modal-title" className="text-[24px] leading-[32px]">
               {title}
             </h2>
             {/* `break-words`: the address is printed back here and a long one
                 has no space in it to wrap at. */}
-            {subtitle && <p className="mt-2 break-words text-[#637381]">{subtitle}</p>}
+            {subtitle && <p className="mt-2 break-words text-[#6e6a72]">{subtitle}</p>}
 
             <form onSubmit={submit} noValidate className="mt-6">
               {view === "signup" && (
@@ -454,7 +454,7 @@ export function AuthModal({
               {resent && (
                 <p
                   role="status"
-                  className="mb-5 rounded-[12px] border border-[#b6d8ce] bg-[#e2f0ec] px-4 py-3 text-[15px] text-[#075f53]"
+                  className="mb-5 rounded-[12px] border border-[#f8c4cd] bg-[#fde8eb] px-4 py-3 text-[15px] text-[#d81f3c]"
                 >
                   {t.auth.resendDone}
                 </p>
@@ -477,7 +477,7 @@ export function AuthModal({
                   than above it: nobody reads a preamble, and everybody looks at
                   what sits next to the thing they are about to press. */}
               {view === "signup" && (
-                <p className="mt-3 text-[13px] leading-[19px] text-[#5d6b66]">
+                <p className="mt-3 text-[13px] leading-[19px] text-[#6e6a72]">
                   {t.auth.collectionNotice}{" "}
                   <a href={`/${lang}/confidentialite`} className={LINK}>
                     {t.privacy.title}
@@ -489,7 +489,7 @@ export function AuthModal({
             {/* `inline-block py-2` on the switches: these are the last thing
                 a phone user reaches for and a bare line of text is a 24px
                 target. */}
-            <div className="mt-6 border-t border-[#ced4da] pt-4 text-center">
+            <div className="mt-6 border-t border-[#e9e0d6] pt-4 text-center">
               {view === "code" ? (
                 <>
                   <p>
@@ -497,7 +497,7 @@ export function AuthModal({
                       type="button"
                       onClick={resend}
                       disabled={cooldown > 0 || pending}
-                      className={`${LINK} inline-block py-2 disabled:cursor-not-allowed disabled:text-[#93a19c] disabled:no-underline`}
+                      className={`${LINK} inline-block py-2 disabled:cursor-not-allowed disabled:text-[#a09a94] disabled:no-underline`}
                     >
                       {cooldown > 0 ? t.auth.resendIn(cooldown) : t.auth.resend}
                     </button>
