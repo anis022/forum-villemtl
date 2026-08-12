@@ -1,10 +1,10 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { formatMeetingDate, formatTimestamp, youtubeDeepLink } from "@/utils/council";
 import type { Citation } from "@/utils/council-agent";
 import { dateLocale, getDictionary, type Locale } from "@/utils/i18n";
-import { BTN_PRIMARY, CARD, CHIP, FIELD, MUTED } from "@/components/ui/styles";
+import { MUTED } from "@/components/ui/styles";
 
 /** Set when the answer came from the corpus alone. See the route for why. */
 type FallbackReason = "limit" | "quota" | "error";
@@ -66,13 +66,43 @@ function DocIcon() {
 const SOURCE_LINK =
   "-mx-2 inline-flex min-h-[40px] items-center gap-1.5 rounded-[8px] px-2 text-[14px] font-bold text-[#fa3250] hover:underline";
 
-/** The model writes these. Everything else in the answer is prose. */
-const MARKER = /\[(\d{1,3})\]/g;
-/** A marker still arriving, a character at a time: "[", "[1", "[12". */
-const HALF_MARKER = /\[\d{0,3}$/;
-/** The model writes "le 4 mai [3]", and a marker floating off its word reads
- *  as a stray figure rather than as a reference. */
-const SPACE_BEFORE_MARKER = / +(?=\[\d{1,3}\])/g;
+/**
+ * The model writes these. Everything else in the answer is prose.
+ *
+ * A run of them comes through as `[1][2][3]` from one model and `[1,2,3]` from
+ * the next. Both are read, because the alternative is that swapping the model
+ * behind this page quietly turns every reference in every answer back into
+ * plain text nobody can click.
+ */
+const MARKER = /\[(\d{1,3}(?:\s*,\s*\d{1,3})*)\]/g;
+/** A marker still arriving, a character at a time: "[", "[1", "[1,", "[1,2". */
+const HALF_MARKER = /\[[\d,\s]*$/;
+/**
+ * The model writes "le 4 mai [3]", and a marker floating off its word reads as
+ * a stray figure rather than as a reference.
+ *
+ * Never after a digit, though. "le 4 mai 2026 [1]" closed up is a chip pressed
+ * against a year, and the reader is looking at what appears to be the number
+ * 20261. The chip has its own background and would survive on screen, but an
+ * answer somebody copies into an email is plain text, and there it is simply
+ * wrong. A date keeps its space.
+ */
+const SPACE_BEFORE_MARKER = /(?<!\d) +(?=\[\d{1,3}(?:\s*,\s*\d{1,3})*\])/g;
+
+/**
+ * What a model reaches for when it forgets it is not writing a document.
+ *
+ * The prompt asks for two or three sentences of plain prose and no formatting,
+ * and mostly gets it. Mostly is not a rendering strategy: asked to name
+ * fourteen people, a model reads that as a job for a bulleted list with every
+ * name in bold, and the page has no markdown renderer, so the reader gets a
+ * screenful of literal asterisks. Rather than a parser for a syntax nobody
+ * asked for, these cover the two things that actually show up, and the bold is
+ * honoured rather than stripped: when a model does list fourteen names, the
+ * names are genuinely the thing worth seeing first.
+ */
+const BOLD = /\*\*(.+?)\*\*/g;
+const BULLET = /^[ \t]*[-*+][ \t]+/gm;
 
 const MARK =
   "ml-0.5 inline-flex min-w-[18px] items-center justify-center rounded-[5px] bg-[#fde8eb] px-1 align-[3px] text-[11px] font-bold leading-[16px] text-[#fa3250] no-underline hover:bg-[#fa3250] hover:text-white";
@@ -89,7 +119,7 @@ const MARK =
  */
 const MAX_RUN = 3;
 
-type Token = { kind: "text"; value: string } | { kind: "mark"; at: number };
+type Token = { kind: "text"; value: string; strong?: boolean } | { kind: "mark"; at: number };
 
 /**
  * One paragraph of an answer, with its markers turned into buttons.
@@ -115,21 +145,27 @@ function Prose({
 }) {
   const t = getDictionary(lang).council;
 
+  const marked = text.replace(SPACE_BEFORE_MARKER, "").replace(BULLET, "• ");
   const clean =
-    at.size === 0
-      ? text.replace(SPACE_BEFORE_MARKER, "").replace(MARKER, "").replace(HALF_MARKER, "")
-      : text.replace(SPACE_BEFORE_MARKER, "");
+    at.size === 0 ? marked.replace(MARKER, "").replace(HALF_MARKER, "") : marked;
 
   // `split` on a capturing group alternates text, capture, text, so the odd
-  // positions are the numbers themselves.
+  // positions are the numbers themselves. One capture can hold several of them,
+  // which is the `[1,2,3]` shape; each becomes its own chip, so a run reads the
+  // same however the model happened to punctuate it. The same trick a second
+  // time inside each run of text, for the pairs of asterisks.
   const tokens: Token[] = [];
   clean.split(MARKER).forEach((piece, i) => {
     if (i % 2 === 0) {
-      if (piece) tokens.push({ kind: "text", value: piece });
+      piece.split(BOLD).forEach((run, j) => {
+        if (run) tokens.push({ kind: "text", value: run, strong: j % 2 === 1 });
+      });
       return;
     }
-    const shown = at.get(Number(piece));
-    if (shown !== undefined) tokens.push({ kind: "mark", at: shown });
+    for (const n of piece.split(",")) {
+      const shown = at.get(Number(n.trim()));
+      if (shown !== undefined) tokens.push({ kind: "mark", at: shown });
+    }
   });
 
   const out: React.ReactNode[] = [];
@@ -137,7 +173,15 @@ function Prose({
   for (let i = 0; i < tokens.length; ) {
     const token = tokens[i];
     if (token.kind === "text") {
-      out.push(token.value);
+      out.push(
+        token.strong ? (
+          <strong key={`b-${out.length}`} className="font-bold">
+            {token.value}
+          </strong>
+        ) : (
+          token.value
+        ),
+      );
       i += 1;
       continue;
     }
@@ -189,19 +233,23 @@ function Source({
   c,
   lang,
   lit,
+  idPrefix,
 }: {
   c: Citation;
   lang: Locale;
   lit: boolean;
+  idPrefix: string;
 }) {
   const t = getDictionary(lang).council;
   const kinds: Record<string, string> = t.kinds;
 
   return (
     <li
-      id={`appui-${c.i}`}
-      className={`flex min-w-0 gap-3 scroll-mt-24 rounded-[10px] p-2 transition-colors ${
-        lit ? "bg-[#fde8eb]" : ""
+      id={`${idPrefix}-${c.i}`}
+      className={`flex min-w-0 gap-3 scroll-mt-4 rounded-[12px] border p-3.5 transition-colors ${
+        lit
+          ? "border-[#f4a8b4] bg-[#fff5f6]"
+          : "border-[#e9e2dc] bg-white hover:border-[#d2c8bf]"
       }`}
     >
       <span
@@ -223,7 +271,7 @@ function Source({
         {c.what && <p className={`text-[14px] leading-[21px] break-words ${MUTED}`}>{c.what}</p>}
 
         {c.quote && (
-          <blockquote className="mt-2 border-l-2 border-[#e9e0d6] pl-3 text-[15px] leading-[24px] break-words">
+          <blockquote className="mt-2.5 border-l-2 border-[#d8d2cb] pl-3 text-[14px] leading-[22px] break-words text-[#4f4a50]">
             « {c.quote} »
           </blockquote>
         )}
@@ -297,8 +345,31 @@ export function CouncilChat({ lang }: { lang: Locale }) {
   const [shown, setShown] = useState<number | null>(null);
   const [lit, setLit] = useState<number | null>(null);
 
+  // Ten sources are four thousand pixels. Beside the conversation that is a
+  // column; under it on a phone it is a wall between the answer and the box for
+  // the next question, so there the panel starts folded. A scroller inside the
+  // card would be the other way out and a worse one: a nested scroller on a
+  // phone swallows the drag and the page feels stuck.
+  const [wide, setWide] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const query = window.matchMedia("(min-width: 1024px)");
+    const sync = () => setWide(query.matches);
+    sync();
+    query.addEventListener("change", sync);
+    return () => query.removeEventListener("change", sync);
+  }, []);
+
   const box = useRef<HTMLTextAreaElement | null>(null);
+  const conversationRef = useRef<HTMLDivElement | null>(null);
   const nextId = useRef(0);
+
+  useEffect(() => {
+    const conversation = conversationRef.current;
+    if (!conversation) return;
+    conversation.scrollTo({ top: conversation.scrollHeight, behavior: busy ? "smooth" : "auto" });
+  }, [activity, busy, turns]);
 
   // The answer arrives a word at a time, so the turn is patched by id rather
   // than by position: anything that reorders the list while a response is in
@@ -318,9 +389,14 @@ export function CouncilChat({ lang }: { lang: Locale }) {
   const pick = useCallback((turnId: number, i: number) => {
     setShown(turnId);
     setLit(i);
-    // After the panel has re-rendered on the turn that was just chosen.
+    setOpen(true);
+    // After the panel has re-rendered on the turn that was just chosen, and
+    // unfolded if it was folded.
     requestAnimationFrame(() => {
-      document.getElementById(`appui-${i}`)?.scrollIntoView({ block: "nearest" });
+      const prefix = window.matchMedia("(min-width: 1024px)").matches
+        ? "desktop-appui"
+        : "mobile-appui";
+      document.getElementById(`${prefix}-${i}`)?.scrollIntoView({ block: "nearest" });
     });
   }, []);
 
@@ -422,193 +498,235 @@ export function CouncilChat({ lang }: { lang: Locale }) {
 
   const panel = turns.find((turn) => turn.id === shown) ?? null;
 
-  return (
-    // Two independent columns at width, one stack below it. `contents` is what
-    // lets the same three elements do both: on a phone the wrapper dissolves,
-    // so the conversation, the panel and the box are siblings that `order` can
-    // arrange as exchange, evidence, box. At `lg` the wrapper becomes a real
-    // column again, which is the only way the panel's height stops dictating
-    // where the box sits. A grid cannot do this: a tall cell in a shared row
-    // pushes everything in the neighbouring cell down with it.
-    <div className="flex min-w-0 flex-col gap-8 lg:flex-row lg:items-start lg:gap-10">
-      <div className="contents lg:block lg:min-w-0 lg:max-w-[760px] lg:flex-1">
-        {/* The conversation. Capped at a reading measure even though the column
-            is wider: past about seventy characters a line tires. */}
-        <div className="order-1 min-w-0">
-        {turns.length === 0 ? (
-          <div className={`${CARD} p-5 sm:p-6`}>
-            <p className="text-[17px] leading-[26px] break-words">{t.emptyLead}</p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {t.examples.map((example) => (
-                <button
-                  key={example}
-                  type="button"
-                  onClick={() => ask(example)}
-                  className={`${CHIP} max-w-full text-left`}
-                >
-                  <span className="min-w-0 break-words">{example}</span>
-                </button>
-              ))}
-            </div>
+  const sourceTitle = panel?.fallback ? t.passagesTitle : t.sources;
+  const sourceList = (idPrefix: string) =>
+    panel && panel.citations.length > 0 ? (
+      <ul className="space-y-3">
+        {panel.citations.map((citation) => (
+          <Source
+            key={citation.key}
+            c={citation}
+            lang={lang}
+            lit={citation.i === lit}
+            idPrefix={idPrefix}
+          />
+        ))}
+      </ul>
+    ) : (
+      <div className="grid min-h-[180px] place-items-center px-6 text-center">
+        <p className={`max-w-[32ch] text-[14px] leading-[21px] ${MUTED}`}>
+          {t.sourcesPlaceholder}
+        </p>
+      </div>
+    );
+
+  const messages = (
+    <>
+      {turns.length === 0 ? (
+        <div className="mx-auto flex min-h-full max-w-[760px] flex-col justify-center py-8">
+          <p className="max-w-[650px] text-[20px] font-medium leading-[30px] tracking-[-0.01em] break-words sm:text-[22px] sm:leading-[32px]">
+            {t.emptyLead}
+          </p>
+          <div className="mt-5 grid gap-2 sm:grid-cols-2">
+            {t.examples.map((example) => (
+              <button
+                key={example}
+                type="button"
+                onClick={() => ask(example)}
+                className="min-h-[52px] rounded-[12px] border border-[#e4ddd6] bg-[#fffdfb] px-4 py-3 text-left text-[14px] font-medium leading-[20px] text-[#4f4a50] transition-colors hover:border-[#fa3250] hover:bg-[#fff6f7] hover:text-[#1a1a1a]"
+              >
+                {example}
+              </button>
+            ))}
           </div>
-        ) : (
-          <div className="space-y-7">
-            {turns.map((turn) => {
-              if (turn.role === "user") {
-                return (
-                  <div key={turn.id} className="flex justify-end">
-                    <p className="min-w-0 max-w-[520px] rounded-[16px] bg-[#e8e8f6] px-4 py-3 text-[16px] leading-[24px] whitespace-pre-wrap break-words text-[#2a2a86]">
-                      {turn.text}
-                    </p>
-                  </div>
-                );
-              }
-
-              const at = new Map(turn.citations.map((c) => [c.n, c.i]));
-
-              const fallbackLine =
-                turn.fallback === "quota"
-                  ? t.fallbackQuota
-                  : turn.fallback === "limit"
-                    ? t.fallbackLimit
-                    : turn.fallback
-                      ? t.fallbackError
-                      : null;
-
+        </div>
+      ) : (
+        <div className="mx-auto max-w-[820px] space-y-8 py-2">
+          {turns.map((turn) => {
+            if (turn.role === "user") {
               return (
-                <div key={turn.id} className="min-w-0">
-                  {turn.text
-                    .split(/\n{2,}/)
-                    .filter((para) => para.trim())
-                    .map((para, i) => (
-                      <p
-                        key={i}
-                        className="mt-3 text-[17px] leading-[27px] whitespace-pre-wrap break-words first:mt-0"
-                      >
-                        <Prose
-                          text={para.trim()}
-                          at={at}
-                          lang={lang}
-                          onPick={(source) => pick(turn.id, source)}
-                        />
-                      </p>
-                    ))}
-
-                  {/* Said in the reader's own column rather than in an alert
-                      box. Nothing has gone wrong for them: the archive is right
-                      there, and the only thing missing is a paragraph. */}
-                  {fallbackLine && (
-                    <p
-                      className={`text-[17px] leading-[27px] break-words ${MUTED}`}
-                      role="status"
-                      aria-live="polite"
-                    >
-                      {fallbackLine}
-                    </p>
-                  )}
-
-                  {turn.error && (
-                    <p className={`text-[15px] leading-[23px] break-words ${MUTED}`} role="status">
-                      {turn.error}
-                    </p>
-                  )}
-
-                  {turn.fallback && turn.citations.length === 0 && (
-                    <p className={`mt-3 text-[15px] leading-[23px] break-words ${MUTED}`}>
-                      {t.nothingFound}
-                    </p>
-                  )}
-
-                  {/* An older answer keeps a way back to its own evidence, so
-                      the panel showing the newest one costs nothing. */}
-                  {turn.citations.length > 0 && turn.id !== shown && (
-                    <button
-                      type="button"
-                      onClick={() => pick(turn.id, turn.citations[0].i)}
-                      className={`mt-2 rounded-[8px] text-[14px] font-bold text-[#fa3250] hover:underline`}
-                    >
-                      {t.sourceCount(turn.citations.length)}
-                    </button>
-                  )}
+                <div key={turn.id} className="flex justify-end">
+                  <p className="min-w-0 max-w-[78%] rounded-[18px] rounded-br-[6px] bg-[#e8e8f6] px-4 py-3 text-[16px] leading-[24px] whitespace-pre-wrap break-words text-[#2a2a86] sm:max-w-[620px]">
+                    {turn.text}
+                  </p>
                 </div>
               );
-            })}
-          </div>
-        )}
+            }
 
-        {/* One quiet line saying what is going on, driven off the tool the model
-            just started calling. It goes the moment the first word of the answer
-            arrives, so nothing is ever claimed after it has stopped being true. */}
-        {activity && (
-          <p className={`mt-6 text-[15px] leading-[23px] ${MUTED}`} role="status" aria-live="polite">
-            {activity}
-          </p>
-        )}
+            const at = new Map(turn.citations.map((citation) => [citation.n, citation.i]));
+            const fallbackLine =
+              turn.fallback === "quota"
+                ? t.fallbackQuota
+                : turn.fallback === "limit"
+                  ? t.fallbackLimit
+                  : turn.fallback
+                    ? t.fallbackError
+                    : null;
+
+            return (
+              <div key={turn.id} className="min-w-0 border-l-2 border-[#e9e2dc] pl-4 sm:pl-5">
+                {turn.text
+                  .split(/\n{2,}/)
+                  .filter((paragraph) => paragraph.trim())
+                  .map((paragraph, index) => (
+                    <p
+                      key={index}
+                      className="mt-3 text-[17px] leading-[28px] whitespace-pre-wrap break-words first:mt-0"
+                    >
+                      <Prose
+                        text={paragraph.trim()}
+                        at={at}
+                        lang={lang}
+                        onPick={(source) => pick(turn.id, source)}
+                      />
+                    </p>
+                  ))}
+
+                {fallbackLine && (
+                  <p className={`text-[17px] leading-[27px] break-words ${MUTED}`} role="status">
+                    {fallbackLine}
+                  </p>
+                )}
+                {turn.error && (
+                  <p className={`text-[15px] leading-[23px] break-words ${MUTED}`} role="status">
+                    {turn.error}
+                  </p>
+                )}
+                {turn.fallback && turn.citations.length === 0 && (
+                  <p className={`mt-3 text-[15px] leading-[23px] break-words ${MUTED}`}>
+                    {t.nothingFound}
+                  </p>
+                )}
+                {turn.citations.length > 0 && turn.id !== shown && (
+                  <button
+                    type="button"
+                    onClick={() => pick(turn.id, turn.citations[0].i)}
+                    className="mt-2 rounded-[8px] text-[14px] font-semibold text-[#fa3250] hover:underline"
+                  >
+                    {t.sourceCount(turn.citations.length)}
+                  </button>
+                )}
+              </div>
+            );
+          })}
+
+          {activity && (
+            <p className={`border-l-2 border-[#e9e2dc] pl-5 text-[15px] leading-[23px] ${MUTED}`} role="status" aria-live="polite">
+              {activity}
+            </p>
+          )}
+        </div>
+      )}
+    </>
+  );
+
+  // Both scrollers are `relative`, and it is not decoration.
+  //
+  // Every row of the source panel carries an `sr-only` label, and `sr-only` is
+  // `position: absolute`. An absolutely positioned element is laid out against
+  // its nearest positioned ancestor, and with none it falls all the way through
+  // to the initial containing block — which means it is not clipped by any of
+  // the `overflow-hidden` wrappers between here and the page root, because none
+  // of them is in its containing block chain.
+  //
+  // The visible effect was that sixteen sources, one of them sitting at 2300px
+  // down its own scroller, quietly gave the *document* 1200px of scrollable
+  // height on a page built to be exactly one viewport tall. Nothing looked
+  // wrong until something scrolled it: `scrollIntoView` on a cited source moves
+  // every scrollable ancestor it can find, so clicking a marker slid the whole
+  // page up and left the masthead off screen above a band of dead background.
+  //
+  // One `relative` on each scroller gives those labels a containing block that
+  // is already clipped, and the document goes back to being unscrollable.
+  //
+  // `overscroll-contain` is the other half: reaching the end of either scroller
+  // must not hand the gesture to the page behind it.
+  return (
+    <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_auto] overflow-hidden lg:grid-cols-[minmax(0,1fr)_390px] lg:grid-rows-1 xl:grid-cols-[minmax(0,1fr)_minmax(440px,38%)]">
+      <section className="flex min-h-0 min-w-0 flex-col overflow-hidden bg-white" aria-label={t.title}>
+        <div
+          ref={conversationRef}
+          className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5 sm:px-6 lg:px-8 lg:py-7"
+        >
+          {messages}
+
+          {panel && panel.citations.length > 0 && (
+            <details
+              open={!wide && open}
+              onToggle={(event) => setOpen(event.currentTarget.open)}
+              className="mt-7 rounded-[14px] border border-[#e4ddd6] bg-[#fffdfb] lg:hidden"
+            >
+              <summary className="flex min-h-[52px] cursor-pointer list-none items-center justify-between gap-3 px-4 [&::-webkit-details-marker]:hidden">
+                <h2 className="text-[13px] font-semibold text-[#373238]">{sourceTitle}</h2>
+                <span className="shrink-0 text-[13px] font-semibold text-[#fa3250]">
+                  {open ? t.hideSources : t.sourceCount(panel.citations.length)}
+                </span>
+              </summary>
+              <div className="border-t border-[#e9e2dc] p-3">{sourceList("mobile-appui")}</div>
+            </details>
+          )}
         </div>
 
-      {/* The box. Third on a phone, so the reading order is exchange, evidence,
-          then the place to ask the next one. */}
-      <form
-        className="order-3 min-w-0 lg:mt-8"
-        onSubmit={(event) => {
-          event.preventDefault();
-          ask(draft);
-        }}
-      >
-        <label className="sr-only" htmlFor="council-chat-question">
-          {t.placeholder}
-        </label>
-        <textarea
-          id="council-chat-question"
-          ref={box}
-          rows={2}
-          value={draft}
-          placeholder={t.placeholder}
-          onChange={(event) => {
-            setDraft(event.target.value);
-            grow();
-          }}
-          onKeyDown={(event) => {
-            if (event.key !== "Enter" || event.shiftKey) return;
+        <form
+          className="shrink-0 border-t border-[#e9e2dc] bg-[#fffdfb] px-4 py-3 sm:px-6 lg:px-8 lg:py-4"
+          onSubmit={(event) => {
             event.preventDefault();
             ask(draft);
           }}
-          className={`${FIELD} resize-none`}
-        />
+        >
+          <div className="mx-auto flex max-w-[860px] items-end gap-2 rounded-[15px] border border-[#d8d0c8] bg-white p-2 shadow-[0_3px_12px_rgba(31,22,16,0.06)] focus-within:border-[#fa3250]">
+            <label className="sr-only" htmlFor="council-chat-question">
+              {t.placeholder}
+            </label>
+            <textarea
+              id="council-chat-question"
+              ref={box}
+              rows={1}
+              value={draft}
+              placeholder={t.placeholder}
+              onChange={(event) => {
+                setDraft(event.target.value);
+                grow();
+              }}
+              onKeyDown={(event) => {
+                if (event.key !== "Enter" || event.shiftKey) return;
+                event.preventDefault();
+                ask(draft);
+              }}
+              className="max-h-[160px] min-h-[42px] min-w-0 flex-1 resize-none bg-transparent px-2 py-2.5 text-[15px] leading-[22px] text-[#1a1a1a] outline-none placeholder:text-[#9b959b]"
+            />
+            <button
+              type="submit"
+              disabled={busy || !draft.trim()}
+              aria-label={busy ? t.sending : t.send}
+              title={busy ? t.sending : t.send}
+              className="grid h-[42px] w-[42px] shrink-0 place-items-center rounded-[11px] bg-[#fa3250] text-white transition-colors hover:bg-[#d81f3c] disabled:cursor-not-allowed disabled:bg-[#eee8e3] disabled:text-[#aaa3a0]"
+            >
+              {busy ? (
+                <svg className="h-[18px] w-[18px] animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M20 12a8 8 0 1 1-2.34-5.66" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              ) : (
+                <svg className="h-[19px] w-[19px]" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M12 19V5m0 0-5.5 5.5M12 5l5.5 5.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
+            </button>
+          </div>
+        </form>
+      </section>
 
-        {/* Hint and button on one row, allowed to stack: at 320px the sentence
-            and the button together are wider than the screen. */}
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-          <p className={`min-w-0 text-[13px] leading-[19px] ${MUTED}`}>{t.hint}</p>
-          <button
-            type="submit"
-            disabled={busy || !draft.trim()}
-            className={`${BTN_PRIMARY} shrink-0`}
-          >
-            {busy ? t.sending : t.send}
-          </button>
-        </div>
-      </form>
-      </div>
-
-      {/* What the shown answer rests on. Beside the conversation and staying
-          put while it moves; under the exchange on a phone, where there is no
-          beside. */}
-      <aside className="order-2 min-w-0 lg:sticky lg:top-6 lg:w-[360px] lg:shrink-0">
-        <div className={`${CARD} p-4 sm:p-5`}>
-          <h2 className={`text-[12px] font-bold uppercase tracking-wide ${MUTED}`}>
-            {panel?.fallback ? t.passagesTitle : t.sources}
-          </h2>
-
-          {panel && panel.citations.length > 0 ? (
-            <ul className="mt-3 -mx-2 space-y-4 lg:max-h-[calc(100vh-9rem)] lg:overflow-y-auto">
-              {panel.citations.map((c) => (
-                <Source key={c.key} c={c} lang={lang} lit={c.i === lit} />
-              ))}
-            </ul>
-          ) : (
-            <p className={`mt-2 text-[15px] leading-[23px] ${MUTED}`}>{t.sourcesPlaceholder}</p>
+      <aside className="hidden min-h-0 min-w-0 flex-col overflow-hidden border-l border-[#e2dbd4] bg-[#f8f5f1] lg:flex">
+        <div className="flex h-[55px] shrink-0 items-center justify-between border-b border-[#e2dbd4] px-5">
+          <h2 className="text-[14px] font-semibold text-[#373238]">{sourceTitle}</h2>
+          {panel && panel.citations.length > 0 && (
+            <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-[#6e6a72] tabular-nums">
+              {panel.citations.length}
+            </span>
           )}
+        </div>
+        <div className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain p-3.5 xl:p-4">
+          {sourceList("desktop-appui")}
         </div>
       </aside>
     </div>

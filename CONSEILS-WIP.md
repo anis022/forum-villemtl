@@ -29,8 +29,9 @@ coûte, pas par ce qu'elle produit :
 
 1. **Une réponse déjà écrite**, servie depuis le cache. Coût nul. Le corpus est
    figé et les résidents posent les mêmes questions.
-2. **Le modèle**, si cette adresse n'a pas déjà pris plus que sa part
-   (5 questions par minute, 40 par jour).
+2. **Les modèles**, dans l'ordre de l'échelle ci-dessous, et seulement si cette
+   adresse n'a pas déjà pris plus que sa part (5 questions par minute, 40 par
+   jour).
 3. **Le corpus lui-même**, sans modèle. Coût nul, aucun plafond, insensible à
    la charge.
 
@@ -38,20 +39,102 @@ L'étape 3 est inconditionnelle. **Tout échec au-dessus retombe dessus**, y
 compris l'absence totale de clé. Il n'existe aucune situation où quelqu'un pose
 une question et n'obtient rien.
 
-## La clé
+## L'échelle des modèles
 
-`GOOGLE_GENERATIVE_AI_API_KEY` est posée en production et dans `.env.local`.
-La rédaction fonctionne, vérifiée en production en français et en anglais.
+**Une dizaine de questions de test ont épuisé l'allocation gratuite du jour**
+sur `gemini-3.6-flash`. Le site a tourné en repli depuis, ce qui valide la
+conception et dit surtout que Google seul n'est pas tenable pour du public.
 
-Si le palier gratuit cesse un jour de couvrir le modèle choisi, la correction
-est la variable `COUNCIL_MODEL_ID` dans le tableau de bord, pas un déploiement.
-Le défaut est `gemini-3.6-flash`. Aucun autre endroit du code ne nomme un
-modèle.
+Le défaut n'est plus un modèle mais une liste, essayée dans l'ordre, définie
+dans `COUNCIL_MODELS` (`utils/council-agent.ts`). Aucun autre endroit du code
+ne nomme un modèle.
 
-**À faire : révoquer cette clé et en générer une autre.** Elle a été transmise
-en clair dans une conversation, donc elle est à considérer comme divulguée.
-Remplacement : `npx vercel env rm GOOGLE_GENERATIVE_AI_API_KEY production`
-puis `npx vercel env add`, et la même ligne dans `.env.local`.
+| Rang | Fournisseur | Ce que le palier gratuit compte | Clé |
+| --- | --- | --- | --- |
+| 1 | Mistral | ~1 G de jetons par **mois** | `MISTRAL_API_KEY` |
+| 2 | au choix, compatible OpenAI | selon la maison | `COUNCIL_COMPATIBLE_*` |
+| 3 | Google | quelques dizaines de requêtes par **jour** | `GOOGLE_GENERATIVE_AI_API_KEY` |
+
+Mistral passe devant à cause de l'unité. Chez Google le palier se compte en
+requêtes par jour, et une question d'ici n'est pas une requête : l'agent
+cherche, recherche parfois, puis rédige. Chez Mistral il se compte en jetons par
+mois, de l'ordre du milliard, soit la même question posée mille fois par jour au
+lieu de dix. C'est aussi une maison qui écrit le français en première langue, ce
+que sont ce corpus et cet arrondissement.
+
+Le rang 2 est volontairement anonyme : une adresse, une clé, un identifiant de
+modèle, les trois lus dans l'environnement (`COUNCIL_COMPATIBLE_BASE_URL`,
+`COUNCIL_COMPATIBLE_API_KEY`, `COUNCIL_COMPATIBLE_MODEL_ID`). Tout palier
+gratuit sérieux parle la forme d'OpenAI, donc glisser Groq, Cerebras ou
+OpenRouter derrière cette page est trois réglages dans le tableau de bord, pas
+un déploiement. Sans ces trois variables le rang est simplement sauté, et c'est
+l'état livré.
+
+Google reste, en dernier. Son allocation est petite mais elle se remplit à
+minuit, sa clé est déjà posée, et un rang qui répond à une question sur dix vaut
+mieux que pas de rang.
+
+L'ordre lui-même est une variable, `COUNCIL_PROVIDERS`, par défaut
+`mistral,compatible,google`.
+
+### Ce que « descendre d'un rang » veut dire
+
+Un palier épuisé se refuse **au début** d'une requête, pas au milieu. Donc un
+rang qui échoue avant d'avoir écrit un mot n'a coûté au lecteur qu'une seconde,
+et le rang suivant reçoit la même question. Dès que des mots sont partis, ce
+n'est plus vrai : la page ajoute ce qui arrive, donc un deuxième rang écrirait
+sa réponse à la suite de la demi-phrase du premier. À partir de là le seul geste
+honnête est celui que la page fait déjà d'une réponse cassée, l'abandonner et
+montrer les passages.
+
+`maxRetries: 0` est posé dans la route. Par défaut le SDK réessayait trois fois,
+et sur une erreur de quota les trois échouent à coup sûr en étant facturées :
+une panne de quota coûtait quatre requêtes au lieu d'une, avant même de songer
+au rang suivant.
+
+Le cache et la limite par adresse restent les deux vraies défenses. Sur un
+corpus figé et des questions qui se répètent, c'est le cache qui décidera si
+l'allocation tient la journée.
+
+## Les clés
+
+À poser en production et dans `.env.local` :
+
+```
+npx vercel env add MISTRAL_API_KEY
+```
+
+Chez Mistral, le palier gratuit se sert par défaut des questions et des réponses
+pour entraîner ses modèles. **Le couper** : console d'administration, menu
+Privacy, section « Anonymous improvement data ». À faire avant d'ouvrir la page
+au public : ce sont des questions de résidents sur leur rue.
+
+**À faire : révoquer `GOOGLE_GENERATIVE_AI_API_KEY` et en générer une autre.**
+Elle a été transmise en clair dans une conversation, donc elle est à considérer
+comme divulguée. Remplacement :
+`npx vercel env rm GOOGLE_GENERATIVE_AI_API_KEY production` puis
+`npx vercel env add`, et la même ligne dans `.env.local`.
+
+## La disposition
+
+Conversation à gauche, appuis dans un panneau à droite. Les deux étaient dans
+une seule colonne : trois lignes de prose, un filet, huit passages, puis la
+question suivante. Chaque réponse poussait ses propres preuves entre elle et la
+relance, donc un fil de trois questions faisait trente écrans.
+
+Les deux colonnes sont **indépendantes** : la hauteur du panneau ne décide plus
+d'où se trouve la boîte de question. C'est fait avec `display: contents` sur
+l'enveloppe de gauche, qui se dissout sur téléphone pour que les trois éléments
+deviennent frères et que `order` les range en échange, preuves, boîte. Une
+grille ne peut pas faire ça : une cellule haute pousse sa voisine vers le bas.
+
+Sur téléphone le panneau **arrive replié**. Déplié il fait quatre mille pixels
+et enterre la boîte de question. Un `details` plutôt qu'un défilement interne :
+sur téléphone un défilement imbriqué avale le glissement et la page semble
+bloquée. Cliquer un marqueur déplie le panneau et y amène l'appui.
+
+Le panneau montre les appuis de la dernière réponse. Une réponse plus ancienne
+garde un bouton « Voir les N appuis » qui y ramène le panneau.
 
 ## Comment les sources tiennent
 

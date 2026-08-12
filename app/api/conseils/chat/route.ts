@@ -3,7 +3,7 @@ import { z } from "zod";
 import {
   councilTools,
   searchTheCorpus,
-  COUNCIL_MODEL,
+  COUNCIL_MODELS,
   COUNCIL_SYSTEM_PROMPT,
   type Citation,
 } from "@/utils/council-agent";
@@ -47,9 +47,19 @@ function reasonFor(error: unknown): FallbackReason {
   return "error";
 }
 
-/** The numbers the answer actually wrote, in the order it wrote them. */
+/**
+ * The numbers the answer actually wrote, in the order it wrote them.
+ *
+ * A run of them is written `[1][2][3]` by some models and `[1,2,3]` by others,
+ * and the two mean the same thing. Reading only the first shape is how a change
+ * of model silently empties the list under an answer: nothing matches, nothing
+ * is counted as cited, and `collect` falls back to printing every row the
+ * search touched as though the answer had leaned on all of them.
+ */
 function citedIn(text: string): number[] {
-  return [...text.matchAll(/\[(\d{1,3})\]/g)].map((m) => Number(m[1]));
+  return [...text.matchAll(/\[(\d{1,3}(?:\s*,\s*\d{1,3})*)\]/g)].flatMap((m) =>
+    m[1].split(",").map((n) => Number(n.trim())),
+  );
 }
 
 const encoder = new TextEncoder();
@@ -69,8 +79,9 @@ const encoder = new TextEncoder();
  * each step costs rather than by what it produces:
  *
  *   1. An answer already written, which costs nothing.
- *   2. The model, if this visitor has not already had more than their share of
- *      a free allowance the whole borough is sharing.
+ *   2. The models, in the order `COUNCIL_MODELS` puts them, and only if this
+ *      visitor has not already had more than their share of the free allowances
+ *      the whole borough is sharing.
  *   3. The corpus itself, which costs nothing, has no allowance, and cannot be
  *      exhausted by anybody.
  *
@@ -128,55 +139,87 @@ export async function POST(request: Request) {
           return;
         }
 
-        const { tools, collect } = councilTools();
+        // The ladder, tried in order and stopped at whichever rung answers.
+        //
+        // A spent allowance is refused at the start of a request, not in the
+        // middle of one, so a rung that fails before it has written a word has
+        // cost the reader a second and nothing else, and the next rung gets the
+        // same question. Once words are on their way that stops being true: the
+        // page appends what arrives, so a second rung would write its answer
+        // onto the end of the first one's half-sentence. From there the only
+        // honest move is the one the page already makes with a broken answer,
+        // which is to drop it and show the passages instead.
+        //
+        // Tools are built per rung. The numbering behind an answer has to be the
+        // numbering of the search that answer read, not of every search tried
+        // tonight.
+        let failed: FallbackReason = "error";
+        let answered = false;
 
-        const result = streamText({
-          model: COUNCIL_MODEL,
-          system: COUNCIL_SYSTEM_PROMPT,
-          messages,
-          tools,
-          // Search, then a reformulation if the first pass came back empty, then
-          // the answer. Past that the model is guessing at queries rather than
-          // reading, and every step is another request against the allowance.
-          stopWhen: isStepCount(6),
-          onError: ({ error }) => {
-            console.error("[conseils/chat]", error);
-          },
-        });
+        for (const rung of COUNCIL_MODELS) {
+          const { tools, collect } = councilTools();
 
-        let answer = "";
-        let failed: FallbackReason | null = null;
+          const result = streamText({
+            model: rung.model,
+            system: COUNCIL_SYSTEM_PROMPT,
+            messages,
+            tools,
+            // Search, then a reformulation if the first pass came back empty,
+            // then the answer. Past that the model is guessing at queries rather
+            // than reading, and every step is another request against the
+            // allowance.
+            stopWhen: isStepCount(6),
+            // The default is to retry three times. Against a metered free tier
+            // that is the worst possible response to the commonest failure: the
+            // allowance is already spent, so all three retries are certain to
+            // fail and each one is charged. One attempt, then the next rung.
+            maxRetries: 0,
+            onError: ({ error }) => {
+              console.error(`[conseils/chat] ${rung.provider}:`, error);
+            },
+          });
 
-        for await (const part of result.fullStream) {
-          if (part.type === "tool-input-start") {
-            send({ t: "tool", v: part.toolName });
-          } else if (part.type === "text-delta") {
-            answer += part.text;
-            send({ t: "d", v: part.text });
-          } else if (part.type === "error") {
-            failed = reasonFor(part.error);
+          let answer = "";
+          let trouble: FallbackReason | null = null;
+          let spoken = false;
+
+          for await (const part of result.fullStream) {
+            if (part.type === "tool-input-start") {
+              send({ t: "tool", v: part.toolName });
+            } else if (part.type === "text-delta") {
+              answer += part.text;
+              spoken = true;
+              send({ t: "d", v: part.text });
+            } else if (part.type === "error") {
+              trouble = reasonFor(part.error);
+            }
           }
+
+          // A model that returned nothing at all has not answered, whatever else
+          // it reported on the way.
+          if (!trouble && !answer.trim()) trouble = "error";
+
+          if (trouble) {
+            failed = trouble;
+            if (spoken) break;
+            continue;
+          }
+
+          // Last, because the list depends on the finished text: a source is
+          // kept only if the answer wrote its number, and the numbers a reader
+          // sees are assigned in the order the answer used them.
+          const citations = collect(citedIn(answer));
+          send({ t: "cites", v: citations });
+
+          if (cacheable && citations.length > 0) {
+            await rememberAnswer(lang, question, { text: answer, citations });
+          }
+
+          answered = true;
+          break;
         }
 
-        // A model that returned nothing at all has not answered, whatever else
-        // it reported on the way.
-        if (!failed && !answer.trim()) failed = "error";
-
-        if (failed) {
-          await fallBackToCorpus(failed);
-          controller.close();
-          return;
-        }
-
-        // Last, because the list depends on the finished text: a source is kept
-        // only if the answer wrote its number, and the numbers a reader sees are
-        // assigned in the order the answer used them.
-        const citations = collect(citedIn(answer));
-        send({ t: "cites", v: citations });
-
-        if (cacheable && citations.length > 0) {
-          await rememberAnswer(lang, question, { text: answer, citations });
-        }
+        if (!answered) await fallBackToCorpus(failed);
       } catch (error) {
         console.error("[conseils/chat] flux interrompu:", error);
         await fallBackToCorpus(reasonFor(error));

@@ -1,5 +1,7 @@
 import { google } from "@ai-sdk/google";
-import { tool } from "ai";
+import { mistral } from "@ai-sdk/mistral";
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+import { tool, type LanguageModel } from "ai";
 import { z } from "zod";
 import {
   answerAboutQuestions,
@@ -27,24 +29,78 @@ import type { MeetingSummary, QuestionHit, RemarkHit, ResolutionHit } from "@/ut
  * makes the list under an answer the evidence for that answer rather than a
  * dump of everything the search happened to touch.
  */
+/** One rung of the ladder: a model, and a name to say so in the log. */
+export type CouncilModel = { provider: string; model: LanguageModel };
+
 /**
- * The model, and the single place it is named.
+ * The models, in the order the route tries them, and the only place any of them
+ * is named.
  *
- * Called straight at Google rather than through the Vercel AI Gateway, because
- * the gateway will not serve a project without a card on file even to spend its
- * own free credits, and this site is not to cost anything. The key is Google's
- * free developer key, which needs no card either.
+ * Called straight at each provider rather than through the Vercel AI Gateway,
+ * because the gateway will not serve a project without a card on file even to
+ * spend its own free credits, and this site is not to cost anything. Every rung
+ * here is reachable with a free key and no card.
  *
- * The id is an environment variable with a default rather than a literal. Free
- * tiers move: Google has already narrowed which models they cover, and the day
- * this one falls off the list the fix has to be a setting somebody changes in
- * the dashboard, not a deployment. Nothing else in the codebase names a model.
+ * Mistral leads because of what its free tier is counted in. Google's is
+ * counted in requests per day, and one question here is nowhere near one
+ * request: the agent searches, sometimes searches again, then writes, so a
+ * handful of questions can spend a day. Mistral's is counted in tokens per
+ * month, on the order of a billion of them, which is the same question asked a
+ * thousand times a day rather than ten. It also writes French as a first
+ * language, which is what this corpus and this borough are.
+ *
+ * The middle rung is deliberately nameless: a base URL, a key and a model id,
+ * all three read from the environment. Every free tier worth having speaks
+ * OpenAI's shape, so putting Groq or Cerebras or OpenRouter behind this page is
+ * three settings in the dashboard rather than a deployment. It is skipped
+ * entirely when those settings are absent, which is the state it ships in.
+ *
+ * Google stays, on the bottom rung. Its allowance is small but it refills at
+ * midnight, its key is already configured, and a rung that answers one question
+ * in ten is worth more than no rung at all.
+ *
+ * Ids and order are environment variables with defaults rather than literals.
+ * Free tiers move: Google has already narrowed which models they cover, and the
+ * day one of these falls off the list the fix has to be a setting somebody
+ * changes in the dashboard, not a deployment.
  *
  * Whatever happens here, no question is ever left unanswered: every failure
  * path in the route falls through to `searchTheCorpus` below, which costs
- * nothing and asks no third party for permission.
+ * nothing and asks no third party for permission. An empty ladder, which is
+ * what no keys at all produces, is not an error state; it is that search.
  */
-export const COUNCIL_MODEL = google(process.env.COUNCIL_MODEL_ID ?? "gemini-3.6-flash");
+const RUNGS: Record<string, () => CouncilModel | null> = {
+  mistral: () =>
+    process.env.MISTRAL_API_KEY
+      ? {
+          provider: "mistral",
+          model: mistral(process.env.COUNCIL_MISTRAL_MODEL_ID ?? "mistral-medium-latest"),
+        }
+      : null,
+
+  compatible: () => {
+    const baseURL = process.env.COUNCIL_COMPATIBLE_BASE_URL;
+    const apiKey = process.env.COUNCIL_COMPATIBLE_API_KEY;
+    const id = process.env.COUNCIL_COMPATIBLE_MODEL_ID;
+    if (!baseURL || !apiKey || !id) return null;
+
+    // Named after the host so a failure in the log says which company said no.
+    const host = URL.canParse(baseURL) ? new URL(baseURL).hostname : "compatible";
+    return { provider: host, model: createOpenAICompatible({ name: host, baseURL, apiKey })(id) };
+  },
+
+  google: () =>
+    process.env.GOOGLE_GENERATIVE_AI_API_KEY
+      ? { provider: "google", model: google(process.env.COUNCIL_MODEL_ID ?? "gemini-3.6-flash") }
+      : null,
+};
+
+export const COUNCIL_MODELS: CouncilModel[] = (
+  process.env.COUNCIL_PROVIDERS ?? "mistral,compatible,google"
+)
+  .split(",")
+  .map((name) => RUNGS[name.trim().toLowerCase()]?.() ?? null)
+  .filter((rung): rung is CouncilModel => rung !== null);
 
 /**
  * A retrieved row is up to eight thousand characters of transcript. A dozen of
@@ -535,6 +591,7 @@ Si une recherche ne donne rien, reformule une fois avant de conclure que les arc
 COMMENT ÉCRIRE
 Dans la langue de la question.
 Deux ou trois phrases. Pas de préambule, pas de reformulation de la question avant la réponse.
+Du texte suivi, rien d'autre. Pas d'astérisques, pas de gras, pas de titres, pas de liste à puces, pas de tableau. Quand tu nommes plusieurs personnes, mets-les dans une phrase, séparées par des virgules, chacune suivie de son numéro : cette page n'affiche pas la mise en forme et le lecteur verrait les astérisques.
 Commence par le fait. N'écris jamais « voici », « au total », « en résumé », « selon les archives ».
 Ne parle pas de toi ni de ton travail. « J'ai compté neuf personnes » se dit « neuf personnes ». Pas de « j'ai trouvé », « j'ai cherché », « les données montrent ».
 Ne redonne pas dans une deuxième phrase un chiffre déjà donné dans la première. Si tu as la place d'en dire plus, nomme les personnes et les dates : c'est ce que le lecteur ne pouvait pas deviner.
