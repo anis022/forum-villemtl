@@ -49,12 +49,12 @@ const fr = {
     forum: "Forum",
     projects: "État d'avancement des projets",
     events: "Carte des événements dans l'arrondissement",
-    council: "Recherche dans les conseils d'arrondissement",
+    council: "Vos questions sur le conseil d'arrondissement",
     officials: "Personnes élues de l'arrondissement",
     forumDesc: "Discutez des enjeux de votre quartier et soutenez les sujets prioritaires.",
     projectsDesc: "Suivez l'avancement des chantiers et des projets en cours.",
     eventsDesc: "Repérez les activités et les événements à venir près de chez vous.",
-    councilDesc: "Explorez ce qui a été dit lors des séances du conseil, avec liens vers la vidéo.",
+    councilDesc: "Posez une question sur les séances et lisez le passage qui y répond, dans la vidéo.",
     officialsDesc: "Voyez qui vous représente, dans quel district, et comment les joindre.",
     // The inline navigation in the masthead is one line of six links; the long
     // labels above are what the mega-menu panel shows, where there is room to
@@ -82,121 +82,81 @@ const fr = {
     sourceNote: "Liste vérifiée le 4 août 2026 auprès de",
   },
   council: {
-    title: "Recherche dans les conseils d'arrondissement",
+    // Copy rules for this whole block, learned the hard way: no em dashes, no
+    // sentence built out of three items, and never explain how the search works
+    // to someone who wants to know what the council said about their street.
+    title: "Demandez ce qui s'est dit au conseil",
     intro:
-      "Posez votre question en toutes lettres. La recherche croise les procès-verbaux officiels de l'arrondissement avec la transcription des enregistrements : elle vous dit combien de personnes ont abordé un sujet, qui elles sont, et à quel moment exact de la vidéo.",
-    searchLabel: "Rechercher dans les séances",
-    searchPlaceholder: "ex. trottoir sur Wilson, piste cyclable de Terrebonne, déneigement…",
-    searchButton: "Rechercher",
-    examplesLabel: "Essayez par exemple :",
+      "Posez votre question en une phrase. La réponse arrive avec les passages qui l'appuient et le moment exact dans la vidéo de la séance.",
+
+    emptyLead: "Demandez ce que vous chercheriez vous-même dans les procès-verbaux.",
     examples: [
-      "piste cyclable de Terrebonne",
-      "trottoir",
-      "logement social",
-      "déneigement",
-      "sécurité aux abords des écoles",
+      "Qui s'est plaint des parcomètres sur Sherbrooke ?",
+      "Combien de personnes ont parlé de déneigement ?",
+      "Qu'est-ce que le conseil a décidé sur le logement ?",
     ],
-    corpusNote: (meetings: number, questions: number, resolutions: number, remarks: number) =>
-      `${meetings} séance${meetings > 1 ? "s" : ""} de 2026 — ${questions} interventions citoyennes, ${resolutions} résolutions et ${remarks} prises de parole d'élus, tirées des procès-verbaux officiels.`,
+    placeholder: "Votre question",
+    send: "Demander",
+    sending: "En cours",
+    hint: "Entrée pour envoyer, Maj et Entrée pour aller à la ligne.",
 
-    // The filter residents asked for: what the public raised, or what the
-    // council decided.
-    sectionAll: "Tout",
-    sectionQuestions: "Questions du public",
-    sectionResolutions: "Ordre du jour et résolutions",
-    sectionElus: "Prises de parole des élus",
-    councilQuestions: "Questions des élus à l'administration",
+    // One quiet line while the model works, driven off the tool it just
+    // started. Each says what is being read, never how the search works.
+    thinking: "Je cherche dans les séances…",
+    tools: {
+      chercher_dans_les_enregistrements: "J'écoute les enregistrements…",
+      chercher_questions_du_public: "Je regarde les questions du public…",
+      chercher_resolutions: "Je lis les décisions du conseil…",
+      chercher_interventions_elus: "Je regarde ce que les élus ont soulevé…",
+      liste_des_seances: "Je parcours les séances…",
+      detail_seance: "J'ouvre le détail de la séance…",
+    },
 
-    // La section « séances » : un résumé par soirée, tiré du procès-verbal.
-    meetingsTitle: "Les séances de 2026",
-    meetingsIntro:
-      "Chaque séance en un coup d'œil : qui est venu parler, ce qui a été décidé, et les sujets qui ont rassemblé plusieurs personnes. Tous les chiffres sont des décomptes du procès-verbal officiel — rien n'est résumé par une machine.",
-    inBrief: "En bref",
-    pvPending: "Procès-verbal pas encore publié — il est approuvé à la séance suivante.",
-    presidedBy: "Présidée par",
-    actingMayor: "(maire suppléant)",
-    sitting: "Séance",
-    backToCouncil: "Toutes les séances",
-    watchFull: "Voir l'enregistrement",
-    mostRaised: "Sujets soulevés par plusieurs personnes",
-    statPeople: "personnes",
-    statResolutions: "résolutions",
-    statRemarks: "prises de parole d'élus",
-    statDebates: "débats",
-    dividedCount: (n: number) =>
-      n === 1 ? "1 décision non unanime" : `${n} décisions non unanimes`,
-    briefLine: (oral: number, written: number, unanimous: number, divided: number) =>
-      `${oral} question${oral > 1 ? "s" : ""} orale${oral > 1 ? "s" : ""} et ${written} écrite${written > 1 ? "s" : ""}. ` +
-      `${unanimous} résolution${unanimous > 1 ? "s" : ""} adoptée${unanimous > 1 ? "s" : ""} à l'unanimité` +
-      (divided > 0
-        ? `, ${divided} après un vote partagé.`
-        : ", aucun vote partagé."),
-    alignedNote: (aligned: number, oral: number) =>
-      `${aligned} des ${oral} interventions orales sont repérées dans l'enregistrement et s'ouvrent à la bonne seconde. Les autres ne sont pas nommées à voix haute.`,
-    badgeComment: "Commentaire d'élu",
-    badgeElusQuestion: "Question d'élu",
-    remarksCount: (n: number) =>
-      n === 1
-        ? "1 prise de parole d'élu correspond"
-        : `${n} prises de parole d'élus correspondent`,
-    modeAll: "Orales et écrites",
-    modeOrale: "Questions orales",
-    modeEcrite: "Questions écrites",
-    badgeOrale: "Question orale",
-    badgeEcrite: "Question écrite",
-
-    // The headline. Phrased as a count of people, because that is the question
-    // being asked — "how many people", not "how many passages".
-    peopleCount: (n: number) =>
-      n === 1 ? "1 personne a abordé ce sujet" : `${n} personnes ont abordé ce sujet`,
-    acrossMeetings: (n: number) =>
-      n === 1 ? "lors d'une séance" : `lors de ${n} séances`,
-    interventionsCount: (n: number) =>
-      n === 1 ? "1 intervention" : `${n} interventions`,
-    resolutionsCount: (n: number) =>
-      n === 1 ? "1 résolution correspond" : `${n} résolutions correspondent`,
-
-    countedNote:
-      "Ces personnes ont employé les mots recherchés. Chaque source renvoie au procès-verbal officiel et au moment exact de l'enregistrement.",
-    relatedLabel: "Sujets proches",
-    relatedNote:
-      "Ces interventions ne contiennent pas les mots recherchés mais portent sur un sujet voisin. Elles ne sont pas comptées.",
-    expandedNote: (expanded: string) => `Recherche élargie : ${expanded}`,
-
-    subjectLabel: "Sujet inscrit au procès-verbal",
-    verbatimLabel: "Ce qui a été dit",
-    notAligned: "Moment non encore repéré dans l'enregistrement",
+    sources: "Ce sur quoi la réponse s'appuie",
+    sourceNumber: (n: number) => `Appui ${n}`,
+    moreSources: (n: number) => (n === 1 ? "1 appui de plus" : `${n} appuis de plus`),
+    sourceCount: (n: number) => (n === 1 ? "Revoir l'appui" : `Revoir les ${n} appuis`),
+    sourcesPlaceholder: "Les appuis de la réponse s'affichent ici, avec le passage et le moment dans la vidéo.",
     watch: "Voir dans la vidéo",
     readPv: "Procès-verbal (PDF)",
-    readOdj: "Ordre du jour (PDF)",
-    movedBy: "Proposé par",
-    secondedBy: "appuyé par",
-    debate: "Débat",
-
-    lexicalOnly:
-      "Recherche par mots-clés seulement — la recherche par sens est temporairement indisponible. Le décompte, lui, est inchangé : il repose toujours sur les mots.",
-    noResultsTitle: "Personne n'a abordé ce sujet",
-    noResultsBody:
-      "Aucune intervention ni résolution de 2026 ne contient ces mots. Reformulez, ou essayez un terme plus courant.",
-    emptyCorpusTitle: "Aucune séance indexée",
-    emptyCorpusBody:
-      "Les procès-verbaux et les transcriptions n'ont pas encore été traités. Revenez après l'exécution du pipeline d'ingestion.",
-
-    roles: {
-      resident: "Résident·e",
-      councillor: "Conseiller·ère",
-      mayor: "Maire·sse",
-      staff: "Personnel",
-      unknown: "Intervenant·e",
+    noMoment: "Ce passage n'est pas repéré dans l'enregistrement.",
+    kinds: {
+      passage: "Ce qui a été dit",
+      question: "Question du public",
+      resolution: "Décision du conseil",
+      remark: "Point soulevé par un élu",
+      meeting: "Séance",
     },
+
+    // Quand la rédaction n'a pas lieu, la recherche répond quand même. Ces
+    // phrases disent ce qui manque sans faire porter au lecteur une panne qui
+    // n'est pas la sienne, et sans promettre un retour à une heure inconnue.
+    passagesTitle: "Ce que les archives contiennent",
+    fallbackQuota:
+      "Le service de rédaction a atteint sa limite gratuite du jour. La recherche, elle, reste ouverte : voici les passages où vos mots apparaissent.",
+    fallbackLimit:
+      "Plusieurs questions coup sur coup. Voici directement les passages où vos mots apparaissent.",
+    fallbackError:
+      "Je n'ai pas réussi à rédiger de réponse. Voici directement les passages où vos mots apparaissent.",
+    nothingFound:
+      "Ces mots n'apparaissent dans aucune séance enregistrée. Essayez un mot plus simple, ou le nom d'une rue.",
+
+    network: "La demande n'a pas abouti. Réessayez.",
+    errorGeneric: "La question n'a pas pu être traitée. Réessayez.",
+
+    // Said once, at the foot of the page, where somebody who has read an answer
+    // will meet it. Repeating it under every reply would train people to stop
+    // seeing it.
     disclaimer:
-      "Les noms, les sujets et les résolutions proviennent des procès-verbaux publiés par l'arrondissement : ce sont des données officielles. Les extraits de paroles proviennent d'une transcription automatique de l'enregistrement, qui peut comporter des erreurs. Consultez la vidéo pour vérifier les propos et leur contexte.",
+      "Les réponses sont écrites par une machine à partir des procès-verbaux de l'arrondissement et de la transcription automatique des enregistrements. Le passage cité peut contenir des erreurs de transcription : avant de le reprendre, écoutez le moment dans la vidéo.",
   },
   events: {
     intro:
       "Les activités et événements en cours ou à venir dans Côte-des-Neiges–Notre-Dame-de-Grâce, situés sur la carte. Cherchez-y, ou filtrez par date, par type et par emplacement.",
     mapLabel: "Carte des événements de l'arrondissement",
     searchPlaceholder: "Rechercher un événement, un lieu…",
+    filterWhen: "Date",
+    filterSetting: "Emplacement",
     when: {
       all: "Tout",
       today: "Aujourd'hui",
@@ -316,21 +276,24 @@ const fr = {
   home: {
     welcome: "Bienvenue sur le forum",
     title: "Échangez sur votre quartier et les services municipaux.",
-    subtitle:
-      "Cherchez si quelqu'un a déjà signalé ce qui vous préoccupe, suivez les dossiers en cours et soutenez les sujets qui comptent pour vous.",
     report: "Signaler un enjeu",
     ctaTitle: "Un problème dans votre quartier?",
-    ctaBody:
-      "Nid-de-poule, lampadaire brisé, ruelle mal entretenue : décrivez la situation en quelques minutes. Les sujets les plus soutenus par les résident·e·s sont traités en priorité par les élu·e·s.",
     signInPrompt: "Connectez-vous pour publier un sujet ou soutenir un enjeu.",
     topTitle: "Sujets les plus soutenus",
+    topicsTitle: "Sujets",
     showMore: "Afficher plus de sujets",
     newTitle: "Sujets récents",
     mapTitle: "Signalements sur la carte",
     sortTop: "Populaires",
     sortNew: "Récents",
+    sortLabel: "Trier par",
     viewList: "Liste",
     viewMap: "Carte",
+    filters: "Filtres",
+    filterCategories: "Catégories",
+    resetFilters: "Réinitialiser",
+    applyFilters: "Appliquer",
+    filterStatuses: "Statut",
     mapAll: "Tous",
     mapOpen: "Non résolus",
     mapSettled: "Résolus",
@@ -349,6 +312,14 @@ const fr = {
     allCategories: "Tous les sujets",
     resultOne: "résultat",
     resultMany: "résultats",
+    activeMembers: "Membres actifs",
+    popularCategories: "Catégories populaires",
+    trending: "Tendances",
+    discover: "À découvrir",
+    contentEvent: "Événement",
+    contentProject: "Projet",
+    contributionCount: (n: number) => (n === 1 ? "1 contrib." : `${n} contrib.`),
+    trafficCount: (n: number) => (n === 1 ? "1 consultation" : `${n} consultations`),
   },
   issue: {
     back: "← Retour au forum",
@@ -499,7 +470,7 @@ const fr = {
       "Un espace pour parler de Côte-des-Neiges–Notre-Dame-de-Grâce : soulevez un enjeu, appuyez celui d'une voisine ou d'un voisin, suivez ce que fait l'arrondissement.",
     // Said plainly and on every page, because the site used to wear the city's
     // masthead and someone who saw it then could reasonably still think so.
-    legal: "Forum CDN-NDG — projet à code ouvert. Ce site n'est pas un service de la Ville de Montréal.",
+    legal: "Forum CDN-NDG, projet à code ouvert. Ce site n'est pas un service de la Ville de Montréal.",
   },
   translate: {
     action: "Traduire",
@@ -552,7 +523,7 @@ const fr = {
     // traitement automatisé, et l'article 12.1 de la Loi 25 oblige à le dire au
     // moment de la décision et à ouvrir une porte vers une personne.
     messageRefused:
-      "Ce message n'a pas été publié : un filtre automatique y a repéré des propos injurieux ou menaçants. Reformulez-le sans viser personne, ou demandez qu'une personne le relise — voir la page Confidentialité.",
+      "Ce message n'a pas été publié : un filtre automatique y a repéré des propos injurieux ou menaçants. Reformulez-le sans viser personne, ou demandez qu'une personne le relise. Voir la page Confidentialité.",
   },
 };
 
@@ -572,12 +543,12 @@ const en: Dictionary = {
     forum: "Forum",
     projects: "Project progress",
     events: "Map of events in the borough",
-    council: "Search the borough council meetings",
+    council: "Your questions about the borough council",
     officials: "Your elected officials",
     forumDesc: "Discuss issues in your neighbourhood and back the topics that matter.",
     projectsDesc: "Follow the progress of construction and current projects.",
     eventsDesc: "Find activities and upcoming events near you.",
-    councilDesc: "Explore what was said at council meetings, with links to the video.",
+    councilDesc: "Ask about the meetings and read the passage that answers you, in the video.",
     officialsDesc: "See who represents you, in which district, and how to reach them.",
     short: {
       forum: "Forum",
@@ -602,112 +573,70 @@ const en: Dictionary = {
     sourceNote: "List checked on 4 August 2026 against",
   },
   council: {
-    title: "Search borough council meetings",
+    title: "Ask what was said at council",
     intro:
-      "Ask in plain language. The search cross-references the borough's official minutes with a transcript of the recordings: it tells you how many people raised a subject, who they were, and the exact moment in the video.",
-    searchLabel: "Search the meetings",
-    searchPlaceholder: "e.g. sidewalk on Wilson, Terrebonne bike path, snow removal…",
-    searchButton: "Search",
-    examplesLabel: "For example:",
+      "Ask your question in one sentence. The answer comes back with the passages behind it and the exact moment in the video of the meeting.",
+
+    emptyLead: "Ask what you would go looking for in the minutes yourself.",
     examples: [
-      "Terrebonne bike path",
-      "sidewalk",
-      "social housing",
-      "snow removal",
-      "safety around schools",
+      "Who complained about the Sherbrooke parking meters?",
+      "How many people raised snow clearing?",
+      "What did the council decide about housing?",
     ],
-    corpusNote: (meetings: number, questions: number, resolutions: number, remarks: number) =>
-      `${meetings} sitting${meetings > 1 ? "s" : ""} from 2026 — ${questions} resident interventions, ${resolutions} resolutions and ${remarks} councillor items, taken from the official minutes.`,
+    placeholder: "Your question",
+    send: "Ask",
+    sending: "Working",
+    hint: "Enter to send, Shift and Enter for a new line.",
 
-    sectionAll: "Everything",
-    sectionQuestions: "Public questions",
-    sectionResolutions: "Agenda and resolutions",
-    sectionElus: "What councillors raised",
-    councilQuestions: "Councillor questions to the administration",
+    thinking: "Looking through the meetings…",
+    tools: {
+      chercher_dans_les_enregistrements: "Listening to the recordings…",
+      chercher_questions_du_public: "Reading the public question periods…",
+      chercher_resolutions: "Reading the council's decisions…",
+      chercher_interventions_elus: "Reading what the councillors raised…",
+      liste_des_seances: "Going through the meetings…",
+      detail_seance: "Opening the meeting…",
+    },
 
-    meetingsTitle: "The 2026 sittings",
-    meetingsIntro:
-      "Each sitting at a glance: who came to speak, what was decided, and the subjects several people turned up about. Every figure is a count from the official minutes — nothing here is summarised by a machine.",
-    inBrief: "In brief",
-    pvPending: "Minutes not published yet — they are approved at the following sitting.",
-    presidedBy: "Chaired by",
-    actingMayor: "(acting mayor)",
-    sitting: "Sitting",
-    backToCouncil: "All sittings",
-    watchFull: "Watch the recording",
-    mostRaised: "Subjects raised by more than one person",
-    statPeople: "people",
-    statResolutions: "resolutions",
-    statRemarks: "councillor items",
-    statDebates: "debates",
-    dividedCount: (n: number) =>
-      n === 1 ? "1 split decision" : `${n} split decisions`,
-    briefLine: (oral: number, written: number, unanimous: number, divided: number) =>
-      `${oral} spoken question${oral > 1 ? "s" : ""} and ${written} written. ` +
-      `${unanimous} resolution${unanimous > 1 ? "s" : ""} passed unanimously` +
-      (divided > 0 ? `, ${divided} on a split vote.` : ", with no split votes."),
-    alignedNote: (aligned: number, oral: number) =>
-      `${aligned} of the ${oral} spoken interventions are located in the recording and open at the right second. The rest are never named aloud.`,
-    badgeComment: "Councillor comment",
-    badgeElusQuestion: "Councillor question",
-    remarksCount: (n: number) =>
-      n === 1 ? "1 councillor item matches" : `${n} councillor items match`,
-    modeAll: "Spoken and written",
-    modeOrale: "Spoken questions",
-    modeEcrite: "Written questions",
-    badgeOrale: "Spoken question",
-    badgeEcrite: "Written question",
-
-    peopleCount: (n: number) =>
-      n === 1 ? "1 person raised this subject" : `${n} people raised this subject`,
-    acrossMeetings: (n: number) =>
-      n === 1 ? "at one sitting" : `across ${n} sittings`,
-    interventionsCount: (n: number) =>
-      n === 1 ? "1 intervention" : `${n} interventions`,
-    resolutionsCount: (n: number) =>
-      n === 1 ? "1 resolution matches" : `${n} resolutions match`,
-
-    countedNote:
-      "These people used the words you searched for. Every source links to the official minutes and to the exact moment in the recording.",
-    relatedLabel: "Related subjects",
-    relatedNote:
-      "These interventions do not contain the words you searched for but cover a nearby subject. They are not counted.",
-    expandedNote: (expanded: string) => `Search widened to: ${expanded}`,
-
-    subjectLabel: "Subject as recorded in the minutes",
-    verbatimLabel: "What was said",
-    notAligned: "Moment not yet located in the recording",
+    sources: "What this answer rests on",
+    sourceNumber: (n: number) => `Source ${n}`,
+    moreSources: (n: number) => (n === 1 ? "1 more source" : `${n} more sources`),
+    sourceCount: (n: number) => (n === 1 ? "See the source again" : `See the ${n} sources again`),
+    sourcesPlaceholder: "The sources behind an answer show up here, with the passage and the moment in the video.",
     watch: "Watch in the video",
     readPv: "Minutes (PDF)",
-    readOdj: "Agenda (PDF)",
-    movedBy: "Moved by",
-    secondedBy: "seconded by",
-    debate: "Debate",
-
-    lexicalOnly:
-      "Keyword search only — meaning-based search is temporarily unavailable. The count is unaffected: it always rests on the words themselves.",
-    noResultsTitle: "Nobody raised this subject",
-    noResultsBody:
-      "No 2026 intervention or resolution contains these words. Try rewording, or a more common term.",
-    emptyCorpusTitle: "No sittings indexed",
-    emptyCorpusBody:
-      "The minutes and transcripts have not been processed yet. Check back once the ingestion pipeline has run.",
-
-    roles: {
-      resident: "Resident",
-      councillor: "Councillor",
-      mayor: "Mayor",
-      staff: "Staff",
-      unknown: "Speaker",
+    noMoment: "This passage is not pinned to a moment in the recording.",
+    kinds: {
+      passage: "What was said",
+      question: "Public question",
+      resolution: "Council decision",
+      remark: "Raised by a councillor",
+      meeting: "Meeting",
     },
+
+    passagesTitle: "What the archive holds",
+    fallbackQuota:
+      "The writing service has used up its free allowance for the day. The search has not: here are the passages where your words come up.",
+    fallbackLimit:
+      "Several questions in a row. Here are the passages where your words come up, straight from the archive.",
+    fallbackError:
+      "I could not write an answer. Here are the passages where your words come up, straight from the archive.",
+    nothingFound:
+      "These words do not come up in any recorded meeting. Try a simpler word, or a street name.",
+
+    network: "The request did not go through. Try again.",
+    errorGeneric: "The question could not be handled. Try again.",
+
     disclaimer:
-      "Names, subjects and resolutions come from the minutes published by the borough: this is official data. Spoken excerpts come from an automatic transcript of the recording, which may contain errors. Check the video to verify what was said and its context.",
+      "Answers are machine-written from the borough's official minutes and from an automatic transcription of the recordings. A quoted passage may carry transcription mistakes, so listen to the moment in the video before repeating it.",
   },
   events: {
     intro:
       "Activities and events happening now or soon in Côte-des-Neiges–Notre-Dame-de-Grâce, placed on the map. Search them, or narrow by date, type and setting.",
     mapLabel: "Map of borough events",
     searchPlaceholder: "Search an event, a place…",
+    filterWhen: "Date",
+    filterSetting: "Setting",
     when: {
       all: "All",
       today: "Today",
@@ -771,7 +700,7 @@ const en: Dictionary = {
   moderation: {
     title: "Flagged messages",
     intro:
-      "What the filter let through but wants read again. A message lands here because of the words in it — that is a suspicion, not a verdict. Read it in context before deciding.",
+      "What the filter let through but wants read again. A message lands here because of the words in it, which is a suspicion and not a verdict. Read it in context before deciding.",
     navLabel: "Moderation",
     empty: "Nothing waiting.",
     emptyBody: "No message is waiting to be read.",
@@ -823,19 +752,21 @@ const en: Dictionary = {
   home: {
     welcome: "Welcome to the forum",
     title: "Discuss your neighbourhood and city services.",
-    subtitle:
-      "Check whether someone has already reported what is bothering you, follow open topics, and support the ones that matter to you.",
     report: "Report an issue",
     ctaTitle: "Something wrong in your neighbourhood?",
-    ctaBody:
-      "A pothole, a broken streetlight, an alley left untended: describe it in a couple of minutes. The topics residents support most are prioritized by elected officials.",
     signInPrompt: "Sign in to post a topic or support an issue.",
     topTitle: "Most-backed topics",
+    topicsTitle: "Topics",
     showMore: "Show more topics",
     newTitle: "Recent topics",
     mapTitle: "Reports on the map",
     viewList: "List",
     viewMap: "Map",
+    filters: "Filters",
+    filterCategories: "Categories",
+    resetFilters: "Reset",
+    applyFilters: "Apply",
+    filterStatuses: "Status",
     mapAll: "All",
     mapOpen: "Unresolved",
     mapSettled: "Resolved",
@@ -845,6 +776,7 @@ const en: Dictionary = {
     mapOpenIssue: "Open the topic",
     sortTop: "Popular",
     sortNew: "Recent",
+    sortLabel: "Sort by",
     emptyTitle: "No topics yet",
     emptyBody: "Be the first to report an issue in your neighbourhood.",
     searchPlaceholder: "What are you looking for?",
@@ -856,6 +788,14 @@ const en: Dictionary = {
     allCategories: "All topics",
     resultOne: "result",
     resultMany: "results",
+    activeMembers: "Active members",
+    popularCategories: "Popular categories",
+    trending: "Trending",
+    discover: "Discover",
+    contentEvent: "Event",
+    contentProject: "Project",
+    contributionCount: (n: number) => (n === 1 ? "1 contribution" : `${n} contributions`),
+    trafficCount: (n: number) => (n === 1 ? "1 view" : `${n} views`),
   },
   issue: {
     back: "← Back to the forum",
@@ -999,7 +939,7 @@ const en: Dictionary = {
     newWindow: "(opens in a new window)",
     tagline:
       "A place to talk about Côte-des-Neiges–Notre-Dame-de-Grâce: raise an issue, back a neighbour's, and follow what the borough is doing.",
-    legal: "Forum CDN-NDG — an open-source project. This site is not a Ville de Montréal service.",
+    legal: "Forum CDN-NDG, an open-source project. This site is not a Ville de Montréal service.",
   },
   translate: {
     action: "Translate",
@@ -1046,7 +986,7 @@ const en: Dictionary = {
     locationOutside:
       "That spot is outside Côte-des-Neiges–Notre-Dame-de-Grâce. Pick a point inside the borough.",
     messageRefused:
-      "This message was not published: an automatic filter found abusive or threatening language in it. Rewrite it without targeting anyone, or ask for a person to review it — see the Privacy page.",
+      "This message was not published: an automatic filter found abusive or threatening language in it. Rewrite it without targeting anyone, or ask for a person to review it. See the Privacy page.",
   },
 };
 

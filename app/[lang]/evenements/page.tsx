@@ -1,10 +1,10 @@
 import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
-import { SiteFooter } from "@/components/site-footer";
+import { MapMobileHeader } from "@/components/issues/map-mobile-header";
 import { getSessionUser } from "@/utils/supabase/auth";
 import { getDictionary, isLocale, dateLocale } from "@/utils/i18n";
 import { listEvents } from "@/utils/supabase/events";
-import { CARD, CONTAINER, HERO_BAND, MUTED } from "@/components/ui/styles";
+import { MUTED } from "@/components/ui/styles";
 import { EventMap } from "@/components/events/event-map";
 
 export default async function EventsPage({
@@ -19,27 +19,19 @@ export default async function EventsPage({
   const [user, events] = await Promise.all([getSessionUser(), listEvents()]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#fef7f0] text-[#1a1a1a]">
-      <SiteHeader user={user} lang={lang} />
-
-      <div className={HERO_BAND}>
-        <div className={`${CONTAINER} py-8 md:py-12`}>
-          <h1 className="text-[28px] leading-[36px] md:text-[40px] md:leading-[56px]">
-            {t.pages.eventsTitle}
-          </h1>
-          <p className={`mt-3 max-w-[760px] text-[16px] leading-[24px] ${MUTED}`}>
-            {t.events.intro}
-          </p>
-        </div>
+    <div className="flex h-dvh min-h-0 flex-col overflow-hidden bg-[#fef7f0] text-[#1a1a1a]">
+      <div className="hidden lg:block">
+        <SiteHeader user={user} lang={lang} />
       </div>
+      <MapMobileHeader user={user} lang={lang} href={`/${lang}/evenements`} />
 
-      <main className={`${CONTAINER} flex-1 py-8 md:py-10`}>
+      <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
         {events.length === 0 ? (
-          // 40px of padding on each side of a 320px screen leaves the message a
-          // column barely wider than one word.
-          <div className={`${CARD} p-6 text-center sm:p-10`}>
-            <p className="text-[20px] font-bold leading-[28px]">{t.events.emptyTitle}</p>
-            <p className={`mt-2 ${MUTED}`}>{t.events.emptyBody}</p>
+          <div className="grid min-h-0 flex-1 place-items-center p-6 text-center">
+            <div className="max-w-[440px] rounded-[16px] border border-[#e5dcd2] bg-white p-7 shadow-[0_4px_16px_rgba(26,26,26,0.06)]">
+              <p className="text-[20px] font-semibold leading-[28px]">{t.events.emptyTitle}</p>
+              <p className={`mt-2 ${MUTED}`}>{t.events.emptyBody}</p>
+            </div>
           </div>
         ) : (
           <EventMap
@@ -50,6 +42,10 @@ export default async function EventsPage({
               type: t.events.type,
               mapLabel: t.events.mapLabel,
               searchPlaceholder: t.events.searchPlaceholder,
+              clearSearch: t.home.clearSearch,
+              filters: t.home.filters,
+              filterWhen: t.events.filterWhen,
+              filterSetting: t.events.filterSetting,
               when: t.events.when,
               settings: t.events.settings,
               allSettings: t.events.allSettings,
@@ -68,15 +64,11 @@ export default async function EventsPage({
               nearbyClear: t.events.nearbyClear,
               nearbyNoneTitle: t.events.nearbyNoneTitle,
               nearbyNoneBody: t.events.nearbyNoneBody,
+              source: t.events.source,
             }}
           />
         )}
-
-        <p className={`mt-8 max-w-[860px] text-[13px] leading-[20px] ${MUTED}`}>
-          {t.events.source}
-        </p>
       </main>
-      <SiteFooter lang={lang} />
     </div>
   );
 }

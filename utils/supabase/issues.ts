@@ -204,8 +204,8 @@ export async function listIssues(
   {
     limit = FEED_PAGE,
     search = "",
-    category = null,
-  }: { limit?: number; search?: string; category?: Category | null } = {},
+    categories = [],
+  }: { limit?: number; search?: string; categories?: Category[] } = {},
 ): Promise<{ issues: Issue[]; hasMore: boolean }> {
   const supabase = await getSupabase();
   const term = forFilter(search);
@@ -213,7 +213,8 @@ export async function listIssues(
   const run = async () => {
     let query = supabase.from("issues").select(issueSelect(feedBodyField())).limit(limit + 1);
     if (term) query = query.or(`title.ilike.%${term}%,body.ilike.%${term}%`);
-    if (category) query = query.eq("category", category);
+    if (categories.length === 1) query = query.eq("category", categories[0]);
+    else if (categories.length > 1) query = query.in("category", categories);
     return sort === "top"
       ? query.order("vote_count", { ascending: false }).order("created_at", { ascending: false })
       : query.order("created_at", { ascending: false });

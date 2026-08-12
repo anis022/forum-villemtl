@@ -1,13 +1,9 @@
 // Client-safe types and helpers for the council-meetings feature.
 // No server-only imports here (mirrors the utils/issues.ts split).
 
-/** Which part of a sitting a result came from — the filter the page offers. */
+/** Which part of a sitting a passage came from — the narrowing the agent offers. */
 export const SECTIONS = ["questions", "resolutions", "elus"] as const;
 export type Section = (typeof SECTIONS)[number];
-
-export function isSection(v: string): v is Section {
-  return (SECTIONS as readonly string[]).includes(v);
-}
 
 /** The borough runs two question periods, and residents ask about both. */
 export const MODES = ["orale", "ecrite"] as const;
@@ -206,6 +202,66 @@ export function excerptAround(text: string, terms: string[]): string {
 }
 
 /**
+ * The words in a question that name the thing being asked about.
+ *
+ * The corpus search takes keywords. A whole question defeats it: "Qui a parlé
+ * de déneigement ?" widens to an OR over every stem in the sentence, and
+ * "parlé" alone matches nearly every passage in eleven hours of recording, so
+ * the one word that mattered is outvoted by the grammar around it. Asked that
+ * way the search returned passages on heritage buildings and on housing, and
+ * none on snow.
+ *
+ * The model is told to search with keywords and does. This is for the path
+ * where there is no model: the words are stripped down here instead.
+ *
+ * Two kinds of word go. The ordinary skeleton of a French or English sentence,
+ * and the verbs of speech that open almost every question put to an archive of
+ * people talking. "Question" stays: in a council corpus it is a thing, not a
+ * verb. Anything below three characters goes with them, which also disposes of
+ * most of what is left.
+ */
+const NOISE = new Set([
+  // French: interrogatives, articles, prepositions, pronouns, auxiliaries.
+  "qui", "que", "quoi", "quel", "quelle", "quels", "quelles", "est", "sont",
+  "ete", "etait", "etaient", "les", "des", "une", "aux", "dans", "sur", "pour",
+  "par", "avec", "sans", "chez", "vers", "elle", "elles", "ils", "nous", "vous",
+  "leur", "leurs", "mon", "mes", "ton", "tes", "son", "ses", "notre", "votre",
+  "cette", "ces", "cet", "celui", "celle", "ceux", "quand", "comment",
+  "pourquoi", "combien", "tout", "tous", "toute", "toutes", "plus", "moins",
+  "aussi", "encore", "deja", "avoir", "etre", "fait", "faire", "peut", "veut",
+  "ont", "avez", "avons", "puis", "donc", "mais", "car", "lors", "afin",
+  // English.
+  "the", "and", "for", "with", "without", "about", "what", "who", "whom",
+  "which", "when", "where", "why", "how", "many", "much", "have", "has", "had",
+  "was", "were", "been", "are", "did", "does", "done", "any", "some", "there",
+  "their", "them", "they", "this", "that", "these", "those", "from", "into",
+  "over", "under", "than", "then", "also", "just", "get", "got",
+  // The verbs of speech an archive question is always built on.
+  "parle", "parler", "parlent", "dire", "dit", "dites", "demande", "demander",
+  "demandent", "souleve", "soulever", "plaint", "plaindre", "plaintes",
+  "evoque", "evoquer", "mentionne", "mentionner", "aborde", "aborder",
+  "said", "say", "says", "talk", "talked", "talks", "speak", "spoke", "spoken",
+  "raise", "raised", "raises", "mention", "mentioned", "complain", "complained",
+  "complaint", "complaints", "ask", "asked", "asks", "bring", "brought",
+]);
+
+export function keywordsFrom(question: string): string {
+  const fold = (w: string) =>
+    w.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+
+  const kept = question
+    .split(/[^\p{L}\p{N}'-]+/u)
+    .filter((word) => {
+      const bare = fold(word).replace(/^[''-]+|[''-]+$/g, "");
+      return bare.length > 2 && !NOISE.has(bare);
+    });
+
+  // Every word was grammar, which happens on "Qui a dit quoi ?". The sentence
+  // as typed is a worse query than these words, and it is the only one left.
+  return kept.length > 0 ? kept.join(" ") : question.trim();
+}
+
+/**
  * The words a reader actually typed, recovered from the expanded query.
  *
  * `expandQuery` wraps alternatives in parentheses and joins them with a bare
@@ -240,6 +296,96 @@ export function formatMeetingDate(iso: string, lang: string, locale: string): st
 /** Deep-link straight to the moment in the recording. */
 export function youtubeDeepLink(youtubeId: string, startS: number): string {
   return `https://www.youtube.com/watch?v=${youtubeId}&t=${Math.floor(startS)}s`;
+}
+
+/**
+ * The clerk types resolution titles in capitals, and the parser keeps them
+ * verbatim because that is how the minutes read. On screen a 200-character line
+ * of capitals is a wall: it is slower to read, it wraps badly, and it shouts.
+ *
+ * Lowercased and given back its initial, with anything that was already an
+ * acronym left alone. Proper nouns are lost, which is a real cost and a smaller
+ * one than the wall.
+ */
+/**
+ * Acronyms that contain a vowel, and so cannot be recognised by shape.
+ *
+ * Length is not the signal it looks like. Sparing every all-caps run of five
+ * letters or fewer, which is what this did, spares most of the French language:
+ * "REJETÉE À LA MAJORITÉ" came out as "Rejetée à LA majorité", and one sitting's
+ * decisions read "semaine des ARTS", "projet de LOI 20", "réaménagement du PARC
+ * mackenzie-king", "DÉPÔT - rapports décisionnels - AVRIL 2026". Fifty words
+ * shouting mid-sentence, one or two on nearly every card.
+ *
+ * What actually distinguishes an acronym is that it is not a word, and the two
+ * reliable readings of that are structural: it carries a digit (RCA26 17427,
+ * PP-151), or it has no vowel at all (NDG, STM, SRRR, MSPQ, CQCH), which no
+ * French or English word does. This list is the remainder — the ones the
+ * borough's minutes use that those two rules miss. Add to it when a new one
+ * turns up; the cost of a miss is one lowercased acronym, not a wall of
+ * capitals.
+ */
+const ACRONYMS = new Set([
+  "ABF", "AOP", "BCA", "CCU", "DAI", "DGI", "FFCAQ", "FHCQ", "FILCAN", "INC",
+  "LAU", "MAMH", "NDA", "NEQ", "OBNL", "OCA", "OCPM", "PAAL", "PIIA", "PMIR",
+  "PRIMADA", "RAAV", "RCA", "REQ", "SENC", "SOCENV", "UCI", "UNESCO", "VAC",
+  // Roman numerals, which the clerk uses for centuries and for annexes.
+  "II", "III", "IV", "VI", "VII", "VIII", "IX", "XI", "XII", "XIX", "XX",
+]);
+
+const VOWELS = /[AEIOUYÀÂÄÉÈÊËÎÏÔÖÙÛÜ]/;
+
+export function unshout(text: string): string {
+  const letters = text.replace(/[^A-Za-zÀ-ÿ]/g, "");
+  if (!letters) return text;
+  const upper = letters.replace(/[^A-ZÀ-Þ]/g, "").length / letters.length;
+  if (upper < 0.8) return text;
+
+  const lowered = text
+    .split(/(\s+)/)
+    .map((word) => {
+      // A reference the reader has to be able to type back into the borough's
+      // search: RCA26 17427, PP-151, 2320-2322.
+      if (/\d/.test(word)) return word;
+
+      const bare = word.replace(/[^A-Za-zÀ-ÿ]/g, "");
+      if (bare.length > 1 && (!VOWELS.test(bare) || ACRONYMS.has(bare))) {
+        return word;
+      }
+      return word.toLocaleLowerCase("fr-CA");
+    })
+    .join("");
+
+  return lowered.replace(/\p{L}/u, (c) => c.toLocaleUpperCase("fr-CA"));
+}
+
+/**
+ * The heading of a resolution, with any preamble that leaked into it removed.
+ *
+ * `parse_pv.py` now stops the heading at the first line the clerk set in
+ * sentence case and files the preamble with the body, where it belongs. This
+ * guards the page against rows loaded before that fix and against the clerk's
+ * template changing again: a heading is a line, and a card that renders four
+ * thousand characters of "Considérant que" at heading size is unreadable
+ * whatever put them there.
+ *
+ * A no-op on a heading that is already one.
+ */
+export function resolutionTitle(title: string): string {
+  const words = title.split(/\s+/);
+  let end = words.length;
+  for (let i = 0; i < words.length; i++) {
+    const letters = words[i].replace(/[^A-Za-zÀ-ÿ]/g, "");
+    // Punctuation and figures carry no case and end nothing.
+    if (!letters) continue;
+    if (letters.replace(/[^a-zà-ÿ]/g, "").length / letters.length > 0.2) {
+      end = i;
+      break;
+    }
+  }
+  // Every word read as sentence case: the row has no shouted heading at all,
+  // so there is nothing to trim and the title stands as stored.
+  return end === 0 ? title : words.slice(0, end).join(" ");
 }
 
 /** seconds -> "1 h 23" for display. */

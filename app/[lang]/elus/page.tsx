@@ -6,7 +6,17 @@ import { SiteFooter } from "@/components/site-footer";
 import { getSessionUser } from "@/utils/supabase/auth";
 import { OFFICIALS } from "@/utils/officials";
 import { getDictionary, isLocale } from "@/utils/i18n";
-import { CARD_INTERACTIVE, CONTAINER, HERO_BAND, LINK, MUTED } from "@/components/ui/styles";
+import {
+  CARD_INTERACTIVE,
+  HERO_BAND,
+  LINK,
+  MUTED,
+  PAGE_HERO_INNER,
+  PAGE_INTRO,
+  PAGE_MAIN,
+  PAGE_SHELL,
+  PAGE_TITLE,
+} from "@/components/ui/styles";
 
 export default async function OfficialsPage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params;
@@ -16,21 +26,19 @@ export default async function OfficialsPage({ params }: { params: Promise<{ lang
   const user = await getSessionUser();
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#fef7f0] text-[#1a1a1a]">
+    <div className={PAGE_SHELL}>
       <SiteHeader user={user} lang={lang} />
 
       <div className={HERO_BAND}>
-        <div className={`${CONTAINER} py-8 md:py-12`}>
-          <h1 className="text-[26px] leading-[34px] break-words sm:text-[28px] sm:leading-[36px] md:text-[40px] md:leading-[56px]">
+        <div className={PAGE_HERO_INNER}>
+          <h1 className={PAGE_TITLE}>
             {t.officials.title}
           </h1>
-          <p className={`mt-3 max-w-[640px] text-[16px] leading-[24px] ${MUTED}`}>
-            {t.officials.intro}
-          </p>
+          <p className={PAGE_INTRO}>{t.officials.intro}</p>
         </div>
       </div>
 
-      <main className={`${CONTAINER} flex-1 py-8 md:py-12`}>
+      <main className={PAGE_MAIN}>
         {/* One column on a phone, two from `sm`. Three would fit at `lg`, and a
             council of four would then sit as a row of three and a widow. */}
         <ul className="grid gap-4 sm:grid-cols-2">

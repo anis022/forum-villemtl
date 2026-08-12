@@ -50,7 +50,7 @@ export type Policy = {
 };
 
 const frPolicy: Policy = {
-  updated: "9 août 2026",
+  updated: "11 août 2026",
   intro:
     "Ce forum est tenu par le cabinet de l'arrondissement de Côte-des-Neiges–Notre-Dame-de-Grâce. Cette page dit ce qu'il recueille sur vous, ce qui en devient public, combien de temps c'est gardé et ce que vous pouvez exiger. Elle est écrite pour être lue en entier en quelques minutes.",
   sections: [
@@ -93,6 +93,11 @@ const frPolicy: Policy = {
             ["Réponses", "Vous, quand vous répondez", "Tout le monde"],
             ["Appuis", "Vous, quand vous appuyez un sujet", "Tout le monde"],
             [
+              "Consultation d'un événement ou d'un projet",
+              "Votre ouverture de sa fiche ou de son lien",
+              "Le système seulement, sous un identifiant aléatoire",
+            ],
+            [
               "Messages retenus par le filtre",
               "Le filtre automatique décrit plus bas",
               "Les personnes élues",
@@ -105,7 +110,7 @@ const frPolicy: Policy = {
         },
         {
           kind: "p",
-          text: "Le site n'utilise aucun cookie publicitaire et ne mesure pas votre navigation. Les seuls témoins déposés servent à vous garder connecté·e.",
+          text: "Le site n'utilise aucun cookie publicitaire. Un témoin aléatoire, sans votre nom ni votre adresse IP, évite de compter plusieurs fois la consultation du même événement ou projet pendant une journée. Il sert uniquement à établir la section « Tendances ».",
         },
       ],
     },
@@ -119,6 +124,7 @@ const frPolicy: Policy = {
             "Publier vos signalements et vos réponses, et les rattacher à votre nom, parce qu'un forum où personne ne signe n'est pas une discussion de quartier.",
             "Situer les signalements sur une carte, pour que l'arrondissement sache où intervenir.",
             "Compter les appuis, parce que les sujets les plus soutenus sont traités en priorité.",
+            "Classer les événements et les projets les plus consultés sur les sept derniers jours.",
             "Vous connecter et vous reconnaître d'une visite à l'autre.",
             "Repérer les propos injurieux ou menaçants avant qu'ils ne soient publiés.",
           ],
@@ -139,7 +145,7 @@ const frPolicy: Policy = {
         },
         {
           kind: "p",
-          text: "Trois services extérieurs interviennent, et il vaut mieux les nommer :",
+          text: "Quatre services extérieurs interviennent, et il vaut mieux les nommer :",
         },
         {
           kind: "list",
@@ -188,7 +194,7 @@ const frPolicy: Policy = {
         },
         {
           kind: "p",
-          text: "Ce qui n'a pas cette raison d'être conservé ne l'est pas : les messages retenus par le filtre puis jugés corrects par une personne élue sont effacés après douze mois, et les codes de connexion expirent en quelques minutes.",
+          text: "Ce qui n'a pas cette raison d'être conservé ne l'est pas : les consultations anonymisées servant aux tendances sont effacées après trente jours, les messages retenus par le filtre puis jugés corrects par une personne élue après douze mois, et les codes de connexion expirent en quelques minutes.",
         },
         {
           kind: "p",
@@ -216,7 +222,7 @@ const frPolicy: Policy = {
 };
 
 const enPolicy: Policy = {
-  updated: "9 August 2026",
+  updated: "11 August 2026",
   intro:
     "This forum is run by the borough office of Côte-des-Neiges–Notre-Dame-de-Grâce. This page says what it collects about you, what becomes public, how long it is kept, and what you can require of us. It is written to be read in full in a few minutes.",
   sections: [
@@ -258,6 +264,11 @@ const enPolicy: Policy = {
             ["Reports: text, photo, location", "You, when you post", "Everyone"],
             ["Replies", "You, when you reply", "Everyone"],
             ["Backing", "You, when you back a topic", "Everyone"],
+            [
+              "Opening an event or project",
+              "You, when you open its page or link",
+              "The system only, under a random identifier",
+            ],
             ["Messages held by the filter", "The automatic filter described below", "Elected officials"],
           ],
         },
@@ -267,7 +278,7 @@ const enPolicy: Policy = {
         },
         {
           kind: "p",
-          text: "The site uses no advertising cookies and does not measure your browsing. The only cookies it sets are the ones that keep you signed in.",
+          text: "The site uses no advertising cookies. A random cookie, carrying neither your name nor your IP address, prevents the same event or project from being counted more than once in a day. It is used only to build the Trending section.",
         },
       ],
     },
@@ -281,6 +292,7 @@ const enPolicy: Policy = {
             "To publish your reports and replies under your name, because a forum nobody signs is not a neighbourhood conversation.",
             "To place reports on a map, so the borough knows where to act.",
             "To count backing, because the most-supported topics are handled first.",
+            "To rank the events and projects most often opened during the last seven days.",
             "To sign you in and recognise you from one visit to the next.",
             "To catch abusive or threatening language before it is published.",
           ],
@@ -347,7 +359,7 @@ const enPolicy: Policy = {
         },
         {
           kind: "p",
-          text: "What has no such reason to be kept is not kept: messages held by the filter and then cleared by an elected official are erased after twelve months, and sign-in codes expire in minutes.",
+          text: "What has no such reason to be kept is not kept: anonymised openings used for Trending are erased after thirty days, messages held by the filter and then cleared by an elected official after twelve months, and sign-in codes expire in minutes.",
         },
         {
           kind: "p",

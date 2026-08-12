@@ -2,12 +2,14 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
+import { FIELD } from "@/components/ui/styles";
 import { SEARCH_PANEL_ID, SEARCH_STATE, SEARCH_TOGGLE } from "@/utils/forum-search";
 import type { Locale } from "@/utils/i18n";
 
 /**
- * The montreal.ca search field: a 56px pill with the magnifier inset on the
- * left (border 0.8px #6e6a72, radius 28px).
+ * The forum search shares the same field shape and border as the rest of the
+ * site. The magnifier and clear action give it its search-specific identity
+ * without introducing a one-off pill treatment.
  *
  * It is **folded away until asked for**. A field that is only used when someone
  * has a specific thing to look for was taking the best row of the hero on every
@@ -128,7 +130,7 @@ export function ForumSearch({
       id={SEARCH_PANEL_ID}
       data-open={open ? "" : undefined}
       inert={!open}
-      className="search-panel mt-7 max-w-[680px]"
+      className="search-panel mt-5 max-w-[680px]"
     >
       <form
         role="search"
@@ -138,7 +140,7 @@ export function ForumSearch({
         }}
         className="relative"
       >
-        <span className="pointer-events-none absolute left-6 top-1/2 -translate-y-1/2 text-[#6e6a72]">
+        <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#6e6a72]">
           {isPending ? (
             <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true" className="search-spinner">
               <circle cx="10" cy="10" r="7" stroke="#e9e0d6" strokeWidth="2" fill="none" />
@@ -167,7 +169,7 @@ export function ForumSearch({
           onChange={(event) => setValue(event.target.value)}
           placeholder={placeholder}
           aria-label={placeholder}
-          className="h-14 w-full rounded-[28px] border-[0.8px] border-[#6e6a72] bg-white pl-14 pr-14 text-[16px] leading-[24px] text-[#1a1a1a] transition-[border-color] duration-150 focus:border-[#fa3250] [&::-webkit-search-cancel-button]:appearance-none"
+          className={`${FIELD} h-12 pl-12 pr-12 [&::-webkit-search-cancel-button]:appearance-none`}
         />
 
         {/* One control, always there, always doing the next obvious thing: it
@@ -178,7 +180,7 @@ export function ForumSearch({
           type="button"
           onClick={() => (value ? setValue("") : close())}
           aria-label={value ? clearLabel : closeLabel}
-          className="clear-btn absolute right-5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-[#6e6a72] hover:bg-[#faf1e8] hover:text-[#1a1a1a]"
+          className="clear-btn absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-[8px] text-[#6e6a72] hover:bg-[#faf1e8] hover:text-[#1a1a1a]"
         >
           <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
             <path

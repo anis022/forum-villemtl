@@ -119,6 +119,107 @@ def read_outcome(text: str) -> str | None:
         return f"{verdict} À LA MAJORITÉ"
     return f"{verdict} TELLE QUE MODIFIÉE"
 
+# Where a resolution's heading stops and its text begins.
+#
+# The clerk sets the heading in capitals and the text in sentence case, and
+# nothing else separates them: no rule, no blank line, no code. Reading the
+# heading as "everything before Il est proposé par" instead swallowed the whole
+# preamble, so 40 of 142 resolutions carried a title over 200 characters and the
+# longest ran to 5,478 -- the entire MOTION POUR L'EXCLUSION DES COOPÉRATIVES
+# D'HABITATION, every Considérant of it, rendered on the page as a heading. The
+# nine deposit items were worse: having no mover at all, their entire content
+# was title and their body was empty.
+#
+# Judged per line on the share of its letters that are capitals, which is what
+# actually distinguishes the two. ATTENDU and Considérant open the preamble in
+# either case and are only two words into a lowercase sentence.
+def shouty(text: str) -> bool:
+    letters = [c for c in text if c.isalpha()]
+    if not letters:
+        # Digits and punctuation alone ("RCA26 17427") continue whatever block
+        # they sit in rather than ending the heading.
+        return True
+    return sum(1 for c in letters if c.isupper()) / len(letters) >= 0.8
+
+
+# A line that ends a thought rather than running out of page width.
+#
+# A PDF has no paragraphs, only lines, and the clerk's text wraps at about
+# eighty-five characters. Keeping every one of those wraps and rendering them
+# with `white-space: pre-line` produced a comb: on a phone each stored line
+# wrapped again a third of the way across, so a resolution read as alternating
+# long and short lines that broke mid-sentence. Dropping them all instead
+# welded the preamble's clauses and the enumerated conditions into one block.
+#
+# The clerk punctuates what they mean: a clause of the preamble closes on a
+# semicolon, an introduction to a list on a colon, a sentence on a full stop. A
+# wrap has none of those, because it falls wherever the margin is.
+LINE_ENDS_THOUGHT = re.compile(r"[;:.!?]\s*$")
+
+# A hyphen the page broke a word on, as opposed to one the clerk used as a
+# separator. Every wrapped hyphen in the corpus falls inside a compound the
+# borough is made of -- "Côte-des-" / "Neiges", "MACKENZIE-" / "KING", "hors-" /
+# "marché" -- so the two halves join with no space between them. A hyphen with a
+# space in front of it is punctuation between two phrases and keeps its space.
+HYPHEN_WRAP = re.compile(r"(?<=\S)-$")
+
+
+def unwrap(previous: str, line: str) -> str:
+    """Two page lines that are one line of text, rejoined."""
+    if HYPHEN_WRAP.search(previous):
+        return previous + line
+    return f"{previous} {line}"
+
+
+def unwrap_all(lines: list[str]) -> str:
+    """Several page lines that are one line of text, rejoined."""
+    out = ""
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        out = unwrap(out, line) if out else line
+    return out
+
+
+def reflow(lines: list[str]) -> str:
+    """The clerk's text with its page wraps undone and its own breaks kept."""
+    out: list[str] = []
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        if out and not LINE_ENDS_THOUGHT.search(out[-1]):
+            out[-1] = unwrap(out[-1], line)
+        else:
+            out.append(line)
+    return "\n".join(out)
+
+
+def section_head(text: str) -> re.Match[str] | None:
+    """
+    A line that opens a numbered section of the sitting, or None.
+
+    The code alone is not enough to tell one from a resident's subject. The
+    clerk files a question under the item it concerns, and when that subject
+    wraps, the continuation line begins with the code:
+
+        Nina Gonzalez Bychkova | Règlement sur les nuisances et mise en pratique
+                                 40.03 – vente de fruits et légumes dans les
+                                 parcs Georges-Saint-Pierre et
+        Joël Coppieters          Herbert-Outerbridge
+
+    Read as a heading, that line ended the table where it stood, and the three
+    residents below it -- Joël Coppieters, Carl Hamilton, Laura Renteria Diaz --
+    were never recorded at all, on a page that says how many people came.
+
+    A heading is set in capitals and a subject is not, in every sitting of the
+    corpus, so that is what separates them.
+    """
+    m = SECTION_HEAD.match(text)
+    return m if m and shouty(m.group(2)) else None
+
+
 QUESTION_HEADER = re.compile(r"^Nom\s+Sujet de la question\s*$", re.I)
 
 # "40.04 - Parcomètres sur la rue Sherbrooke Ouest" -> the subject alone.
@@ -158,6 +259,18 @@ MAX_NAME_WORDS = 6
 # scanning subjects for note-like phrasing, which would eventually discard a
 # genuine question about, say, personnes itinérantes.
 GENERIC_NAME = re.compile(r"^(personnes?|aucune?|aucun|nul(le)?|neant)$", re.I)
+
+# The other shape the clerk's asides take in the name column. These are not
+# sentences that begin with an innocuous word, so GENERIC_NAME never saw them,
+# and three of them were being counted and displayed as residents:
+#
+#     4e question  | et suivante sur un même sujet
+#     4e question  | et suivante sur un même sujet – non entendue
+#     (question    | supprimée)
+#
+# Recognised by what no name can contain: a leading digit, a bracket, or the
+# word "question" itself.
+NOT_A_NAME = re.compile(r"^[\d(\[]|\bquestions?\b", re.I)
 
 # Through 2022 the clerk bulleted the speakers' names with a Wingdings glyph,
 # which survives extraction as U+F0B7 and would otherwise become part of the
@@ -236,9 +349,18 @@ def read_lines(path: Path) -> list[Line]:
             # 2026 sittings it takes the fused-word count from 17 to near zero
             # without breaking ordinary words apart.
             for w in page.extract_words(x_tolerance=2):
-                # Round to the nearest 3pt so a word sitting a hair proud of its
-                # neighbours still joins the same line.
-                buckets[round(w["top"] / 3)].append(w)
+                # Bucketed on the baseline, not on the top of the box.
+                #
+                # A word carrying a superscript is taller than its neighbours,
+                # so its top sits a point or so higher while its baseline does
+                # not move. Rounding on the top put "XIXe" a bucket above the
+                # line it belongs to and printed it as a line of its own, ahead
+                # of its own sentence: "MOTION - CONTRIBUTION DE LA COMMUNAUTÉ
+                # ITALIENNE / XIXe / Attendu que depuis la fin du siècle". The
+                # bottom edge is identical for every word on a line (458.3 for
+                # all sixteen of that one), so it groups them without a
+                # tolerance to tune.
+                buckets[round(w["bottom"] / 3)].append(w)
             for key in sorted(buckets):
                 line = Line(buckets[key], pno)
                 if PAGE_NUMBER.match(line.text):
@@ -325,7 +447,7 @@ def parse_questions(
         if (
             SEPARATOR.match(text)
             or RESOLUTION.match(text)
-            or SECTION_HEAD.match(text)
+            or section_head(text)
             or QUESTION_HEADER.match(text)
         ):
             break
@@ -337,14 +459,8 @@ def parse_questions(
     if split_x is None:
         return [], [], i
 
-    rows: list[dict] = []
     notes: list[str] = []
-    pending: list[str] = []  # subject lines whose owner is not yet known
-
-    def flush_to_previous() -> None:
-        if pending and rows:
-            rows[-1]["subject"] = " ".join([rows[-1]["subject"], *pending]).strip()
-        pending.clear()
+    cells: list[tuple[str, str, int]] = []  # (name, subject, page), in order
 
     for line in body:
         name = " ".join(w["text"] for w in line.words if w["x0"] < split_x).strip()
@@ -361,32 +477,60 @@ def parse_questions(
         # The clerk records who could not be reached; it is not a question.
         if name and (
             GENERIC_NAME.match(deaccent(name).strip())
+            or NOT_A_NAME.search(deaccent(name))
             or CLERK_NOTE.search(deaccent(name))
             or len(name.split()) > MAX_NAME_WORDS
         ):
             notes.append(" ".join(filter(None, [name, subject])))
             continue
 
-        if not name and not subject:
-            continue
+        if name or subject:
+            cells.append((name, subject, line.page))
 
+    rows: list[dict] = []
+    pending: list[str] = []  # subject lines whose owner is not yet known
+
+    def flush_to_previous() -> None:
+        if pending and rows:
+            rows[-1]["subject"] = unwrap_all([rows[-1]["subject"], *pending])
+        pending.clear()
+
+    for k, (name, subject, page) in enumerate(cells):
         if not name:
             pending.append(subject)
             continue
 
-        # A name with no subject beside it owns the lines buffered above it.
-        opening = list(pending) if not subject else []
-        if subject:
-            flush_to_previous()
-        pending.clear()
+        opening: list[str] = []
+        if not subject:
+            # A name typeset alone between two subject lines. How many of the
+            # buffered lines above are this person's is decided by counting the
+            # ones below, because the clerk centres the name in its cell: a
+            # four-line subject prints two lines, the name, then two more.
+            #
+            # Taking the whole buffer instead read one line too many whenever
+            # the row above had a subject that outran its own name. On 4 May
+            # that gave Alex Aronson the tail of James Luck's question --
+            # "parcomètres sur les rues transversales à l'est de Décarie" --
+            # welded onto the front of his own.
+            below = 0
+            for after_name, after_subject, _ in cells[k + 1 :]:
+                if after_name:
+                    break
+                if after_subject:
+                    below += 1
+            take = min(len(pending), max(below, 1))
+            opening = pending[len(pending) - take :]
+            del pending[len(pending) - take :]
+
+        flush_to_previous()
 
         rows.append(
             {
                 "name": name,
-                "subject": " ".join([*opening, subject]).strip(),
+                "subject": unwrap_all([*opening, subject]),
                 "mode": mode,
                 "order": order0 + len(rows),
-                "page": line.page,
+                "page": page,
             }
         )
 
@@ -418,7 +562,7 @@ def parse_remarks(
     i = start + 1
     while i < len(lines):
         text = lines[i].text
-        if SEPARATOR.match(text) or RESOLUTION.match(text) or SECTION_HEAD.match(text):
+        if SEPARATOR.match(text) or RESOLUTION.match(text) or section_head(text):
             break
         if not INLINE_RULE.match(text):
             body.append(lines[i])
@@ -448,7 +592,7 @@ def parse_remarks(
                 continue
             # Right of the bullet column: the tail of the item above.
             if words[0]["x0"] >= bullet_x and rows:
-                rows[-1]["topic"] = f"{rows[-1]['topic']} {text}".strip()
+                rows[-1]["topic"] = unwrap(rows[-1]["topic"], text)
             elif words[0]["x0"] < bullet_x:
                 # A name too long for its line ("Gracia Kasoki" / "Katahwa").
                 pending_name.append(text)
@@ -529,21 +673,27 @@ def parse_resolution(lines: list[Line], start: int) -> tuple[dict, int]:
             i += 1
             continue
 
-        # Before the mover, uppercase lines are the title; after it, prose is
-        # the operative text of the decision.
-        if not in_body and not moved_by:
+        # The heading runs until the first line set in sentence case. After
+        # that everything is the decision itself: the preamble that recites why,
+        # then the operative text of what. Both belong to the body, in the order
+        # the clerk wrote them.
+        #
+        # The first line is taken as the heading whatever it looks like, so a
+        # resolution can never come back without one.
+        if not in_body and (not title_parts or shouty(text)):
             title_parts.append(text)
         else:
+            in_body = True
             body_parts.append(text)
         i += 1
 
     return (
         {
             "number": number,
-            "title": re.sub(r"\s+", " ", " ".join(title_parts)).strip(),
+            "title": re.sub(r"\s+", " ", unwrap_all(title_parts)).strip(),
             "movedBy": moved_by,
             "secondedBy": seconded_by,
-            "body": re.sub(r"[ \t]+", " ", "\n".join(body_parts)).strip(),
+            "body": reflow([re.sub(r"[ \t]+", " ", p) for p in body_parts]),
             "outcome": outcome,
             "agendaCode": agenda_code,
             "dossier": dossier,
@@ -620,7 +770,7 @@ def parse_pv(path: Path) -> dict:
     while i < len(lines):
         text = lines[i].text
 
-        sec = SECTION_HEAD.match(text)
+        sec = section_head(text)
         if sec:
             title = sec.group(2)
             sections.append({"code": sec.group(1), "title": title, "page": lines[i].page})

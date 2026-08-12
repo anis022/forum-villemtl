@@ -54,23 +54,7 @@ function milestoneDate(m: Milestone, lang: Locale): string {
   }).format(new Date(m.on));
 }
 
-/**
- * The history of a project, oldest first, read left to right.
- *
- * Horizontal because that is the shape people already read a timeline in, and
- * because it lets the whole span of a project — 1927 to 2027, here — be taken
- * in at once instead of scrolled through. A vertical rail of eleven steps is a
- * page of its own; laid across, it is a band you can see the ends of.
- *
- * The cost is that it cannot fit a phone, so the band scrolls inside itself.
- * That is the one place this site allows sideways scrolling: the container has
- * `overflow-x-auto` and the page body still does not move. It is focusable and
- * labelled, so it can be scrolled with a keyboard rather than only by dragging.
- *
- * Filled dots are things that happened; hollow ones are scheduled, and carry
- * the word as well as the shape so the distinction survives being printed, or
- * read by someone who cannot see it.
- */
+/** The full project history, in the page's natural reading direction. */
 export function ProjectTimeline({
   milestones,
   lang,
@@ -78,99 +62,96 @@ export function ProjectTimeline({
 }: {
   milestones: readonly Milestone[];
   lang: Locale;
-  /** Names the scrollable region for assistive technology. */
+  /** Names the chronology for assistive technology. */
   label: string;
 }) {
   const t = getDictionary(lang);
   const last = milestones.length - 1;
 
   return (
-    <div
-      role="region"
-      aria-label={label}
-      tabIndex={0}
-      className="overflow-x-auto overscroll-x-contain pb-3"
-    >
-      {/* `min-w-max` keeps the steps at their natural width so the row
-          overflows and scrolls, rather than squeezing eleven columns into
-          320px and rendering each one two words wide. */}
-      <ol className="flex min-w-max items-start">
-        {milestones.map((m, i) => {
-          const done = isPast(m.on);
-          return (
-            <li
-              key={`${m.on}-${say(m.title, lang)}`}
-              className="flex w-[196px] shrink-0 flex-col px-2 sm:w-[232px] sm:px-3"
-            >
-              {/* The rail: two half-segments per step, so the line stops at the
-                  first and last dot instead of running off both ends. */}
-              <div className="relative flex h-3 items-center">
-                {i > 0 && (
-                  <span aria-hidden="true" className="absolute left-0 right-1/2 h-px bg-[#e9e0d6]" />
-                )}
-                {i < last && (
-                  <span aria-hidden="true" className="absolute left-1/2 right-0 h-px bg-[#e9e0d6]" />
-                )}
-                <span
-                  aria-hidden="true"
-                  className={`relative left-1/2 z-10 h-[11px] w-[11px] -translate-x-1/2 rounded-full ${
-                    done ? "bg-[#fa3250]" : "border-2 border-[#a09a94] bg-white"
-                  }`}
-                />
+    <ol role="list" aria-label={label} className="overflow-hidden">
+      {milestones.map((milestone, index) => {
+        const done = isPast(milestone.on);
+        return (
+          <li
+            key={`${milestone.on}-${say(milestone.title, lang)}`}
+            className="grid grid-cols-[22px_minmax(0,1fr)] gap-x-3 md:grid-cols-[132px_26px_minmax(0,1fr)] md:gap-x-4"
+          >
+            <p className={`hidden pt-5 text-right text-[12px] font-semibold leading-[18px] tracking-[0.02em] md:block ${MUTED}`}>
+              {milestoneDate(milestone, lang)}
+            </p>
+
+            <div className="relative flex justify-center">
+              {index > 0 && (
+                <span aria-hidden="true" className="absolute inset-x-auto top-0 h-1/2 w-px bg-[#ddd5cd]" />
+              )}
+              {index < last && (
+                <span aria-hidden="true" className="absolute inset-x-auto bottom-0 h-1/2 w-px bg-[#ddd5cd]" />
+              )}
+              <span
+                aria-hidden="true"
+                className={`relative z-10 mt-[22px] h-3 w-3 rounded-full ring-4 ring-white ${
+                  done ? "bg-[#fa3250]" : "border-2 border-[#5d56b4] bg-white"
+                }`}
+              />
+            </div>
+
+            <div className={`min-w-0 py-4 ${index < last ? "border-b border-[#eee7df]" : ""}`}>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 md:hidden">
+                <span className={`text-[12px] font-semibold leading-[18px] tracking-[0.02em] ${MUTED}`}>
+                  {milestoneDate(milestone, lang)}
+                </span>
+                {!done && <UpcomingTag label={t.projects.upcoming} />}
               </div>
 
-              <p className="mt-3 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                <span className={`text-[12px] font-bold uppercase tracking-[0.04em] ${MUTED}`}>
-                  {milestoneDate(m, lang)}
-                </span>
+              <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
+                <h3 className="text-[16px] font-semibold leading-[23px] tracking-[-0.005em] text-[#1a1a1a] md:text-[17px]">
+                  {say(milestone.title, lang)}
+                </h3>
                 {!done && (
-                  <span className="rounded-full bg-[#faf1e8] px-1.5 py-0.5 text-[10px] font-bold text-[#6e6a72]">
-                    {t.projects.upcoming}
+                  <span className="hidden md:inline-flex">
+                    <UpcomingTag label={t.projects.upcoming} />
                   </span>
                 )}
-              </p>
+              </div>
 
-              {/* Two lines, as a backstop. A step's label is meant to be short
-                  — the prose lives in the description — and one five-line title
-                  was setting the height of every column in the band. */}
-              <h3 className="mt-1 line-clamp-2 text-[15px] font-bold leading-[21px] break-words">
-                {say(m.title, lang)}
-              </h3>
-
-              {/* Clamped, and the columns are top-aligned rather than
-                  stretched: one milestone here carries a paragraph, and letting
-                  it set the height left every short column trailing a hundred
-                  and fifty pixels of nothing under two lines of text. */}
-              {m.body && (
-                <p className={`mt-1.5 line-clamp-3 text-[13px] leading-[19px] ${MUTED}`}>
-                  {say(m.body, lang)}
+              {milestone.body && (
+                <p className={`mt-1.5 max-w-[70ch] text-[14px] leading-[21px] ${MUTED}`}>
+                  {say(milestone.body, lang)}
                 </p>
               )}
 
-              {/* The receipt. A milestone a reader cannot check is a claim. */}
-              {(m.resolution || m.source) && (
-                <p className="mt-2 flex flex-col items-start gap-1 text-[12px]">
-                  {m.resolution && (
-                    <span className="rounded-[6px] bg-[#faf1e8] px-1.5 py-0.5 font-bold tabular-nums text-[#6e6a72]">
-                      {t.projects.resolutionLabel(m.resolution)}
+              {(milestone.resolution || milestone.source) && (
+                <div className="mt-2.5 flex flex-wrap items-center gap-2 text-[12px]">
+                  {milestone.resolution && (
+                    <span className="rounded-full bg-[#f4eee8] px-2.5 py-1 font-semibold tabular-nums text-[#6e6a72]">
+                      {t.projects.resolutionLabel(milestone.resolution)}
                     </span>
                   )}
-                  {m.source && (
+                  {milestone.source && (
                     <a
-                      href={m.source.url}
+                      href={milestone.source.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="font-bold text-[#fa3250] underline hover:text-[#d81f3c]"
+                      className="font-semibold text-[#5d56b4] underline-offset-4 hover:text-[#fa3250] hover:underline"
                     >
-                      {say(m.source.label, lang)}
+                      {say(milestone.source.label, lang)}
                     </a>
                   )}
-                </p>
+                </div>
               )}
-            </li>
-          );
-        })}
-      </ol>
-    </div>
+            </div>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+function UpcomingTag({ label }: { label: string }) {
+  return (
+    <span className="inline-flex rounded-full bg-[#eeecfb] px-2 py-0.5 text-[10px] font-semibold text-[#5d56b4]">
+      {label}
+    </span>
   );
 }

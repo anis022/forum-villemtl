@@ -1,0 +1,325 @@
+"use client";
+
+import { useEffect, useRef, useState, useTransition } from "react";
+import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import type { Category } from "@/utils/issues";
+
+type CategoryOption = {
+  key: Category;
+  label: string;
+  count: number;
+};
+
+export function FeedToolbar({
+  listHref,
+  mapHref,
+  sort,
+  selectedCategories,
+  categories,
+  labels,
+}: {
+  listHref: string;
+  mapHref: string;
+  sort: "top" | "new";
+  selectedCategories: Category[];
+  categories: CategoryOption[];
+  labels: {
+    viewList: string;
+    viewMap: string;
+    filters: string;
+    sortLabel: string;
+    sortTop: string;
+    sortNew: string;
+    filterCategories: string;
+    allCategories: string;
+    resetFilters: string;
+    applyFilters: string;
+  };
+}) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const panelRef = useRef<HTMLDivElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(false);
+  const [panelMaxHeight, setPanelMaxHeight] = useState(360);
+  const [pending, startTransition] = useTransition();
+  const selected = new Set(selectedCategories);
+  const [draftSort, setDraftSort] = useState(sort);
+  const [draftCategories, setDraftCategories] = useState<Category[]>(selectedCategories);
+  const draftSelected = new Set(draftCategories);
+  const totalCount = categories.reduce((total, category) => total + category.count, 0);
+  const activeCount = selected.size + Number(sort === "new");
+  const hasChanges =
+    draftSort !== sort ||
+    draftCategories.length !== selectedCategories.length ||
+    draftCategories.some((category) => !selected.has(category));
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: MouseEvent) => {
+      if (!panelRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const fitPanelToViewport = () => {
+      const top = popoverRef.current?.getBoundingClientRect().top;
+      if (top !== undefined) {
+        setPanelMaxHeight(Math.max(280, window.innerHeight - top - 16));
+      }
+    };
+    const frame = window.requestAnimationFrame(fitPanelToViewport);
+    window.addEventListener("resize", fitPanelToViewport);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("resize", fitPanelToViewport);
+    };
+  }, [open]);
+
+  const update = (nextSort: "top" | "new", nextCategories: Category[]) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (nextSort === "new") params.set("tri", "recents");
+    else params.delete("tri");
+    if (nextCategories.length > 0) params.set("cat", nextCategories.join(","));
+    else params.delete("cat");
+    params.delete("n");
+    const query = params.toString();
+    startTransition(() => router.replace(query ? pathname + "?" + query : pathname, { scroll: false }));
+  };
+
+  const togglePanel = () => {
+    if (!open) {
+      setDraftSort(sort);
+      setDraftCategories(selectedCategories);
+    }
+    setOpen((value) => !value);
+  };
+
+  const toggleCategory = (category: Category) => {
+    setDraftCategories((current) =>
+      current.includes(category)
+        ? current.filter((key) => key !== category)
+        : [...current, category],
+    );
+  };
+
+  const applyFilters = () => {
+    if (hasChanges) update(draftSort, draftCategories);
+    setOpen(false);
+  };
+
+  return (
+    <div className="ml-auto flex min-w-0 items-center justify-end gap-2">
+      <nav
+        aria-label={labels.viewList + " / " + labels.viewMap}
+        className="inline-flex shrink-0 rounded-full border border-[#e9e0d6] bg-white p-0.5 sm:p-1"
+      >
+        <Link
+          href={listHref}
+          aria-current="page"
+          className="inline-flex items-center gap-1.5 rounded-full bg-[#1a1a1a] px-2.5 py-1.5 text-[13px] font-semibold text-white sm:px-3.5 sm:text-[14px]"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="hidden shrink-0 min-[360px]:block">
+            <path d="M4 6.5h16M4 12h16M4 17.5h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
+          {labels.viewList}
+        </Link>
+        <Link
+          href={mapHref}
+          className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[13px] font-medium text-[#6e6a72] transition-colors hover:text-[#1a1a1a] sm:px-3.5 sm:text-[14px]"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="hidden shrink-0 min-[360px]:block">
+            <path d="m4 5 5-2 6 2 5-2v16l-5 2-6-2-5 2V5Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+            <path d="M9 3v16m6-14v16" stroke="currentColor" strokeWidth="1.5" />
+          </svg>
+          {labels.viewMap}
+        </Link>
+      </nav>
+
+      <div ref={panelRef} className="relative">
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-controls="forum-filter-panel"
+          aria-busy={pending}
+          disabled={pending}
+          onClick={togglePanel}
+          className={
+            "map-filter-trigger inline-flex h-10 items-center gap-2 rounded-full border px-3.5 text-[13px] font-semibold shadow-[0_2px_8px_rgba(26,26,26,0.08)] transition-colors " +
+            (open
+              ? "border-[#2a2a86] bg-[#2a2a86] text-white"
+              : "border-[#ded6cd] bg-white text-[#1a1a1a] hover:border-[#5d56b4]")
+          }
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M4 6h16M7 12h10m-7 6h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
+          {labels.filters}
+          {activeCount > 0 && (
+            <span className={"grid h-5 min-w-5 place-items-center rounded-full px-1 text-[11px] tabular-nums " + (open ? "bg-white text-[#2a2a86]" : "bg-[#fa3250] text-white")}>
+              {activeCount}
+            </span>
+          )}
+        </button>
+
+        {open && (
+          <div
+            ref={popoverRef}
+            id="forum-filter-panel"
+            style={{ maxHeight: panelMaxHeight }}
+            className="absolute -right-[15px] top-[calc(100%+8px)] z-30 flex w-[min(380px,calc(100vw-20px))] flex-col overflow-hidden rounded-[14px] border border-[#ddd4cb] bg-white shadow-[0_10px_28px_rgba(26,26,26,0.13)] sm:right-0 sm:rounded-[12px]"
+          >
+            <fieldset className="shrink-0 px-4 pb-3 pt-4">
+              <legend className="text-[14px] font-semibold text-[#1a1a1a]">
+                {labels.sortLabel}
+              </legend>
+              <div className="mt-2 grid grid-cols-2 gap-x-4">
+                <FilterOption active={draftSort === "top"} onClick={() => setDraftSort("top")}>
+                  {labels.sortTop}
+                </FilterOption>
+                <FilterOption active={draftSort === "new"} onClick={() => setDraftSort("new")}>
+                  {labels.sortNew}
+                </FilterOption>
+              </div>
+            </fieldset>
+
+            <div className="flex min-h-0 flex-1 flex-col border-t border-[#eee6dd] px-4 pt-3">
+              <p id="feed-filter-categories" className="shrink-0 text-[14px] font-semibold text-[#1a1a1a]">
+                {labels.filterCategories}
+              </p>
+              <div
+                role="group"
+                aria-labelledby="feed-filter-categories"
+                className="mt-2 min-h-0 flex-1 overflow-y-auto overscroll-contain pb-2 pr-1"
+              >
+                  <button
+                    type="button"
+                    aria-pressed={draftSelected.size === 0}
+                    onClick={() => setDraftCategories([])}
+                    className={categoryClass(draftSelected.size === 0)}
+                  >
+                    <span className="min-w-0 flex-1">{labels.allCategories}</span>
+                    <span className="text-[12px] font-medium text-[#8a858c] tabular-nums">{totalCount}</span>
+                    <FilterCheck active={draftSelected.size === 0} />
+                  </button>
+                  {categories.map((category) => {
+                    const active = draftSelected.has(category.key);
+                    return (
+                      <button
+                        key={category.key}
+                        type="button"
+                        aria-pressed={active}
+                        onClick={() => toggleCategory(category.key)}
+                        className={categoryClass(active)}
+                      >
+                        <span className="min-w-0 truncate">{category.label}</span>
+                        <span className="text-[12px] font-medium text-[#8a858c] tabular-nums">{category.count}</span>
+                        <FilterCheck active={active} />
+                      </button>
+                    );
+                  })}
+              </div>
+            </div>
+
+            <div className="relative z-10 flex shrink-0 items-center justify-between gap-3 border-t border-[#eee6dd] bg-white px-4 py-3">
+              <button
+                type="button"
+                disabled={draftSort === "top" && draftCategories.length === 0}
+                onClick={() => {
+                  setDraftSort("top");
+                  setDraftCategories([]);
+                }}
+                className="map-filter-option min-h-9 px-1 text-[13px] font-semibold text-[#5d56b4] underline-offset-4 hover:text-[#fa3250] hover:underline disabled:cursor-default disabled:text-[#aaa4a8] disabled:no-underline"
+              >
+                {labels.resetFilters}
+              </button>
+              <button
+                type="button"
+                onClick={applyFilters}
+                className="map-filter-option min-h-9 rounded-full border border-[#fa3250] bg-[#fa3250] px-5 text-[13px] font-semibold text-white transition-colors hover:border-[#d81f3c] hover:bg-[#d81f3c]"
+              >
+                {labels.applyFilters}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function FilterOption({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      className={`map-filter-option flex min-h-[38px] min-w-0 items-center gap-2 border-b border-[#f2ece6] py-2 text-left text-[13px] leading-[18px] transition-colors ${
+        active
+          ? "font-semibold text-[#1a1a1a]"
+          : "font-medium text-[#6e6a72] hover:text-[#1a1a1a]"
+      }`}
+    >
+      <RadioMark active={active} />
+      {children}
+    </button>
+  );
+}
+
+function categoryClass(active: boolean) {
+  return (
+    "map-filter-option flex min-h-[38px] w-full items-center gap-2 border-b border-[#f2ece6] py-2 text-left text-[13px] leading-[18px] transition-colors " +
+    (active ? "font-semibold text-[#1a1a1a]" : "font-medium text-[#6e6a72] hover:text-[#1a1a1a]")
+  );
+}
+
+function RadioMark({ active }: { active: boolean }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={`grid h-4 w-4 shrink-0 place-items-center rounded-full border ${
+        active ? "border-[#5d56b4]" : "border-[#cfc6bd]"
+      }`}
+    >
+      {active && <span className="h-2 w-2 rounded-full bg-[#5d56b4]" />}
+    </span>
+  );
+}
+
+function FilterCheck({ active }: { active: boolean }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={`grid h-4 w-4 shrink-0 place-items-center rounded-full border ${
+        active ? "border-[#fa3250] bg-[#fa3250] text-white" : "border-[#cfc6bd]"
+      }`}
+    >
+      {active && (
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+          <path d="m2.5 6.2 2.1 2.1 4.8-4.8" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      )}
+    </span>
+  );
+}

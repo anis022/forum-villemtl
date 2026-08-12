@@ -5,7 +5,14 @@ import { SiteFooter } from "@/components/site-footer";
 import { NewIssueForm } from "@/components/issues/new-issue-form";
 import { getSessionUser } from "@/utils/supabase/auth";
 import { getDictionary, isLocale } from "@/utils/i18n";
-import { CONTAINER, HERO_BAND, MUTED } from "@/components/ui/styles";
+import {
+  HERO_BAND,
+  MUTED,
+  PAGE_HERO_INNER,
+  PAGE_MAIN,
+  PAGE_SHELL,
+  PAGE_TITLE,
+} from "@/components/ui/styles";
 
 export default async function NewIssuePage({
   params,
@@ -22,15 +29,15 @@ export default async function NewIssuePage({
   if (!user) redirect(`/${lang}`);
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#fef7f0] text-[#1a1a1a]">
+    <div className={PAGE_SHELL}>
       <SiteHeader user={user} lang={lang} />
 
       <div className={HERO_BAND}>
-        <div className={`${CONTAINER} py-8 md:py-10`}>
+        <div className={PAGE_HERO_INNER}>
           <Link href={`/${lang}`} className="text-[14px] font-bold text-[#fa3250] hover:underline">
             {t.issue.back}
           </Link>
-          <h1 className="mt-3 text-[28px] leading-[36px] md:text-[40px] md:leading-[56px]">
+          <h1 className={`${PAGE_TITLE} mt-3`}>
             {t.issue.newTitle}
           </h1>
           <p className={`mt-2 max-w-[640px] text-[16px] leading-[24px] ${MUTED}`}>
@@ -39,7 +46,7 @@ export default async function NewIssuePage({
         </div>
       </div>
 
-      <main className={`${CONTAINER} flex-1 py-8 md:py-10`}>
+      <main className={PAGE_MAIN}>
         <NewIssueForm lang={lang} />
       </main>
       <SiteFooter lang={lang} />

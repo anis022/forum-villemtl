@@ -23,7 +23,7 @@ import { REPLIES_PAGE, getIssue, listComments } from "@/utils/supabase/issues";
 import { editedByOther } from "@/utils/issues";
 import { IssueActions } from "@/components/issues/issue-actions";
 import { getDictionary, isLocale } from "@/utils/i18n";
-import { BTN_SECONDARY, CARD, CONTAINER, MUTED } from "@/components/ui/styles";
+import { BTN_SECONDARY, CARD, MUTED, PAGE_MAIN, PAGE_SHELL } from "@/components/ui/styles";
 import { Avatar } from "@/components/ui/avatar";
 
 export default async function IssuePage({
@@ -52,10 +52,10 @@ export default async function IssuePage({
   const isAuthor = Boolean(user) && user!.id === issue.author.id;
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#fef7f0] text-[#1a1a1a]">
+    <div className={PAGE_SHELL}>
       <SiteHeader user={user} lang={lang} />
 
-      <main className={`${CONTAINER} flex-1 py-8 md:py-10`}>
+      <main className={PAGE_MAIN}>
         <Link href={`/${lang}`} className="text-[14px] font-bold text-[#fa3250] hover:underline">
           {t.issue.back}
         </Link>

@@ -4,12 +4,11 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { IssuePhoto } from "@/components/issues/issue-photo";
 import { ProjectStatusTag, ProjectTimeline } from "@/components/projects/project-timeline";
+import { ContentViewTracker } from "@/components/analytics/content-view-tracker";
 import { getSessionUser } from "@/utils/supabase/auth";
-import { councilMentions } from "@/utils/supabase/council";
 import { ALL_PROJECTS, projectBySlug, say } from "@/utils/projects";
-import { formatTimestamp, youtubeDeepLink } from "@/utils/council";
-import { dateLocale, getDictionary, isLocale } from "@/utils/i18n";
-import { CARD, CONTAINER, MUTED, READABLE } from "@/components/ui/styles";
+import { getDictionary, isLocale } from "@/utils/i18n";
+import { CARD, MUTED, PAGE_MAIN, PAGE_SHELL, READABLE } from "@/components/ui/styles";
 
 /** The list is a handful of hand-written entries; prerender all of them. */
 export function generateStaticParams() {
@@ -31,34 +30,16 @@ export default async function ProjectPage({
   if (!project) notFound();
 
   const t = getDictionary(lang);
-  const locale = dateLocale(lang);
-
-  const [user, mentions] = await Promise.all([
-    getSessionUser(),
-    // Empty when the project names no term, and harmless when the council
-    // tables have not been ingested — the section simply does not render.
-    project.councilTerm
-      ? councilMentions(project.councilTerm)
-      : Promise.resolve({ questions: [], resolutions: [] }),
-  ]);
+  const user = await getSessionUser();
 
   const [lead, ...rest] = project.photos;
 
-  /* Counted over people and sittings, not over rows: the same resident asking
-     twice at one sitting is one person, and the sentence has to survive that. */
-  const people = new Set(mentions.questions.map((q) => q.personId ?? q.name)).size;
-  const sittings = new Set(mentions.questions.map((q) => q.meetingDate)).size;
-
-  const fmtDay = (iso: string) =>
-    new Intl.DateTimeFormat(locale, { day: "numeric", month: "long", year: "numeric" }).format(
-      new Date(`${iso}T12:00:00`),
-    );
-
   return (
-    <div className="flex min-h-screen flex-col bg-[#fef7f0] text-[#1a1a1a]">
+    <div className={PAGE_SHELL}>
       <SiteHeader user={user} lang={lang} />
+      <ContentViewTracker contentType="project" contentId={project.slug} />
 
-      <main className={`${CONTAINER} flex-1 py-6 md:py-10`}>
+      <main className={PAGE_MAIN}>
         <Link
           href={`/${lang}/projets`}
           className="text-[14px] font-bold text-[#fa3250] hover:underline"
@@ -83,7 +64,7 @@ export default async function ProjectPage({
 
         <section className="mt-5">
           <h2 className="text-[18px] font-bold leading-[26px]">{t.projects.timeline}</h2>
-          <div className={`${CARD} mt-3 px-3 py-5 sm:px-5`}>
+          <div className={`${CARD} mt-3 overflow-hidden px-4 sm:px-6 lg:px-8`}>
             <ProjectTimeline
               milestones={project.milestones}
               lang={lang}
@@ -140,72 +121,6 @@ export default async function ProjectPage({
                 </li>
               ))}
             </ul>
-          </section>
-        )}
-
-        {/* What the borough's own record says, rather than what this page says
-            about it. Only rendered when there is something in it. */}
-        {project.councilTerm && mentions.questions.length > 0 && (
-          <section className="mt-10">
-            <h2 className="text-[22px] leading-[30px] md:text-[26px]">
-              {t.projects.atCouncil}
-            </h2>
-            <p className={`mt-2 max-w-[68ch] text-[15px] leading-[23px] ${MUTED}`}>
-              {t.projects.raisedIntro(people, sittings)}
-            </p>
-
-            <ul className="mt-4 space-y-3">
-              {mentions.questions.map((q) => (
-                <li key={q.id} className={`${CARD} p-4`}>
-                  <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-[13px]">
-                    <span className={`font-bold ${MUTED}`}>{fmtDay(q.meetingDate)}</span>
-                    <span aria-hidden="true" className={MUTED}>
-                      ·
-                    </span>
-                    <span className="rounded-full bg-[#faf1e8] px-2 py-0.5 text-[11px] font-bold text-[#6e6a72]">
-                      {q.mode === "orale" ? t.projects.questionOrale : t.projects.questionEcrite}
-                    </span>
-                  </div>
-
-                  <p className="mt-1.5 text-[16px] font-bold leading-[23px] break-words">
-                    {q.subject}
-                  </p>
-                  <p className={`mt-0.5 text-[14px] ${MUTED}`}>{q.name}</p>
-
-                  <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[13px]">
-                    {/* Only when the alignment pass has placed this question in
-                        the recording. Without a timestamp the link would open
-                        a two-hour video at zero, which is not a citation. */}
-                    {q.startS !== null && (
-                      <a
-                        href={youtubeDeepLink(q.youtubeId, q.startS)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-bold text-[#fa3250] underline hover:text-[#d81f3c]"
-                      >
-                        {formatTimestamp(q.startS)}
-                      </a>
-                    )}
-                    {q.pvUrl && (
-                      <a
-                        href={q.pvUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-bold text-[#fa3250] underline hover:text-[#d81f3c]"
-                      >
-                        {t.projects.readMinutes}
-                      </a>
-                    )}
-                  </p>
-                </li>
-              ))}
-            </ul>
-
-            {mentions.resolutions.length === 0 && (
-              <p className={`mt-4 max-w-[68ch] text-[15px] leading-[23px] ${MUTED}`}>
-                {t.projects.noResolutions}
-              </p>
-            )}
           </section>
         )}
 

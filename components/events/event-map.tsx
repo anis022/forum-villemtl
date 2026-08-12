@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import "leaflet/dist/leaflet.css";
-import type { Map as LeafletMap, LayerGroup } from "leaflet";
+import type { LayerGroup, Map as LeafletMap, Marker } from "leaflet";
+import { trackContentOpen } from "@/components/analytics/content-view-tracker";
+import { MUTED } from "@/components/ui/styles";
 import {
   ACCENT,
   ACCENT_TODAY,
@@ -22,13 +24,12 @@ import {
   type Setting,
   type When,
 } from "@/utils/events";
-import { BTN_SECONDARY, CARD, FIELD, INK, MUTED } from "@/components/ui/styles";
 import {
+  BOROUGH_BOUNDS,
+  BOROUGH_CENTER,
   MAP_OPTIONS,
   TILE_OPTIONS,
   TILE_URL,
-  addBoroughOutline,
-  frameBorough,
 } from "@/utils/map";
 
 export type MapLabels = {
@@ -36,6 +37,10 @@ export type MapLabels = {
   type: string;
   mapLabel: string;
   searchPlaceholder: string;
+  clearSearch: string;
+  filters: string;
+  filterWhen: string;
+  filterSetting: string;
   when: Record<When, string>;
   settings: Record<Setting, string>;
   allSettings: string;
@@ -48,48 +53,19 @@ export type MapLabels = {
   online: string;
   unmapped: string;
   showAll: string;
-  // A plain string, not a formatter: labels cross the server/client boundary
-  // and a function cannot. The count is composed here instead.
   showMore: string;
   nearbyHint: string;
   nearbyLabel: string;
   nearbyClear: string;
   nearbyNoneTitle: string;
   nearbyNoneBody: string;
+  source: string;
 };
 
-/**
- * How many events the list shows before asking. Enough that the list reads as a
- * list rather than a teaser, few enough that a phone is not handed three
- * hundred rows to scroll past on the way to the rest of the page.
- */
-const PAGE = 8;
+const COLLAPSED_SHEET_HEIGHT = 52;
+const RESULTS_PAGE = 30;
 
-/**
- * Events on a map, and the same events as a list beside it.
- *
- * A bare map is a wall of identical pins: you cannot read it, you can only
- * poke at it. Pairing it with a scrollable list means the page answers "what
- * is on this week" without a single click, and hovering a card lights its pin,
- * so the two halves explain each other.
- *
- * The filters answer the questions people actually arrive with, in the order
- * they ask them: *when* first as chips, because a listing is read forwards from
- * today; then a search box, because someone looking for one thing knows its
- * name; then type and indoor/outdoor as selects, which are refinements rather
- * than entry points.
- *
- * Filtering by district is deliberately gone. Nobody looking for something to
- * do on Saturday thinks in electoral boundaries — they think about when they
- * are free and how far they will walk — and the map already shows where
- * everything is far better than five chips could.
- *
- * "How far they will walk" is the other half of that, and it is why the map
- * takes a click: pick a corner — home, the métro, the school — and the page
- * narrows to what is within walking distance of it. A radius drawn from a point
- * someone chose is the filter that district chips were only ever approximating,
- * and it needs no vocabulary to use.
- */
+/** Full-screen event map, with a desktop results rail and a two-position mobile sheet. */
 export function EventMap({
   events,
   locale,
@@ -103,103 +79,194 @@ export function EventMap({
   const [when, setWhen] = useState<When>("all");
   const [setting, setSetting] = useState<Setting | "">("");
   const [type, setType] = useState("");
-  const [active, setActive] = useState<string | null>(null);
-  const [limit, setLimit] = useState(PAGE);
   const [origin, setOrigin] = useState<Origin | null>(null);
   const [radius, setRadius] = useState<Radius>(DEFAULT_RADIUS);
+  const [hovered, setHovered] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [mapReady, setMapReady] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [sheetCollapsed, setSheetCollapsed] = useState(false);
+  const [dragY, setDragY] = useState<number | null>(null);
+  const [dragDistance, setDragDistance] = useState(0);
+  const [listLimit, setListLimit] = useState(RESULTS_PAGE);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const sheetRef = useRef<HTMLElement>(null);
+  const filtersRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const layerRef = useRef<LayerGroup | null>(null);
   const areaRef = useRef<LayerGroup | null>(null);
-  const markersRef = useRef(new Map<string, { setIcon: (i: unknown) => void }>());
+  const [markers] = useState(() => new Map<string, Marker>());
+  const dragRef = useRef<{
+    startY: number;
+    startOffset: number;
+    distance: number;
+    current: number;
+    moved: boolean;
+  } | null>(null);
+  const suppressClickRef = useRef(false);
 
   const types = useMemo(
-    () => [...new Set(events.map((e) => e.eventType).filter(Boolean))].sort() as string[],
+    () => [...new Set(events.map((event) => event.eventType).filter(Boolean))].sort() as string[],
     [events],
   );
-
-  /**
-   * Today, read once per filter pass rather than at module scope. This
-   * component renders on the server too, and a date captured at import time
-   * would be whichever day the server happened to start on.
-   */
-  const filtered = useMemo(() => {
-    const today = new Date().toISOString().slice(0, 10);
-    const until = windowEnd(when, today);
-
-    return events.filter((e) => {
-      if (type && e.eventType !== type) return false;
-      if (setting && e.setting !== setting) return false;
-      // A window asks "is any of this event inside it", not "does it start
-      // inside it": a series running all summer is on this week too.
-      if (until && e.startsOn > until) return false;
-      // A point on the map excludes everything without one, online events
-      // included. "Near here" is a question they have no answer to.
-      if (origin && !isNearby(e, origin, radius)) return false;
-      return matches(e, query);
-    });
-  }, [events, query, when, setting, type, origin, radius]);
-
-  const mappable = useMemo(() => filtered.filter(isMappable), [filtered]);
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const filtered = useMemo(() => {
+    const until = windowEnd(when, today);
+    return events.filter((event) => {
+      if (type && event.eventType !== type) return false;
+      if (setting && event.setting !== setting) return false;
+      if (until && event.startsOn > until) return false;
+      if (origin && !isNearby(event, origin, radius)) return false;
+      return matches(event, query);
+    });
+  }, [events, origin, query, radius, setting, today, type, when]);
+  const mappable = useMemo(() => filtered.filter(isMappable), [filtered]);
+  const hidden = filtered.length - mappable.length;
+  const active = hovered ?? (filtered.some((event) => event.id === selected) ? selected : null);
+  const visible = filtered.slice(0, listLimit);
+  const remaining = filtered.length - visible.length;
+  const activeFilterCount =
+    Number(when !== "all") + Number(Boolean(setting)) + Number(Boolean(type)) + Number(Boolean(origin));
+  const hasFilter = Boolean(query || activeFilterCount);
 
-  // Leaflet reads `window` at import time, so it is pulled in here rather than
-  // at module scope.
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const recordPopupOpen = (event: MouseEvent) => {
+      if (!(event.target instanceof Element)) return;
+      const link = event.target.closest<HTMLAnchorElement>("a[data-track-event]");
+      const eventId = link?.dataset.trackEvent;
+      if (eventId) trackContentOpen("event", eventId);
+    };
+    container.addEventListener("click", recordPopupOpen);
+    return () => container.removeEventListener("click", recordPopupOpen);
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
+    let observer: ResizeObserver | null = null;
 
     (async () => {
       const L = await import("leaflet");
       if (cancelled || !containerRef.current || mapRef.current) return;
 
       const map = L.map(containerRef.current, MAP_OPTIONS);
-      // Stored before anything else async can run. React invokes effects twice
-      // in development; a map the cleanup cannot find leaks its container, and
-      // the second run then fails on an already-initialised element.
       mapRef.current = map;
-
-      // The view has to come first: Leaflet refuses to accept a layer before it
-      // knows where it is looking. It opens on the whole borough — all five
-      // districts at once — and is fenced there, because this map is not about
-      // the rest of the island and panning away only ever loses people.
-      frameBorough(L, map);
-      L.control.zoom({ position: "bottomright" }).addTo(map);
-
+      map.scrollWheelZoom.enable();
+      map.setView(BOROUGH_CENTER, 12, { animate: false });
+      L.control.zoom({ position: "bottomleft" }).addTo(map);
       L.tileLayer(TILE_URL, TILE_OPTIONS).addTo(map);
       layerRef.current = L.layerGroup().addTo(map);
-      // Not awaited: the outline is decoration, and blocking on it would hold
-      // up the pins behind a network round trip.
-      void addBoroughOutline(L, map);
 
-      // Anywhere on the map is a place you might be standing. Clicking a second
-      // time moves the point rather than clearing it — the common case is
-      // "not quite there, a bit more east", not "never mind".
-      map.on("click", (ev: { latlng: { lat: number; lng: number } }) => {
-        setOrigin({ lat: ev.latlng.lat, lon: ev.latlng.lng });
-        setLimit(PAGE);
+      map.on("click", (event: { latlng: { lat: number; lng: number } }) => {
+        setOrigin({ lat: event.latlng.lat, lon: event.latlng.lng });
       });
+
+      observer = new ResizeObserver(() => map.invalidateSize({ animate: false }));
+      observer.observe(containerRef.current);
+      setMapReady(true);
     })();
 
     return () => {
       cancelled = true;
+      observer?.disconnect();
       mapRef.current?.remove();
       mapRef.current = null;
       layerRef.current = null;
       areaRef.current = null;
+      markers.clear();
+      setMapReady(false);
     };
-  }, []);
+  }, [markers]);
 
-  /**
-   * The circle, drawn as its own layer so redrawing the pins cannot wipe it.
-   *
-   * Nothing in it is interactive: a Leaflet circle swallows clicks by default,
-   * and the one place you most want to click again is just inside the circle
-   * you have already drawn.
-   */
   useEffect(() => {
     let cancelled = false;
+    (async () => {
+      if (!mapReady) return;
+      const L = await import("leaflet");
+      const map = mapRef.current;
+      if (cancelled || !map) return;
 
+      map.setMinZoom(0);
+      map.invalidateSize({ animate: false });
+      const mobile = !window.matchMedia("(min-width: 1024px)").matches;
+      const coveredHeight = mobile
+        ? sheetCollapsed
+          ? COLLAPSED_SHEET_HEIGHT
+          : (sheetRef.current?.offsetHeight ?? 0)
+        : 0;
+
+      if (mobile && !sheetCollapsed) {
+        map.setView(BOROUGH_CENTER, 12, { animate: false });
+        map.panBy([0, coveredHeight / 2], { animate: false });
+        map.setMinZoom(11);
+      } else {
+        map.fitBounds(L.latLngBounds(BOROUGH_BOUNDS), {
+          animate: false,
+          padding: [14, 14],
+        });
+        map.setMinZoom(map.getZoom());
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [mapReady, sheetCollapsed]);
+
+  useEffect(() => {
+    let cancelled = false;
+    let detach: (() => void) | undefined;
+    (async () => {
+      if (!mapReady) return;
+      const L = await import("leaflet");
+      const map = mapRef.current;
+      if (cancelled || !map) return;
+
+      const distantLimit = L.latLngBounds(BOROUGH_BOUNDS).pad(4);
+      const onMoveEnd = () => {
+        if (mappable.length === 0) return;
+        const viewport = map.getBounds();
+        const hasVisiblePin = mappable.some((event) => viewport.contains([event.lat!, event.lon!]));
+        if (hasVisiblePin || distantLimit.contains(map.getCenter())) return;
+        map.panTo(BOROUGH_CENTER, { animate: true, duration: 0.45 });
+      };
+      map.on("moveend", onMoveEnd);
+      detach = () => map.off("moveend", onMoveEnd);
+    })();
+    return () => {
+      cancelled = true;
+      detach?.();
+    };
+  }, [mapReady, mappable]);
+
+  useEffect(() => {
+    const media = window.matchMedia("(min-width: 1024px)");
+    const onChange = (event: MediaQueryListEvent) => {
+      if (event.matches) setSheetCollapsed(false);
+    };
+    media.addEventListener("change", onChange);
+    return () => media.removeEventListener("change", onChange);
+  }, []);
+
+  useEffect(() => {
+    if (!filtersOpen) return;
+    const onPointerDown = (event: MouseEvent) => {
+      if (!filtersRef.current?.contains(event.target as Node)) setFiltersOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setFiltersOpen(false);
+    };
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [filtersOpen]);
+
+  useEffect(() => {
+    let cancelled = false;
     (async () => {
       const L = await import("leaflet");
       const map = mapRef.current;
@@ -208,7 +275,6 @@ export function EventMap({
       areaRef.current?.remove();
       areaRef.current = null;
       if (!origin) return;
-
       areaRef.current = L.layerGroup([
         L.circle([origin.lat, origin.lon], {
           radius,
@@ -220,101 +286,87 @@ export function EventMap({
           fillOpacity: 0.08,
           interactive: false,
         }),
-        // The point itself, in ink rather than the accent: it is the one mark on
-        // the map that is not an event, and it should not read as another pin.
         L.circleMarker([origin.lat, origin.lon], {
           radius: 5,
           color: "#fff",
           weight: 2,
-          fillColor: INK,
+          fillColor: "#1a1a1a",
           fillOpacity: 1,
           interactive: false,
         }),
       ]).addTo(map);
     })();
-
     return () => {
       cancelled = true;
     };
   }, [origin, radius]);
 
-  // Redraw pins whenever the filters change.
   useEffect(() => {
     let cancelled = false;
-
     (async () => {
+      if (!mapReady) return;
       const L = await import("leaflet");
       const layer = layerRef.current;
       if (cancelled || !layer) return;
-      layer.clearLayers();
-      markersRef.current.clear();
 
-      // Leaflet's popup defaults to 300px wide, which on a 320px phone is wider
-      // than the map frame itself: autoPan has nowhere to move it to, so it
-      // opens half outside the rounded frame and gets clipped. Sizing it to the
-      // frame keeps the popup inside the map at every width, and the desktop
-      // popup is unchanged because 300px is still the cap.
+      layer.clearLayers();
+      markers.clear();
       const frame = containerRef.current?.clientWidth ?? 0;
       const popupMaxWidth = frame > 0 ? Math.min(300, frame - 32) : 300;
 
-      for (const e of mappable) {
-        const marker = L.marker([e.lat!, e.lon!], {
-          title: e.title,
-          icon: pin(L, ACCENT, false),
+      for (const event of mappable) {
+        const marker = L.marker([event.lat!, event.lon!], {
+          title: event.title,
+          icon: eventMarker(L, isOngoing(event, today), false),
         });
-
-        const place = [e.venueName, e.address].filter(Boolean).join(" · ");
+        const place = [event.venueName, event.address].filter(Boolean).join(" · ");
         marker.bindPopup(
-          `<strong style="font-size:14px">${escapeHtml(e.title)}</strong>` +
-            `<br><span style="color:#6e6a72">${escapeHtml(formatDateRange(e.startsOn, e.endsOn, locale))}</span>` +
+          `<strong style="font-size:14px">${escapeHtml(event.title)}</strong>` +
+            `<br><span style="color:#6e6a72">${escapeHtml(formatDateRange(event.startsOn, event.endsOn, locale))}</span>` +
             (place ? `<br><span style="color:#6e6a72">${escapeHtml(place)}</span>` : "") +
-            `<br><a href="${escapeHtml(e.sourceUrl)}" target="_blank" rel="noreferrer" style="color:#fa3250;font-weight:700">${escapeHtml(labels.details)}</a>`,
+            `<br><a href="${escapeHtml(event.sourceUrl)}" data-track-event="${escapeHtml(event.id)}" target="_blank" rel="noreferrer" style="color:#fa3250;font-weight:700">${escapeHtml(labels.details)}</a>`,
           { maxWidth: popupMaxWidth },
         );
-        marker.on("mouseover", () => setActive(e.id));
-        marker.on("mouseout", () => setActive(null));
+        marker.on("mouseover", () => setHovered(event.id));
+        marker.on("mouseout", () => setHovered(null));
+        marker.on("click", () => {
+          setSelected(event.id);
+          if (sheetCollapsed) return;
+          const listIndex = filtered.findIndex((item) => item.id === event.id);
+          if (listIndex >= 0) setListLimit((current) => Math.max(current, listIndex + 1));
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              document.getElementById(`map-event-${event.id}`)?.scrollIntoView({
+                behavior: "smooth",
+                block: "nearest",
+              });
+            });
+          });
+        });
         marker.addTo(layer);
-        markersRef.current.set(e.id, marker as unknown as { setIcon: (i: unknown) => void });
+        markers.set(event.id, marker);
       }
     })();
-
     return () => {
       cancelled = true;
     };
-  }, [mappable, locale, labels.details]);
+  }, [filtered, labels.details, locale, mapReady, markers, mappable, sheetCollapsed, today]);
 
-  // Lift the pin that matches the hovered card, so the pairing is legible.
   useEffect(() => {
     let cancelled = false;
     (async () => {
       const L = await import("leaflet");
       if (cancelled) return;
-      for (const e of mappable) {
-        const marker = markersRef.current.get(e.id);
-        if (!marker) continue;
-        marker.setIcon(pin(L, ACCENT, active === e.id));
+      for (const event of mappable) {
+        markers
+          .get(event.id)
+          ?.setIcon(eventMarker(L, isOngoing(event, today), active === event.id));
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [active, mappable]);
-
-  const hidden = filtered.length - mappable.length;
-  const hasFilter = Boolean(query || when !== "all" || setting || type || origin);
-
-  // Changing a filter re-answers the question, so the list starts over. Done in
-  // the handlers rather than an effect: an effect would run after a render that
-  // had already painted the old list at its old length.
-  const reset = <T,>(set: (v: T) => void) => (value: T) => {
-    set(value);
-    setLimit(PAGE);
-  };
-  const chooseWhen = reset(setWhen);
-  const chooseType = reset(setType);
-  const chooseSetting = reset(setSetting);
-  const chooseQuery = reset(setQuery);
-  const chooseRadius = reset(setRadius);
+  }, [active, markers, mappable, today]);
 
   const clearAll = () => {
     setQuery("");
@@ -322,315 +374,446 @@ export function EventMap({
     setSetting("");
     setType("");
     setOrigin(null);
-    setLimit(PAGE);
   };
 
-  const clearOrigin = () => {
-    setOrigin(null);
-    setLimit(PAGE);
+  const startDrag = (event: React.PointerEvent<HTMLButtonElement>) => {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    const distance = Math.max((sheetRef.current?.offsetHeight ?? 0) - COLLAPSED_SHEET_HEIGHT, 0);
+    const start = sheetCollapsed ? distance : 0;
+    dragRef.current = {
+      startY: event.clientY,
+      startOffset: start,
+      distance,
+      current: start,
+      moved: false,
+    };
+    setDragDistance(distance);
+    setDragY(start);
+
+    const pointerId = event.pointerId;
+    const cleanup = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onEnd);
+      window.removeEventListener("pointercancel", onCancel);
+    };
+    const onMove = (pointerEvent: PointerEvent) => {
+      const drag = dragRef.current;
+      if (!drag || pointerEvent.pointerId !== pointerId) return;
+      const delta = pointerEvent.clientY - drag.startY;
+      drag.current = Math.min(Math.max(drag.startOffset + delta, 0), drag.distance);
+      if (Math.abs(delta) > 5) drag.moved = true;
+      setDragY(drag.current);
+      pointerEvent.preventDefault();
+    };
+    const onEnd = (pointerEvent: PointerEvent) => {
+      const drag = dragRef.current;
+      if (!drag || pointerEvent.pointerId !== pointerId) return;
+      const finalPosition = Math.min(
+        Math.max(drag.startOffset + pointerEvent.clientY - drag.startY, 0),
+        drag.distance,
+      );
+      const moved = drag.moved || Math.abs(pointerEvent.clientY - drag.startY) > 5;
+      suppressClickRef.current = moved;
+      setSheetCollapsed(finalPosition > drag.distance / 2);
+      setDragY(null);
+      dragRef.current = null;
+      cleanup();
+    };
+    const onCancel = (pointerEvent: PointerEvent) => {
+      if (pointerEvent.pointerId !== pointerId) return;
+      setDragY(null);
+      dragRef.current = null;
+      cleanup();
+    };
+
+    window.addEventListener("pointermove", onMove, { passive: false });
+    window.addEventListener("pointerup", onEnd);
+    window.addEventListener("pointercancel", onCancel);
   };
 
-  const visible = filtered.slice(0, limit);
-  const remaining = filtered.length - visible.length;
+  const toggleSheet = () => {
+    if (suppressClickRef.current) {
+      suppressClickRef.current = false;
+      return;
+    }
+    setSheetCollapsed((value) => !value);
+  };
+
+  const sheetOffset =
+    dragY === null
+      ? sheetCollapsed
+        ? `calc(100% - ${COLLAPSED_SHEET_HEIGHT}px)`
+        : "0px"
+      : `${dragY}px`;
+  const dimOpacity =
+    dragY === null
+      ? sheetCollapsed
+        ? 0
+        : 0.16
+      : dragDistance > 0
+        ? 0.16 * (1 - dragY / dragDistance)
+        : 0.16;
+  const sheetStyle = {
+    "--map-sheet-y": sheetOffset,
+    "--map-sheet-height": "calc(100% - clamp(205px, 27dvh, 240px))",
+  } as CSSProperties;
 
   return (
-    <div>
-      {/* Searching comes first because it is the only control that answers
-          "where is the thing I already know about". Full width: an event title
-          is a sentence, not a keyword. */}
-      <label className="block">
-        <span className="sr-only">{labels.searchPlaceholder}</span>
-        <input
-          type="search"
-          value={query}
-          onChange={(e) => chooseQuery(e.target.value)}
-          placeholder={labels.searchPlaceholder}
-          className={`${FIELD} rounded-full`}
-        />
-      </label>
+    <section className="event-map-workspace relative flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div
+        ref={filtersRef}
+        className="pointer-events-none absolute inset-x-0 top-0 z-20 p-2.5 lg:p-3 lg:pr-[max(33.333%,404px)]"
+      >
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 lg:gap-3">
+          <label className="pointer-events-auto relative flex h-9 w-full max-w-[680px] items-center rounded-full border border-[#ded6cd] bg-white shadow-[0_2px_8px_rgba(26,26,26,0.12)] transition-colors focus-within:border-[#5d56b4]">
+            <SearchIcon />
+            <input
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              onFocus={() => setFiltersOpen(false)}
+              placeholder={labels.searchPlaceholder}
+              aria-label={labels.searchPlaceholder}
+              className="h-full min-w-0 flex-1 bg-transparent px-2.5 text-[13px] font-medium text-[#1a1a1a] outline-none placeholder:text-[#8a858c] [&::-webkit-search-cancel-button]:appearance-none"
+            />
+            {query && (
+              <button
+                type="button"
+                aria-label={labels.clearSearch}
+                onClick={() => setQuery("")}
+                className="mr-1 grid h-7 w-7 shrink-0 place-items-center rounded-full text-[#6e6a72] hover:bg-[#f4eee8] hover:text-[#1a1a1a]"
+              >
+                <CloseIcon />
+              </button>
+            )}
+          </label>
 
-      {/* Then when. A listing is read forwards from today, so this is the cut
-          most people want and it gets chips rather than a select — four
-          options behind a click is three options hidden. */}
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        {(Object.keys(labels.when) as When[]).map((key) => (
-          <FilterChip key={key} active={when === key} onClick={() => chooseWhen(key)}>
-            {labels.when[key]}
-          </FilterChip>
-        ))}
-      </div>
-
-      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
-        {/* A <select> is as wide as its longest option, and the activity names
-            are long enough to push past a 320px screen. Clamped and allowed to
-            shrink so it fills the space left over instead of setting it, and
-            given the whole row on a phone: sharing a line with the count would
-            leave it too narrow to read a single activity name in. */}
-        <label className="flex w-full min-w-0 items-center gap-2 text-[14px] sm:w-auto">
-          <span className={`shrink-0 font-bold ${MUTED}`}>{labels.type}</span>
-          <select
-            value={type}
-            onChange={(e) => chooseType(e.target.value)}
-            className="min-h-[40px] min-w-0 max-w-full flex-1 rounded-[10px] border border-[#e9e0d6] bg-white px-3.5 py-2 text-[14px] font-bold text-[#1a1a1a] transition-colors hover:border-[#fa3250] sm:flex-none"
-          >
-            <option value="">{labels.allTypes}</option>
-            {types.map((tp) => (
-              <option key={tp} value={tp}>
-                {tp}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        {/* Indoors or out is the other thing that decides whether an event is
-            worth crossing the borough for in February. */}
-        <label className="flex w-full min-w-0 items-center gap-2 text-[14px] sm:w-auto">
-          <span className="sr-only">{labels.allSettings}</span>
-          <select
-            value={setting}
-            onChange={(e) => chooseSetting(e.target.value as Setting | "")}
-            className="min-h-[40px] min-w-0 max-w-full flex-1 rounded-[10px] border border-[#e9e0d6] bg-white px-3.5 py-2 text-[14px] font-bold text-[#1a1a1a] transition-colors hover:border-[#fa3250] sm:flex-none"
-          >
-            <option value="">{labels.allSettings}</option>
-            {(Object.keys(labels.settings) as Setting[]).map((key) => (
-              <option key={key} value={key}>
-                {labels.settings[key]}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <p className={`text-[14px] ${MUTED}`}>
-          {/* The count and its noun are held together; broken across lines the
-              number reads as belonging to the sentence above it. Only this
-              pair is kept unbreakable — "sans lieu sur la carte" is long
-              enough that refusing to wrap it would set the width of the row. */}
-          <span className="whitespace-nowrap">
-            <span className="font-bold text-[#1a1a1a] tabular-nums">{filtered.length}</span>{" "}
-            {filtered.length === 1 ? labels.eventOne : labels.eventMany}
-          </span>
-          {hidden > 0 ? ` · ${hidden} ${labels.unmapped}` : ""}
-        </p>
-
-        {hasFilter && (
           <button
             type="button"
-            onClick={clearAll}
-            className="inline-flex min-h-[40px] items-center text-[14px] font-bold text-[#fa3250] underline hover:text-[#d81f3c]"
+            aria-label={labels.filters}
+            aria-expanded={filtersOpen}
+            aria-controls="event-map-filter-panel"
+            onClick={() => setFiltersOpen((value) => !value)}
+            className={`map-filter-trigger pointer-events-auto inline-flex h-9 items-center gap-2 rounded-full border px-3 text-[13px] font-semibold shadow-[0_2px_8px_rgba(26,26,26,0.12)] transition-colors sm:px-3.5 ${
+              filtersOpen
+                ? "border-[#2a2a86] bg-[#2a2a86] text-white"
+                : "border-[#ded6cd] bg-white text-[#1a1a1a] hover:border-[#5d56b4]"
+            }`}
           >
-            {labels.showAll}
+            <FilterIcon />
+            <span className="hidden min-[360px]:inline">{labels.filters}</span>
+            {activeFilterCount > 0 && (
+              <span
+                className={`grid h-5 min-w-5 place-items-center rounded-full px-1 text-[11px] tabular-nums ${
+                  filtersOpen ? "bg-white text-[#2a2a86]" : "bg-[#fa3250] text-white"
+                }`}
+              >
+                {activeFilterCount}
+              </span>
+            )}
           </button>
-        )}
-      </div>
+        </div>
 
-      {/* The point, and how far around it to look.
-
-          Before one is placed this row is only an invitation — the map gives no
-          sign that it can be clicked, and a feature nobody discovers is not a
-          feature. Once placed it becomes the control: three walking distances,
-          and a way out. */}
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        {origin ? (
-          <>
-            <span className={`text-[14px] font-bold ${MUTED}`}>{labels.nearbyLabel}</span>
-            {RADII.map((r) => (
-              <FilterChip key={r} active={radius === r} onClick={() => chooseRadius(r)}>
-                {formatDistance(r, locale)}
-              </FilterChip>
-            ))}
-            <button
-              type="button"
-              onClick={clearOrigin}
-              className="inline-flex min-h-[40px] items-center text-[14px] font-bold text-[#fa3250] underline hover:text-[#d81f3c]"
-            >
-              {labels.nearbyClear}
-            </button>
-          </>
-        ) : (
-          <p className={`flex items-center gap-2 text-[14px] ${MUTED}`}>
-            <Crosshair />
-            {labels.nearbyHint}
-          </p>
-        )}
-      </div>
-
-      {/* The map is never taken away, even when nothing matches.
-
-          It used to be: an empty result replaced the whole pane with a card.
-          That is survivable for a search box, and impossible once the map is
-          itself a filter — clicking a quiet corner would remove the very thing
-          you needed in order to click somewhere else. So the message moved into
-          the list column, where the map stays beside it to be clicked again. */}
-      <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">
-        {/* Shorter on a phone. At full height the map fills the screen on its
-            own, and nothing suggests there is a readable list under it. */}
-        <div
-          ref={containerRef}
-          role="application"
-          aria-label={labels.mapLabel}
-          className="h-[320px] w-full cursor-crosshair overflow-hidden rounded-[16px] border border-[#e9e0d6] sm:h-[400px] md:h-[620px]"
-        />
-
-        {filtered.length === 0 ? (
-          // 40px of padding on each side of a 320px screen leaves the message a
-          // column barely wider than one word.
-          <div className={`${CARD} p-6 text-center sm:p-10`}>
-            <p className="text-[18px] font-bold leading-[26px]">
-              {origin ? labels.nearbyNoneTitle : labels.noneTitle}
-            </p>
-            <p className={`mt-2 ${MUTED}`}>
-              {origin ? labels.nearbyNoneBody : labels.noneBody}
-            </p>
-          </div>
-        ) : (
-          /* The same events, readable without touching the map.
-
-             The list only becomes its own scroller once it sits beside the map
-             and has to match its height. Stacked on a phone that inner scroller
-             is a trap: a thumb dragged over the list scrolls the list instead
-             of the page, and the rest of the page becomes unreachable. */
-          <div className="min-w-0">
-            <div className="relative">
-              <ul className="space-y-2 lg:max-h-[620px] lg:overflow-y-auto lg:pr-1">
-                {visible.map((e) => (
-                  <li key={e.id}>
-                    <a
-                      href={e.sourceUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      onMouseEnter={() => setActive(e.id)}
-                      onMouseLeave={() => setActive(null)}
-                      onFocus={() => setActive(e.id)}
-                      onBlur={() => setActive(null)}
-                      className={`flex gap-3 rounded-[14px] border p-3 transition-colors ${
-                        active === e.id
-                          ? "border-[#fa3250] bg-[#faf1e8]"
-                          : "border-[#e9e0d6] bg-white hover:border-[#fa3250]"
-                      }`}
-                    >
-                      {/* The bar used to carry the district's colour, which
-                          only meant anything while the district chips were
-                          there to read it against. It now marks the one
-                          distinction a listing actually turns on: happening
-                          today, or still to come. */}
-                      <span
-                        aria-hidden="true"
-                        className="mt-1 h-9 w-1.5 shrink-0 rounded-full"
-                        style={{ background: isOngoing(e, today) ? ACCENT_TODAY : ACCENT }}
-                      />
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-[15px] font-bold leading-[21px]">
-                          {e.title}
-                        </span>
-                        <span className={`mt-0.5 block text-[13px] leading-[19px] ${MUTED}`}>
-                          {formatDateRange(e.startsOn, e.endsOn, locale)}
-                          {e.venueName ? ` · ${e.venueName}` : ""}
-                        </span>
-                        <span className="mt-1 flex flex-wrap gap-1">
-                          {/* How far, once there is a point to measure from.
-                              A radius that only thins the list leaves you
-                              trusting it; the distance on each row is the
-                              circle saying what it did. Its own pill rather
-                              than a third clause on the meta line, which at
-                              320px would wrap the venue onto a line of its
-                              own. */}
-                          {origin && isMappable(e) && (
-                            <span className="inline-block rounded-full bg-[#fde8eb] px-2 py-0.5 text-[11px] font-bold tabular-nums text-[#d81f3c]">
-                              {formatDistance(distanceMeters(origin, e.lat!, e.lon!), locale)}
-                            </span>
-                          )}
-                          {isOngoing(e, today) && (
-                            <span className="inline-block rounded-full bg-[#fdeaf2] px-2 py-0.5 text-[11px] font-bold text-[#b3122c]">
-                              {labels.todayPill}
-                            </span>
-                          )}
-                          {e.setting === "online" && (
-                            <span className="inline-block rounded-full bg-[#e4f2eb] px-2 py-0.5 text-[11px] font-bold text-[#0b6042]">
-                              {labels.online}
-                            </span>
-                          )}
-                        </span>
-                      </span>
-                    </a>
-                  </li>
+        {filtersOpen && (
+          <div
+            id="event-map-filter-panel"
+            className="pointer-events-auto absolute inset-x-2.5 top-[52px] z-30 max-h-[calc(100dvh-124px)] overflow-y-auto rounded-[14px] border border-[#ddd4cb] bg-white p-4 shadow-[0_10px_28px_rgba(26,26,26,0.13)] lg:inset-x-auto lg:right-[max(33.333%,404px)] lg:w-[380px] lg:rounded-[12px]"
+          >
+            <fieldset>
+              <legend className="text-[14px] font-semibold text-[#1a1a1a]">{labels.filterWhen}</legend>
+              <div className="mt-2 grid grid-cols-2 gap-x-4">
+                {(Object.keys(labels.when) as When[]).map((key) => (
+                  <FilterOption
+                    key={key}
+                    active={when === key}
+                    onClick={() => setWhen(key)}
+                  >
+                    {labels.when[key]}
+                  </FilterOption>
                 ))}
-              </ul>
+              </div>
+            </fieldset>
 
-              {/* The list does not simply stop — the last rows soften into the
-                page, which says "there is more of this" before the button has
-                to. Two layers: a ramp of blur, and a fade to the page colour
-                over it. Hit-testing passes straight through, so the last card
-                stays clickable under its own fade. */}
-              {remaining > 0 && (
+            <div className="mt-3 border-t border-[#eee6dd] pt-3">
+              <label className="block text-[14px] font-semibold text-[#1a1a1a]">
+                {labels.type}
+                <select
+                  value={type}
+                  onChange={(event) => setType(event.target.value)}
+                  className="mt-2 min-h-10 w-full rounded-[10px] border border-[#ddd4cb] bg-white px-3 text-[13px] font-medium text-[#1a1a1a] outline-none transition-colors focus:border-[#5d56b4]"
+                >
+                  <option value="">{labels.allTypes}</option>
+                  {types.map((eventType) => (
+                    <option key={eventType} value={eventType}>
+                      {eventType}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <fieldset className="mt-3 border-t border-[#eee6dd] pt-3">
+              <legend className="text-[14px] font-semibold text-[#1a1a1a]">{labels.filterSetting}</legend>
+              <div className="mt-2 grid grid-cols-2 gap-x-4">
+                <FilterOption active={!setting} onClick={() => setSetting("")}>
+                  {labels.allSettings}
+                </FilterOption>
+                {(Object.keys(labels.settings) as Setting[]).map((key) => (
+                  <FilterOption
+                    key={key}
+                    active={setting === key}
+                    onClick={() => setSetting(key)}
+                  >
+                    {labels.settings[key]}
+                  </FilterOption>
+                ))}
+              </div>
+            </fieldset>
+
+            <div className="mt-3 border-t border-[#eee6dd] pt-3">
+              {origin ? (
                 <>
-                  <div
-                    aria-hidden="true"
-                    className="pointer-events-none absolute inset-x-0 bottom-0 h-24 backdrop-blur-[3px] [mask-image:linear-gradient(to_top,#000_30%,transparent)]"
-                  />
-                  <div
-                    aria-hidden="true"
-                    className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#fef7f0] via-[#fef7f0]/85 to-transparent"
-                  />
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[14px] font-semibold text-[#1a1a1a]">{labels.nearbyLabel}</p>
+                    <button
+                      type="button"
+                      onClick={() => setOrigin(null)}
+                      className="text-[12px] font-semibold text-[#5d56b4] underline-offset-4 hover:text-[#fa3250] hover:underline"
+                    >
+                      {labels.nearbyClear}
+                    </button>
+                  </div>
+                  <div className="mt-2 grid grid-cols-3 gap-2">
+                    {RADII.map((distance) => (
+                      <button
+                        key={distance}
+                        type="button"
+                        aria-pressed={radius === distance}
+                        onClick={() => setRadius(distance)}
+                        className={`min-h-9 rounded-full border px-2 text-[12px] font-semibold transition-colors ${
+                          radius === distance
+                            ? "border-[#5d56b4] bg-[#eeecfb] text-[#2a2a86]"
+                            : "border-[#ddd4cb] text-[#6e6a72] hover:border-[#5d56b4]"
+                        }`}
+                      >
+                        {formatDistance(distance, locale)}
+                      </button>
+                    ))}
+                  </div>
                 </>
+              ) : (
+                <p className={`flex items-start gap-2 text-[13px] leading-[19px] ${MUTED}`}>
+                  <Crosshair />
+                  {labels.nearbyHint}
+                </p>
               )}
             </div>
 
-            {remaining > 0 && (
-              <button
-                type="button"
-                onClick={() => setLimit((n) => n + PAGE)}
-                className={`${BTN_SECONDARY} mt-3 w-full`}
-              >
-                {labels.showMore}
-              <span className="tabular-nums">({remaining})</span>
-              </button>
+            {hasFilter && (
+              <div className="mt-3 border-t border-[#eee6dd] pt-3 text-right">
+                <button
+                  type="button"
+                  onClick={clearAll}
+                  className="min-h-9 rounded-full border border-[#fa3250] bg-[#fa3250] px-5 text-[13px] font-semibold text-white transition-colors hover:border-[#d81f3c] hover:bg-[#d81f3c]"
+                >
+                  {labels.showAll}
+                </button>
+              </div>
             )}
           </div>
         )}
       </div>
-    </div>
+
+      <div className="relative min-h-0 flex-1 overflow-hidden">
+        <div
+          ref={containerRef}
+          role="region"
+          aria-label={labels.mapLabel}
+          className="absolute inset-0 z-0 min-h-0 cursor-crosshair bg-[#dfe6dc]"
+        />
+
+        <div
+          aria-hidden="true"
+          className={`pointer-events-none absolute inset-0 z-[1] bg-[#17121a] lg:hidden ${
+            dragY === null ? "transition-opacity duration-300" : ""
+          }`}
+          style={{ opacity: dimOpacity }}
+        />
+
+        <aside
+          ref={sheetRef}
+          aria-label={labels.mapLabel}
+          style={sheetStyle}
+          className={`absolute inset-x-0 bottom-0 z-[2] flex h-[var(--map-sheet-height)] min-h-0 translate-y-[var(--map-sheet-y)] flex-col overflow-hidden rounded-t-[18px] border-t border-[#e9e0d6] bg-[#fef7f0] shadow-[0_-3px_14px_rgba(26,26,26,0.08)] lg:inset-y-3 lg:left-auto lg:right-3 lg:h-auto lg:w-[calc(33.333%-24px)] lg:min-w-[380px] lg:translate-y-0 lg:rounded-[18px] lg:border lg:border-[#ded5cc] lg:bg-white lg:shadow-[0_8px_24px_rgba(26,26,26,0.14)] ${
+            dragY === null ? "transition-transform duration-300 ease-[cubic-bezier(0.22,0.61,0.36,1)]" : ""
+          }`}
+        >
+          <button
+            type="button"
+            aria-expanded={!sheetCollapsed}
+            aria-controls="event-map-results"
+            onClick={toggleSheet}
+            onPointerDown={startDrag}
+            className="map-sheet-toggle relative flex h-[52px] shrink-0 touch-none items-center justify-center border-b border-[#eee6dd] bg-white lg:hidden"
+          >
+            <span className="map-sheet-grip absolute top-2.5 h-1 w-10 rounded-full bg-[#c7c0b8]" aria-hidden="true" />
+            <span className="mt-2 text-[13px] font-semibold text-[#6e6a72]">
+              {filtered.length} {filtered.length === 1 ? labels.eventOne : labels.eventMany}
+            </span>
+            <ChevronIcon collapsed={sheetCollapsed} />
+          </button>
+
+          <div className="hidden min-h-[50px] shrink-0 items-center border-b border-[#e9e0d6] bg-white px-5 lg:flex">
+            <ResultCount count={filtered.length} hidden={hidden} labels={labels} />
+          </div>
+
+          <ul
+            id="event-map-results"
+            inert={sheetCollapsed}
+            aria-hidden={sheetCollapsed}
+            className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3 [scrollbar-width:none] sm:p-4 lg:bg-transparent lg:p-3 lg:[scrollbar-width:auto] [&::-webkit-scrollbar]:hidden lg:[&::-webkit-scrollbar]:block"
+          >
+            {visible.map((event) => (
+              <li key={event.id} id={`map-event-${event.id}`}>
+                <EventCard
+                  event={event}
+                  locale={locale}
+                  labels={labels}
+                  today={today}
+                  origin={origin}
+                  active={active === event.id}
+                  onActive={() => setHovered(event.id)}
+                  onInactive={() => setHovered(null)}
+                  onSelect={() => setSelected(event.id)}
+                />
+              </li>
+            ))}
+
+            {filtered.length === 0 && (
+              <li className="rounded-[15px] border border-[#e9e0d6] bg-white p-6 text-center">
+                <p className="text-[16px] font-semibold text-[#1a1a1a]">
+                  {origin ? labels.nearbyNoneTitle : labels.noneTitle}
+                </p>
+                <p className={`mt-1.5 text-[13px] leading-[19px] ${MUTED}`}>
+                  {origin ? labels.nearbyNoneBody : labels.noneBody}
+                </p>
+              </li>
+            )}
+
+            {remaining > 0 && (
+              <li>
+                <button
+                  type="button"
+                  onClick={() => setListLimit((current) => current + RESULTS_PAGE)}
+                  className="min-h-10 w-full rounded-full border border-[#5d56b4] bg-white px-4 text-[13px] font-semibold text-[#2a2a86] transition-colors hover:bg-[#eeecfb]"
+                >
+                  {labels.showMore} <span className="tabular-nums">({remaining})</span>
+                </button>
+              </li>
+            )}
+
+            <li className={`px-2 pb-1 pt-2 text-[11px] leading-[17px] ${MUTED}`}>{labels.source}</li>
+          </ul>
+        </aside>
+      </div>
+    </section>
   );
 }
 
-/**
- * The mark beside the invitation to click. It is the cursor the map now shows,
- * drawn small next to the sentence that explains it — so the hint and the thing
- * under the pointer are recognisably the same gesture.
- */
-function Crosshair() {
+function EventCard({
+  event,
+  locale,
+  labels,
+  today,
+  origin,
+  active,
+  onActive,
+  onInactive,
+  onSelect,
+}: {
+  event: BoroughEvent;
+  locale: string;
+  labels: MapLabels;
+  today: string;
+  origin: Origin | null;
+  active: boolean;
+  onActive: () => void;
+  onInactive: () => void;
+  onSelect: () => void;
+}) {
+  const place = event.setting === "online" ? labels.online : event.venueName ?? event.address;
+  const ongoing = isOngoing(event, today);
+
   return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      className="h-4 w-4 shrink-0"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
+    <a
+      href={event.sourceUrl}
+      target="_blank"
+      rel="noreferrer"
+      onClick={() => {
+        onSelect();
+        trackContentOpen("event", event.id);
+      }}
+      onMouseEnter={onActive}
+      onMouseLeave={onInactive}
+      onFocus={onActive}
+      onBlur={onInactive}
+      className={`group block rounded-[15px] border bg-white px-4 py-3.5 transition-[border-color,box-shadow] sm:px-5 sm:py-4 lg:px-4 lg:py-3.5 ${
+        active
+          ? "border-[#2a2a86] shadow-[0_3px_12px_rgba(26,26,26,0.08)]"
+          : "border-[#e5dcd2] hover:border-[#bdb1a5] hover:shadow-[0_3px_12px_rgba(26,26,26,0.06)]"
+      }`}
     >
-      <circle cx="12" cy="12" r="6.5" />
-      <path d="M12 1.5v4M12 18.5v4M1.5 12h4M18.5 12h4" />
-    </svg>
+      <span className="flex items-center justify-between gap-3 text-[12px] leading-[18px]">
+        <span className="min-w-0 truncate font-medium text-[#5d56b4]">
+          {event.eventType ?? labels.eventOne}
+        </span>
+        {ongoing && (
+          <span className="shrink-0 rounded-full bg-[#f9e7ee] px-2 py-0.5 font-semibold text-[#a92351]">
+            {labels.todayPill}
+          </span>
+        )}
+      </span>
+      <span className="mt-0.5 block text-[17px] font-semibold leading-[23px] tracking-[-0.01em] text-[#1a1a1a] group-hover:text-[#2a2a86]">
+        {event.title}
+      </span>
+      <span className={`mt-2 flex items-start gap-2 text-[13px] leading-[19px] ${MUTED}`}>
+        <CalendarIcon />
+        {formatDateRange(event.startsOn, event.endsOn, locale)}
+      </span>
+      {place && (
+        <span className={`mt-1 flex items-start gap-2 text-[13px] leading-[19px] ${MUTED}`}>
+          <PlaceIcon online={event.setting === "online"} />
+          <span className="min-w-0">{place}</span>
+        </span>
+      )}
+      {origin && isMappable(event) && (
+        <span className="mt-2 inline-block rounded-full bg-[#eeecfb] px-2.5 py-1 text-[11px] font-semibold tabular-nums text-[#2a2a86]">
+          {formatDistance(distanceMeters(origin, event.lat!, event.lon!), locale)}
+        </span>
+      )}
+    </a>
   );
 }
 
-/** A teardrop pin, so events read as places rather than as dots on paper. */
-function pin(L: typeof import("leaflet"), color: string, raised: boolean) {
-  const size = raised ? 34 : 28;
-  return L.divIcon({
-    className: "",
-    html: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" style="filter:drop-shadow(0 1px 2px rgba(26,26,26,.35))">
-      <path d="M12 2.2c-4 0-7.2 3.2-7.2 7.2 0 5.2 7.2 12.4 7.2 12.4s7.2-7.2 7.2-12.4c0-4-3.2-7.2-7.2-7.2z"
-            fill="${color}" stroke="#fff" stroke-width="1.6"/>
-      <circle cx="12" cy="9.4" r="2.6" fill="#fff"/>
-    </svg>`,
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size],
-    popupAnchor: [0, -size + 4],
-  });
+function ResultCount({
+  count,
+  hidden,
+  labels,
+}: {
+  count: number;
+  hidden: number;
+  labels: MapLabels;
+}) {
+  return (
+    <p className={`shrink-0 text-[13px] ${MUTED}`} aria-live="polite">
+      <strong className="font-semibold text-[#1a1a1a] tabular-nums">{count}</strong>{" "}
+      {count === 1 ? labels.eventOne : labels.eventMany}
+      {hidden > 0 ? ` · ${hidden} ${labels.unmapped}` : ""}
+    </p>
+  );
 }
 
-function FilterChip({
+function FilterOption({
   active,
   onClick,
   children,
@@ -639,28 +822,117 @@ function FilterChip({
   onClick: () => void;
   children: React.ReactNode;
 }) {
-  // `max-w-full` so a wrapping flex row cannot let a chip hang off the edge on
-  // a 320px screen; clamped, it wraps inside the chip instead. `min-h-[40px]`
-  // keeps it a thumb-sized target — the type alone leaves it 36px.
   return (
     <button
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`inline-flex min-h-[40px] max-w-full items-center gap-2 rounded-full border px-3.5 py-2 text-[14px] font-bold leading-[20px] transition-colors ${
-        active
-          ? "border-[#fa3250] bg-[#fa3250] text-white"
-          : "border-[#e9e0d6] bg-white text-[#6e6a72] hover:border-[#fa3250] hover:text-[#1a1a1a]"
+      className={`map-filter-option flex min-h-[38px] min-w-0 items-center gap-2 border-b border-[#f2ece6] py-2 text-left text-[13px] leading-[18px] transition-colors ${
+        active ? "font-semibold text-[#1a1a1a]" : "font-medium text-[#6e6a72] hover:text-[#1a1a1a]"
       }`}
     >
+      <span
+        aria-hidden="true"
+        className={`grid h-4 w-4 shrink-0 place-items-center rounded-full border ${
+          active ? "border-[#5d56b4]" : "border-[#cfc6bd]"
+        }`}
+      >
+        {active && <span className="h-2 w-2 rounded-full bg-[#5d56b4]" />}
+      </span>
       {children}
     </button>
   );
 }
 
-/** Popup content is built as an HTML string, so titles must be escaped. */
-function escapeHtml(s: string): string {
-  return s
+function eventMarker(L: typeof import("leaflet"), ongoing: boolean, raised: boolean) {
+  const size = raised ? 40 : 32;
+  const color = ongoing ? ACCENT_TODAY : ACCENT;
+  return L.divIcon({
+    className: "",
+    html: `<svg width="${size}" height="${size}" viewBox="0 0 32 40" style="filter:drop-shadow(0 2px 3px rgba(26,26,26,.28))">
+      <path d="M16 1.5C8.4 1.5 2.5 7.4 2.5 15c0 9.6 13.5 23.5 13.5 23.5S29.5 24.6 29.5 15C29.5 7.4 23.6 1.5 16 1.5Z" fill="${color}" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
+      <circle cx="16" cy="15" r="4.25" fill="#fff"/>
+    </svg>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size],
+    popupAnchor: [0, -size + 5],
+  });
+}
+
+function SearchIcon() {
+  return (
+    <svg className="ml-3 shrink-0 text-[#6e6a72]" width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" strokeWidth="1.8" />
+      <path d="m15.5 15.5 4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="m7 7 10 10M17 7 7 17" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function FilterIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M4 6h16M7 12h10m-7 6h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function ChevronIcon({ collapsed }: { collapsed: boolean }) {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+      className={`absolute right-4 mt-2 transition-transform ${collapsed ? "rotate-180" : ""}`}
+    >
+      <path d="m7 9 5 5 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function Crosshair() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="mt-0.5 h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <circle cx="12" cy="12" r="6.5" />
+      <path d="M12 1.5v4M12 18.5v4M1.5 12h4M18.5 12h4" />
+    </svg>
+  );
+}
+
+function CalendarIcon() {
+  return (
+    <svg aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none">
+      <rect x="4" y="5.5" width="16" height="14" rx="2" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M8 3.5v4M16 3.5v4M4 9.5h16" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function PlaceIcon({ online }: { online: boolean }) {
+  return online ? (
+    <svg aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M4.5 9h15M4.5 15h15M12 4c2 2.2 3 4.9 3 8s-1 5.8-3 8c-2-2.2-3-4.9-3-8s1-5.8 3-8Z" stroke="currentColor" strokeWidth="1.4" />
+    </svg>
+  ) : (
+    <svg aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none">
+      <path d="M12 21s6-5.8 6-11a6 6 0 1 0-12 0c0 5.2 6 11 6 11Z" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="12" cy="10" r="2" stroke="currentColor" strokeWidth="1.5" />
+    </svg>
+  );
+}
+
+function escapeHtml(value: string): string {
+  return value
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")

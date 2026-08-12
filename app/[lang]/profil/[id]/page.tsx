@@ -13,7 +13,7 @@ import {
 } from "@/utils/supabase/profile";
 import { officialByProfileId, officialBySlug } from "@/utils/officials";
 import { getDictionary, isLocale, dateLocale } from "@/utils/i18n";
-import { CARD, CONTAINER, MUTED } from "@/components/ui/styles";
+import { CARD, MUTED, PAGE_MAIN, PAGE_SHELL } from "@/components/ui/styles";
 import { Avatar } from "@/components/ui/avatar";
 import { AvatarUpload } from "@/components/profile/avatar-upload";
 import { AccountControls } from "@/components/profile/account-controls";
@@ -101,10 +101,10 @@ export default async function ProfilePage({
   ];
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#fef7f0] text-[#1a1a1a]">
+    <div className={PAGE_SHELL}>
       <SiteHeader user={viewer} lang={lang} />
 
-      <main className={`${CONTAINER} flex-1 py-6 md:py-10`}>
+      <main className={PAGE_MAIN}>
         {/* Identity card, overlapping a tinted banner — the shape people
             already read as "this is a person" rather than "this is a record". */}
         <section className={`${CARD} overflow-hidden`}>

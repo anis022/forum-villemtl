@@ -92,6 +92,7 @@ function toQuestion(r: QuestionRow, terms: string[]): QuestionHit {
 export async function answerAboutQuestions(
   query: string,
   mode?: "orale" | "ecrite",
+  lexicalOnly = false,
 ): Promise<CouncilAnswer> {
   const trimmed = query.trim();
   const empty: CouncilAnswer = {
@@ -105,7 +106,7 @@ export async function answerAboutQuestions(
   if (!trimmed) return empty;
 
   const expanded = expandQuery(trimmed);
-  const embedding = await embed(trimmed);
+  const embedding = lexicalOnly ? null : await embed(trimmed);
 
   const supabase = await sb();
   const { data, error } = await supabase.rpc("search_council_questions", {
@@ -284,16 +285,28 @@ type SegmentRow = {
   semantic_rank: number | null;
 };
 
-/** Passages of the recording itself, for when the words are what is wanted. */
+/**
+ * Passages of the recording itself, for when the words are what is wanted.
+ *
+ * `lexicalOnly` turns off the meaning half. It exists because ranking fuses
+ * word matches with nearest neighbours and then truncates: filtering the
+ * survivors afterwards does not give you the best word matches, it gives you
+ * whichever word matches happened to outrank the neighbours. A caller that
+ * wants only rows containing the words has to say so before the cut, not after.
+ *
+ * It is also the cheap path. No embedding is computed, so no model is loaded,
+ * which is what makes it safe to serve on every request at any volume.
+ */
 export async function searchCouncil(
   query: string,
   section?: Section,
   matchCount = 12,
+  lexicalOnly = false,
 ): Promise<{ hits: SearchHit[]; semantic: boolean }> {
   const trimmed = query.trim();
   if (!trimmed) return { hits: [], semantic: false };
 
-  const embedding = await embed(trimmed);
+  const embedding = lexicalOnly ? null : await embed(trimmed);
 
   const supabase = await sb();
   const { data, error } = await supabase.rpc("search_council", {
@@ -477,31 +490,6 @@ export async function getMeeting(youtubeId: string): Promise<{
       lexical: true,
       similarity: null,
     })),
-  };
-}
-
-/** How much of the archive the answer is actually drawn from. */
-export async function corpusStats(): Promise<{
-  meetings: number;
-  segments: number;
-  questions: number;
-  resolutions: number;
-  remarks: number;
-}> {
-  const supabase = await sb();
-  const [m, s, q, r, k] = await Promise.all([
-    supabase.from("council_meetings").select("id", { count: "exact", head: true }),
-    supabase.from("council_segments").select("id", { count: "exact", head: true }),
-    supabase.from("council_questions").select("id", { count: "exact", head: true }),
-    supabase.from("council_resolutions").select("id", { count: "exact", head: true }),
-    supabase.from("council_remarks").select("id", { count: "exact", head: true }),
-  ]);
-  return {
-    meetings: m.count ?? 0,
-    segments: s.count ?? 0,
-    questions: q.count ?? 0,
-    resolutions: r.count ?? 0,
-    remarks: k.count ?? 0,
   };
 }
 

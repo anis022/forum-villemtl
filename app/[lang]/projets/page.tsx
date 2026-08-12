@@ -7,7 +7,17 @@ import { ProjectStatusTag } from "@/components/projects/project-timeline";
 import { getSessionUser } from "@/utils/supabase/auth";
 import { ALL_PROJECTS, say } from "@/utils/projects";
 import { getDictionary, isLocale } from "@/utils/i18n";
-import { CARD, CARD_INTERACTIVE, CONTAINER, HERO_BAND, MUTED } from "@/components/ui/styles";
+import {
+  CARD,
+  CARD_INTERACTIVE,
+  HERO_BAND,
+  MUTED,
+  PAGE_HERO_INNER,
+  PAGE_INTRO,
+  PAGE_MAIN,
+  PAGE_SHELL,
+  PAGE_TITLE,
+} from "@/components/ui/styles";
 
 export default async function ProjectsPage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params;
@@ -17,24 +27,21 @@ export default async function ProjectsPage({ params }: { params: Promise<{ lang:
   const user = await getSessionUser();
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#fef7f0] text-[#1a1a1a]">
+    <div className={PAGE_SHELL}>
       <SiteHeader user={user} lang={lang} />
 
       <div className={HERO_BAND}>
-        <div className={`${CONTAINER} py-8 md:py-12`}>
-          {/* 26px is the floor of the page-title scale and is what the narrowest
-              phone gets: a French heading such as "État d'avancement" carries
-              long words that have nowhere to break inside 288px of content. */}
-          <h1 className="text-[26px] leading-[34px] break-words sm:text-[28px] sm:leading-[36px] md:text-[40px] md:leading-[56px]">
+        <div className={PAGE_HERO_INNER}>
+          {/* Long French words still break safely inside the shared page-title
+              measure on the narrowest supported phone. */}
+          <h1 className={PAGE_TITLE}>
             {t.pages.projectsTitle}
           </h1>
-          <p className={`mt-3 max-w-[640px] text-[16px] leading-[24px] ${MUTED}`}>
-            {t.pages.projectsIntro}
-          </p>
+          <p className={PAGE_INTRO}>{t.pages.projectsIntro}</p>
         </div>
       </div>
 
-      <main className={`${CONTAINER} flex-1 py-8 md:py-12`}>
+      <main className={PAGE_MAIN}>
         {ALL_PROJECTS.length === 0 ? (
           <div className={`${CARD} px-6 py-10 text-center md:px-10`}>
             <p className="text-[18px] font-bold leading-[26px]">{t.projects.emptyTitle}</p>

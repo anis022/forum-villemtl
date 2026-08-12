@@ -57,25 +57,24 @@ export function SiteFooter({ lang }: { lang: Locale }) {
     },
   ];
 
-  /* Their footer headings are large and unbolded — the weight comes from size,
-     not from the type being heavy. */
-  const heading = "text-[22px] leading-[30px] text-[#1a1a1a]";
+  /* Kept on the same compact heading scale as the rest of the interface. */
+  const heading = "text-[18px] font-bold leading-[26px] text-[#1a1a1a]";
   const row =
     "group inline-flex min-h-[40px] items-center gap-1.5 text-[15px] font-bold leading-[22px] text-[#fa3250] transition-colors hover:text-[#d81f3c]";
 
   return (
     <footer className="border-t border-[#e9e0d6] bg-[#fef7f0] text-[#1a1a1a]">
-      <div className={`${CONTAINER} pb-8 pt-12`}>
-        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)] lg:gap-16">
+      <div className={`${CONTAINER} pb-7 pt-10`}>
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)] lg:gap-14">
           <div>
             <Image
               src="/logo-ensemble-mtl.png"
               alt="Ensemble Montréal"
               width={469}
               height={166}
-              className="h-14 w-auto max-w-full"
+              className="h-12 w-auto max-w-full"
             />
-            <p className="mt-5 max-w-[46ch] text-[15px] leading-[24px] text-[#6e6a72]">
+            <p className="mt-4 max-w-[46ch] text-[15px] leading-[24px] text-[#6e6a72]">
               {t.footer.tagline}
             </p>
           </div>

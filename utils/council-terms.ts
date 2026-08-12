@@ -32,7 +32,12 @@ const SYNONYMS: string[][] = [
   ["trottoir", "trottoirs", "sidewalk", "sidewalks"],
   ["piste cyclable", "pistes cyclables", "bike lane", "bike lanes", "bike path", "cycling"],
   ["vélo", "velo", "vélos", "bicycle", "bike", "cyclist", "cycliste"],
-  ["déneigement", "deneigement", "neige", "snow removal", "snow", "plow", "déneiger"],
+  // "neige" is deliberately absent. The French stemmer folds it and "Neiges" to
+  // the same token, so widening a snow query with it matches the borough's own
+  // name: every passage that says "Côte-des-Neiges" came back as a hit about
+  // snow clearing, which in this borough is most of them. A synonym has to be
+  // a synonym here, not merely elsewhere in the language.
+  ["déneigement", "deneigement", "snow removal", "snow", "plow", "déneiger", "charrue"],
   ["stationnement", "parking", "vignette", "permit parking"],
   ["circulation", "traffic", "congestion"],
   ["sécurité routière", "securite routiere", "road safety", "traffic calming", "apaisement"],

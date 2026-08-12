@@ -4,7 +4,17 @@ import { SiteFooter } from "@/components/site-footer";
 import { getSessionUser } from "@/utils/supabase/auth";
 import { POLICY, PRIVACY_CONTACT, CONTACT_MISSING, type Block } from "@/utils/privacy";
 import { getDictionary, isLocale } from "@/utils/i18n";
-import { ALERT, CARD, CONTAINER, HERO_BAND, LINK, MUTED } from "@/components/ui/styles";
+import {
+  ALERT,
+  CARD,
+  HERO_BAND,
+  LINK,
+  MUTED,
+  PAGE_HERO_INNER,
+  PAGE_MAIN,
+  PAGE_SHELL,
+  PAGE_TITLE,
+} from "@/components/ui/styles";
 
 export const metadata = { title: "Confidentialité" };
 
@@ -33,13 +43,13 @@ export default async function PrivacyPage({
   const policy = POLICY[lang];
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#fef7f0] text-[#1a1a1a]">
+    <div className={PAGE_SHELL}>
       <SiteHeader user={user} lang={lang} />
 
       <div className={HERO_BAND}>
-        <div className={`${CONTAINER} py-8 md:py-12`}>
+        <div className={PAGE_HERO_INNER}>
           <div className="mx-auto w-full max-w-[720px]">
-            <h1 className="text-[26px] leading-[34px] break-words sm:text-[28px] sm:leading-[36px] md:text-[40px] md:leading-[52px]">
+            <h1 className={PAGE_TITLE}>
               {t.privacy.title}
             </h1>
             <p className={`mt-3 text-[16px] leading-[25px] ${MUTED}`}>{policy.intro}</p>
@@ -50,7 +60,7 @@ export default async function PrivacyPage({
         </div>
       </div>
 
-      <main className={`${CONTAINER} flex-1 py-8 md:py-12`}>
+      <main className={PAGE_MAIN}>
         <div className="mx-auto w-full max-w-[720px]">
           {policy.sections.map((section) => (
             <section key={section.id} id={section.id} className="scroll-mt-24 border-t border-[#e9e0d6] pt-7 first:border-t-0 first:pt-0 [&+section]:mt-9">

@@ -18,14 +18,17 @@
     "moderation:check": "node --env-file-if-exists=.env --env-file-if-exists=.env.local --experimental-strip-types scripts/db/moderation-check.ts"
   },
   "dependencies": {
+    "@ai-sdk/google": "^4.0.42",
     "@huggingface/transformers": "^4.2.0",
     "@supabase/ssr": "^0.12.3",
     "@supabase/supabase-js": "^2.110.7",
+    "@vercel/functions": "^3.9.3",
     "ai": "^7.0.37",
     "leaflet": "^1.9.4",
     "next": "16.2.10",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

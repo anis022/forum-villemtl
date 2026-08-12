@@ -133,6 +133,48 @@ summary:focus-visible,
     0 0 0 3px #fa3250;
 }
 
+.map-filter-trigger:focus-visible,
+.map-filter-option:focus-visible {
+  box-shadow:
+    0 0 0 2px #ffffff,
+    0 0 0 3px rgba(42, 42, 134, 0.42);
+}
+
+/* The mobile map sheet spans edge to edge. Its regular outer focus halo read
+   as a red rectangle around the whole panel, so keep the keyboard cue inside
+   the draggable handle instead. */
+.map-sheet-toggle:focus-visible {
+  box-shadow: none;
+}
+
+.map-sheet-toggle:focus-visible .map-sheet-grip {
+  background: #5d56b4;
+  box-shadow:
+    0 0 0 2px #ffffff,
+    0 0 0 3px rgba(42, 42, 134, 0.42);
+}
+
+/* In the event-map workspace, clicked controls already communicate their
+   state through their border, fill or selected card. Avoid drawing the
+   site's red outer halo around those large shapes; keyboard focus stays
+   visible as a restrained purple border or inset cue. */
+.event-map-workspace a:focus-visible,
+.event-map-workspace button:focus-visible,
+.event-map-workspace input:focus-visible,
+.event-map-workspace select:focus-visible {
+  box-shadow: none;
+}
+
+.event-map-workspace a:focus-visible {
+  border-color: #5d56b4;
+}
+
+.event-map-workspace button:focus-visible,
+.event-map-workspace select:focus-visible {
+  outline: 1px solid rgba(42, 42, 134, 0.42);
+  outline-offset: -1px;
+}
+
 /* The ring is a box-shadow, so it traces whatever radius the element already
    has — and anything left at 0 got a hard-cornered rectangle around it while
    its neighbours got rounded ones. Give every focusable element a floor in the
@@ -264,6 +306,37 @@ summary:focus-visible,
   }
 }
 
+/* The account trigger owns profile and sign-out as one compact disclosure.
+   Keeping the panel mounted lets it leave as gently as it arrives, while
+   `display: none` keeps closed actions out of the tab order. */
+.account-menu {
+  display: none;
+  opacity: 0;
+  transform: translateY(-6px) scale(0.98);
+  transform-origin: top right;
+  transition:
+    opacity 120ms ease-in,
+    transform 120ms ease-in,
+    display 120ms allow-discrete;
+}
+
+.account-menu[data-open] {
+  display: block;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition:
+    opacity 180ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    transform 180ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    display 180ms allow-discrete;
+}
+
+@starting-style {
+  .account-menu[data-open] {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+}
+
 /* The forum's search field, folded away until the masthead's "Recherche" asks
    for it. Driven by `display` through `allow-discrete`, like `.menu-panel`
    above, so it animates shut as well as open — and so that while folded it is
@@ -292,6 +365,17 @@ summary:focus-visible,
     opacity 200ms cubic-bezier(0.22, 0.61, 0.36, 1),
     transform 200ms cubic-bezier(0.22, 0.61, 0.36, 1),
     display 200ms allow-discrete;
+}
+
+/* Category chips become a contained horizontal strip only on the narrowest
+   phones. The browser scrollbar added a second, much louder control under the
+   chips; touch, wheel and keyboard scrolling remain available without it. */
+.chip-strip {
+  scrollbar-width: none;
+}
+
+.chip-strip::-webkit-scrollbar {
+  display: none;
 }
 
 @starting-style {
@@ -327,7 +411,7 @@ summary:focus-visible,
    A touch of sepia rather than a hue rotation: the page is a warm cream now,
    and a neutral grey basemap sitting on it reads as a hole. */
 .map-tiles {
-  filter: saturate(0.35) sepia(0.18) brightness(1.05) contrast(0.92);
+  filter: none;
 }
 
 /* Leaflet's default popup is a white box with a hard 12px radius and a tight
@@ -400,6 +484,7 @@ summary:focus-visible,
 @media (prefers-reduced-motion: reduce) {
   #page-root,
   .menu-panel,
+  .account-menu,
   .search-panel,
   .search-spinner,
   .result-item,

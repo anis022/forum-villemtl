@@ -42,11 +42,15 @@ export function CategoryChips({
   if (items.length === 0) return null;
 
   return (
-    <div className="mt-7">
+    <div className="mt-5">
       <p className="text-[13px] font-bold leading-[18px] text-[#6e6a72]">{label}</p>
 
-      <ul className="mt-3 flex flex-wrap gap-2">
-        <li>
+      {/* One calm row on the narrowest phones. Wrapping five categories into
+          four or five lines made this filter consume more space than the
+          introduction it belongs to; from `sm` up, everything is visible in
+          the ordinary wrapped row. */}
+      <ul className="chip-strip -mx-4 mt-2.5 flex snap-x gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
+        <li className="shrink-0 snap-start">
           <Link
             href={allHref}
             aria-current={active ? undefined : "true"}
@@ -58,7 +62,7 @@ export function CategoryChips({
         </li>
 
         {items.map((item) => (
-          <li key={item.key}>
+          <li key={item.key} className="shrink-0 snap-start">
             <Link
               href={item.href}
               aria-current={active === item.key ? "true" : undefined}

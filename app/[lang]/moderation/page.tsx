@@ -5,7 +5,16 @@ import { FlagCard } from "@/components/issues/flag-card";
 import { getSessionUser } from "@/utils/supabase/auth";
 import { listOpenFlags } from "@/utils/supabase/moderation";
 import { getDictionary, isLocale } from "@/utils/i18n";
-import { CARD, CONTAINER, HERO_BAND, MUTED } from "@/components/ui/styles";
+import {
+  CARD,
+  HERO_BAND,
+  MUTED,
+  PAGE_HERO_INNER,
+  PAGE_INTRO,
+  PAGE_MAIN,
+  PAGE_SHELL,
+  PAGE_TITLE,
+} from "@/components/ui/styles";
 
 /**
  * The queue: everything the matcher wants a person to look at.
@@ -35,23 +44,21 @@ export default async function ModerationPage({
   const flags = isOfficial ? await listOpenFlags() : [];
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#fef7f0] text-[#1a1a1a]">
+    <div className={PAGE_SHELL}>
       <SiteHeader user={user} lang={lang} />
 
       <div className={HERO_BAND}>
-        <div className={`${CONTAINER} py-8 md:py-12`}>
-          <h1 className="text-[26px] leading-[34px] break-words sm:text-[28px] sm:leading-[36px] md:text-[40px] md:leading-[56px]">
+        <div className={PAGE_HERO_INNER}>
+          <h1 className={PAGE_TITLE}>
             {t.moderation.title}
           </h1>
           {isOfficial && (
-            <p className={`mt-3 max-w-[640px] text-[16px] leading-[24px] ${MUTED}`}>
-              {t.moderation.intro}
-            </p>
+            <p className={PAGE_INTRO}>{t.moderation.intro}</p>
           )}
         </div>
       </div>
 
-      <main className={`${CONTAINER} flex-1 py-8 md:py-12`}>
+      <main className={PAGE_MAIN}>
         {!isOfficial ? (
           <div className={`${CARD} p-6 text-center sm:p-10`}>
             <p className={MUTED}>{t.moderation.forbidden}</p>

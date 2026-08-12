@@ -16,15 +16,16 @@ import { getDictionary, type Locale } from "@/utils/i18n";
  *   - an aubergine (#32004a) utility strip carrying search and language, the
  *     small things that are not navigation
  *   - a cream (#fef7f0) nav row: wordmark left, sections spelt out in indigo,
- *     and the one red call to action on the right
+ *     and the resident's account on the right
  *
  * Two tiers, like the old one — but that shape was never the problem. The
  * problem was that it was the city's near-black over the city's white with the
  * city's blue focus ring, which is a different object entirely.
  *
  * The sections only fit on one line from `lg`; below that MainMenu collapses
- * them into the hamburger and its panel. The red CTA drops below `md`, where
- * the page's own hero already carries the same button.
+ * them into the hamburger and its panel. Reporting an issue stays in the
+ * forum's own hero, where its purpose and context are clear, rather than being
+ * repeated as a global action on every page.
  *
  * Sticky rather than fixed: same result without the body-padding maths, and it
  * survives the page-blur filter the auth modal applies.
@@ -82,30 +83,8 @@ export async function SiteHeader({
             moderationCount={moderationCount}
           />
 
-          <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2 md:gap-3">
+          <div className="ml-auto flex shrink-0 items-center">
             <AccountButton initialUser={user} lang={lang} />
-            {/* Their "Donner": the single red pill at the end of the row. Ours
-                is the thing this site exists for. */}
-            <Link
-              href={`/${lang}/sujets/nouveau`}
-              className="hidden items-center gap-2 rounded-full bg-[#fa3250] py-[9px] pl-5 pr-[9px] text-[14px] font-bold leading-[22px] text-white transition-colors hover:bg-[#d81f3c] md:inline-flex"
-            >
-              {t.home.report}
-              <span
-                aria-hidden="true"
-                className="flex h-6 w-6 items-center justify-center rounded-full bg-white/25"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M4 12h15m0 0-6-6m6 6-6 6"
-                    stroke="currentColor"
-                    strokeWidth="2.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </span>
-            </Link>
           </div>
         </div>
       </header>

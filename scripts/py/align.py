@@ -380,6 +380,18 @@ def run_one(path: Path, force: bool) -> None:
         print(f"  {path.stem}: pas de proces-verbal joint — ignore", file=sys.stderr)
         return
 
+    # The copy of the minutes inside a transcript is a snapshot taken when the
+    # audio was transcribed, which is hours of GPU time ago and several parser
+    # fixes ago. Re-read the parsed file it came from, so a correction to
+    # parse_pv.py reaches the alignment without re-transcribing the sitting.
+    # Without this the aligner kept placing rows the parser had since dropped,
+    # among them "4e question" and "(question", which are the clerk's asides and
+    # not residents.
+    fresh = ROOT / "data" / "docs" / "parsed" / f"{Path(pv['source']).stem}.json"
+    if fresh.exists():
+        pv = json.loads(fresh.read_text(encoding="utf-8"))
+        data["pv"] = pv
+
     # Only spoken questions happen in the room. Written ones are tabled, not
     # read out, so there is no moment in the recording to point at.
     oral = [q for q in pv["publicQuestions"] if q["mode"] == "orale"]
@@ -405,8 +417,17 @@ def run_one(path: Path, force: bool) -> None:
             continue
         later = [s for s in starts[idx + 1 :] if s is not None]
         end = min(later[0], start + MAX_TURN_S) if later else start + MAX_TURN_S
-        text = " ".join(
-            w["word"].strip()
+        # Concatenated, not joined on a space.
+        #
+        # Whisper hands back each word with its own leading space already
+        # attached, and it withholds that space exactly where French elides:
+        # the tokens are "j" and "'aimerais", " l" and "'ordre". Stripping each
+        # one and rejoining on a space put a space inside every elision in the
+        # corpus -- "j 'ai", "l 'arrondissement", "d 'habitation", "20 ,000" --
+        # so every quotation printed under a resident's name read as broken
+        # French. Concatenating reproduces the segment text exactly.
+        text = "".join(
+            w["word"]
             for seg in data["segments"]
             for w in seg["words"]
             if start <= w["start"] < end

@@ -110,6 +110,17 @@ export const CARD_INTERACTIVE = `${CARD} transition-shadow hover:shadow-[0_4px_1
 
 export const MUTED = "text-[#6e6a72]";
 
+/** Shared page rhythm. Route-level pages should differ in content, not in the
+ * size, weight and breathing room of the frame around it. */
+export const PAGE_SHELL = "flex min-h-screen flex-col bg-[#fef7f0] text-[#1a1a1a]";
+export const PAGE_HERO_INNER = `${CONTAINER} py-7 md:py-9`;
+export const PAGE_TITLE =
+  "max-w-[900px] break-words text-[28px] font-bold leading-[35px] tracking-[-0.02em] md:text-[34px] md:leading-[42px]";
+export const PAGE_INTRO = `mt-3 max-w-[720px] text-[16px] leading-[25px] ${MUTED}`;
+export const PAGE_MAIN = `${CONTAINER} flex-1 py-7 md:py-9`;
+export const SECTION_TITLE =
+  "text-[22px] font-bold leading-[29px] tracking-[-0.01em] md:text-[26px] md:leading-[34px]";
+
 /**
  * The rule a threaded reply hangs off. A shade darker than `line` (#e9e0d6),
  * because this one has a different job: a card border only ever sits on white,
@@ -119,4 +130,4 @@ export const MUTED = "text-[#6e6a72]";
 export const THREAD_LINE = "border-[#ddd2c5]";
 
 /** The one band allowed to lift off the cream page: their pale butter. */
-export const HERO_BAND = "bg-[#fffbe5]";
+export const HERO_BAND = "border-b border-[#f2eadf] bg-[#fffbe5]";
