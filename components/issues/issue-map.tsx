@@ -411,15 +411,15 @@ export function IssueMap({
         <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 lg:gap-3">
           <nav
             aria-label={`${labels.viewList} / ${labels.viewMap}`}
-            className="pointer-events-auto inline-flex shrink-0 rounded-full border border-[#ded6cd] bg-[#f7f3ee] p-0.5 shadow-[0_2px_8px_rgba(26,26,26,0.12)]"
+            className="pointer-events-auto inline-flex shrink-0 rounded-full border border-[#ded6cd] bg-[#f7f3ee] p-0.5 shadow-[0_2px_8px_rgba(26,26,26,0.12)] lg:p-1"
           >
             <Link
               href={toolbar.listHref}
               aria-label={labels.viewList}
               title={labels.viewList}
-              className="grid h-8 w-8 place-items-center rounded-full text-[#6e6a72] transition-colors hover:text-[#1a1a1a]"
+              className="grid h-8 w-8 place-items-center rounded-full text-[#6e6a72] transition-colors hover:text-[#1a1a1a] lg:h-10 lg:w-10"
             >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <svg className="lg:h-[18px] lg:w-[18px]" width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path d="M5 6.5h14M5 12h14M5 17.5h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
               </svg>
             </Link>
@@ -427,17 +427,17 @@ export function IssueMap({
               aria-current="page"
               aria-label={labels.viewMap}
               title={labels.viewMap}
-              className="grid h-8 w-8 place-items-center rounded-full bg-[#1a1a1a] text-white"
+              className="grid h-8 w-8 place-items-center rounded-full bg-[#1a1a1a] text-white lg:h-10 lg:w-10"
             >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <svg className="lg:h-[18px] lg:w-[18px]" width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path d="m4 5 5-2 6 2 5-2v16l-5 2-6-2-5 2V5Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
                 <path d="M9 3v16m6-14v16" stroke="currentColor" strokeWidth="1.5" />
               </svg>
             </span>
           </nav>
 
-          <label className="pointer-events-auto relative mx-auto flex h-9 w-full max-w-[420px] items-center rounded-full border border-[#ded6cd] bg-white shadow-[0_2px_8px_rgba(26,26,26,0.12)]">
-            <svg className="ml-3 shrink-0 text-[#6e6a72]" width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <label className="pointer-events-auto relative mx-auto flex h-9 w-full max-w-[420px] items-center rounded-full border border-[#ded6cd] bg-white shadow-[0_2px_8px_rgba(26,26,26,0.12)] lg:h-12 lg:max-w-[560px]">
+            <svg className="ml-3 shrink-0 text-[#6e6a72] lg:ml-4 lg:h-[18px] lg:w-[18px]" width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" strokeWidth="1.8" />
               <path d="m15.5 15.5 4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
             </svg>
@@ -448,14 +448,14 @@ export function IssueMap({
               onFocus={() => setFiltersOpen(false)}
               placeholder={labels.searchPlaceholder}
               aria-label={labels.searchPlaceholder}
-              className="h-full min-w-0 flex-1 bg-transparent px-2.5 text-[13px] font-medium text-[#1a1a1a] outline-none placeholder:text-[#8a858c] [&::-webkit-search-cancel-button]:appearance-none"
+              className="h-full min-w-0 flex-1 bg-transparent px-2.5 text-[13px] font-medium text-[#1a1a1a] outline-none placeholder:text-[#8a858c] lg:px-3 lg:text-[15px] [&::-webkit-search-cancel-button]:appearance-none"
             />
             {query && (
               <button
                 type="button"
                 aria-label={labels.clearSearch}
                 onClick={() => setQuery("")}
-                className="mr-1 grid h-7 w-7 shrink-0 place-items-center rounded-full text-[#6e6a72] hover:bg-[#f4eee8] hover:text-[#1a1a1a]"
+                className="mr-1 grid h-7 w-7 shrink-0 place-items-center rounded-full text-[#6e6a72] hover:bg-[#f4eee8] hover:text-[#1a1a1a] lg:mr-1.5 lg:h-9 lg:w-9"
               >
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path d="m7 7 10 10M17 7 7 17" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -469,20 +469,20 @@ export function IssueMap({
             aria-expanded={filtersOpen}
             aria-controls="map-filter-panel"
             onClick={() => setFiltersOpen((value) => !value)}
-            className={`map-filter-trigger pointer-events-auto inline-flex h-9 items-center gap-2 rounded-full border px-3 text-[13px] font-bold shadow-[0_2px_8px_rgba(26,26,26,0.12)] transition-colors sm:px-3.5 ${
+            className={`map-filter-trigger pointer-events-auto inline-flex h-9 items-center gap-2 rounded-full border px-3 text-[13px] font-bold shadow-[0_2px_8px_rgba(26,26,26,0.12)] transition-colors sm:px-3.5 lg:h-12 lg:gap-2.5 lg:px-5 lg:text-[15px] ${
               filtersOpen
-                ? "border-[#1a1a1a] bg-[#1a1a1a] text-white"
-                : "border-[#ded6cd] bg-white text-[#1a1a1a] hover:border-[#fa3250]"
+                ? "border-[#fa3250] bg-[#fa3250] text-white"
+                : "border-[#ded6cd] bg-white text-[#2a2a86] hover:border-[#fa3250] hover:text-[#fa3250]"
             }`}
           >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <svg className="lg:h-[18px] lg:w-[18px]" width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M4 6h16M7 12h10m-7 6h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
             </svg>
             <span className="hidden min-[360px]:inline">{labels.filters}</span>
             {activeFilterCount > 0 && (
               <span
-                className={`grid h-5 min-w-5 place-items-center rounded-full px-1 text-[11px] tabular-nums ${
-                  filtersOpen ? "bg-white text-[#1a1a1a]" : "bg-[#fa3250] text-white"
+                className={`grid h-5 min-w-5 place-items-center rounded-full px-1 text-[11px] tabular-nums lg:h-6 lg:min-w-6 lg:text-[12px] ${
+                  filtersOpen ? "bg-white text-[#fa3250]" : "bg-[#fa3250] text-white"
                 }`}
               >
                 {activeFilterCount}
@@ -494,21 +494,24 @@ export function IssueMap({
         {filtersOpen && (
           <div
             id="map-filter-panel"
-            className="pointer-events-auto absolute inset-x-2.5 top-[52px] z-30 max-h-[calc(100dvh-124px)] overflow-y-auto rounded-[14px] border border-[#ddd4cb] bg-white p-4 shadow-[0_10px_28px_rgba(26,26,26,0.13)] lg:inset-x-auto lg:right-[max(33.333%,404px)] lg:w-[380px] lg:rounded-[12px]"
+            className="pointer-events-auto absolute inset-x-3.5 top-[54px] z-30 max-h-[calc(100dvh-128px)] overflow-y-auto rounded-[14px] border border-[#ded7d0] bg-[#fffdfb] shadow-[0_8px_24px_rgba(31,22,16,0.08)] lg:inset-x-auto lg:right-[max(33.333%,404px)] lg:top-[72px] lg:w-[400px] lg:rounded-[12px]"
           >
-            <fieldset>
-              <legend className="text-[14px] font-bold text-[#1a1a1a]">
+            <div className="px-5 pb-5 pt-5">
+              <p className="text-[14px] font-semibold text-[#373238]">
                 {labels.filterCategories}
-              </legend>
-              <div className="mt-2 grid grid-cols-2 gap-x-4">
+              </p>
+              <div className="mt-3 space-y-1">
                 <button
                   type="button"
                   onClick={() => setSelectedCategories(new Set())}
                   aria-pressed={selectedCategories.size === 0}
                   className={filterLinkClass(selectedCategories.size === 0)}
                 >
-                  {labels.showAll}
-                  <FilterCheck active={selectedCategories.size === 0} />
+                  <span className="min-w-0 flex-1">{labels.showAll}</span>
+                  <span className="text-[12px] font-medium text-[#8a858c] tabular-nums">
+                    {toolbar.categories.reduce((sum, category) => sum + category.count, 0)}
+                  </span>
+                  <FilterCheck active={selectedCategories.size === 0} square />
                 </button>
                 {toolbar.categories.map((category) => (
                   <button
@@ -518,30 +521,33 @@ export function IssueMap({
                     aria-pressed={selectedCategories.has(category.key)}
                     className={filterLinkClass(selectedCategories.has(category.key))}
                   >
-                    {category.label}
-                    <FilterCheck active={selectedCategories.has(category.key)} />
+                    <span className="min-w-0 flex-1 truncate">{category.label}</span>
+                    <span className="text-[12px] font-medium text-[#8a858c] tabular-nums">
+                      {category.count}
+                    </span>
+                    <FilterCheck active={selectedCategories.has(category.key)} square />
                   </button>
                 ))}
               </div>
-            </fieldset>
+            </div>
 
-            <div className="mt-3 border-t border-[#eee6dd] pt-3">
-              <fieldset>
-                <legend className="text-[14px] font-bold text-[#1a1a1a]">
+            <div className="border-t border-[#e9e2dc] px-5 pb-5 pt-4">
+              <div>
+                <p className="text-[14px] font-semibold text-[#373238]">
                   {labels.filterStatuses}
-                </legend>
-                <div className="mt-1.5 grid grid-cols-3 gap-x-2">
+                </p>
+                <div className="mt-3 grid grid-cols-3 gap-1 rounded-[12px] bg-[#f1ede8] p-1.5">
                   <StatusSegment active={filter === "all"} onClick={() => setFilter("all")}>
                     {labels.showAll}
                   </StatusSegment>
-                  <StatusSegment active={filter === "open"} onClick={() => setFilter("open")} dot="#fa3250">
+                  <StatusSegment active={filter === "open"} onClick={() => setFilter("open")}>
                     {labels.onlyOpen}
                   </StatusSegment>
-                  <StatusSegment active={filter === "settled"} onClick={() => setFilter("settled")} dot="#0b6042">
+                  <StatusSegment active={filter === "settled"} onClick={() => setFilter("settled")}>
                     {labels.onlySettled}
                   </StatusSegment>
                 </div>
-              </fieldset>
+              </div>
             </div>
           </div>
         )}
@@ -647,10 +653,9 @@ export function IssueMap({
                           {issue.commentCount}
                         </span>
                         <span
-                          className="ml-auto inline-flex items-center gap-1.5 whitespace-nowrap font-bold"
+                          className="ml-auto inline-flex items-center whitespace-nowrap font-bold"
                           style={{ color: STATUS_MAP_COLORS[issue.status] }}
                         >
-                          <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-current" />
                           {labels.statuses[issue.status]}
                         </span>
                       </span>
@@ -714,18 +719,18 @@ function issueMarker(L: typeof import("leaflet"), status: Status, raised: boolea
 }
 
 function filterLinkClass(active: boolean) {
-  return `map-filter-option flex min-h-[38px] min-w-0 items-center justify-between gap-2 border-b border-[#f2ece6] py-2 text-left text-[13px] leading-[18px] transition-colors ${
+  return `map-filter-option flex min-h-[42px] min-w-0 items-center justify-between gap-3 rounded-[9px] px-3 py-2 text-left text-[13px] leading-[18px] transition-colors ${
     active
-      ? "font-bold text-[#1a1a1a]"
-      : "font-medium text-[#6e6a72] hover:text-[#1a1a1a]"
+      ? "bg-[#f8f3ee] font-semibold text-[#1a1a1a]"
+      : "font-medium text-[#6e6a72] hover:bg-[#f8f3ee] hover:text-[#1a1a1a]"
   }`;
 }
 
-function FilterCheck({ active }: { active: boolean }) {
+function FilterCheck({ active, square = false }: { active: boolean; square?: boolean }) {
   return (
     <span
       aria-hidden="true"
-      className={`grid h-4 w-4 shrink-0 place-items-center rounded-full border ${
+      className={`grid h-[17px] w-[17px] shrink-0 place-items-center border ${square ? "rounded-[3px]" : "rounded-full"} ${
         active ? "border-[#fa3250] bg-[#fa3250] text-white" : "border-[#cfc6bd]"
       }`}
     >
@@ -741,12 +746,10 @@ function FilterCheck({ active }: { active: boolean }) {
 function StatusSegment({
   active,
   onClick,
-  dot,
   children,
 }: {
   active: boolean;
   onClick: () => void;
-  dot?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -754,21 +757,12 @@ function StatusSegment({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`map-filter-option inline-flex min-h-[38px] min-w-0 items-center justify-start gap-1.5 py-2 text-[12px] font-bold leading-[18px] transition-colors ${
+      className={`map-filter-option inline-flex min-h-10 min-w-0 items-center justify-center rounded-[9px] border px-2.5 text-[12px] font-semibold leading-[18px] transition-colors ${
         active
-          ? "text-[#1a1a1a]"
-          : "text-[#6e6a72] hover:text-[#1a1a1a]"
+          ? "border-[#fa3250] bg-white text-[#fa3250] shadow-[0_1px_2px_rgba(250,50,80,0.08)]"
+          : "border-transparent text-[#6e686e] hover:text-[#2a2a86]"
       }`}
     >
-      <span className={`grid h-4 w-4 shrink-0 place-items-center rounded-full border ${active ? "border-[#1a1a1a]" : "border-[#bdb4ab]"}`}>
-        {active && (
-          <span
-            aria-hidden="true"
-            className="h-2 w-2 rounded-full"
-            style={{ backgroundColor: dot ?? "#1a1a1a" }}
-          />
-        )}
-      </span>
       {children}
     </button>
   );

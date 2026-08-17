@@ -130,7 +130,7 @@ function Rendered({ block }: { block: Block }) {
         {block.items.map((item, i) => (
           <li key={i} className="grid grid-cols-[0.9rem_minmax(0,1fr)] gap-x-2 text-[16px] leading-[25px]">
             <span aria-hidden="true" className="text-[#fa3250]">
-              —
+              •
             </span>
             <span>{item}</span>
           </li>

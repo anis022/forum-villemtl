@@ -89,6 +89,17 @@ export const CHIP_ACTIVE =
 export const LINK = "font-bold text-[#fa3250] underline hover:text-[#d81f3c]";
 
 /**
+ * A link inside a list where every row already leads with one, and a rule under
+ * each is stripe after stripe of underline rather than one thing to click.
+ *
+ * The trait comes back on hover, so the affordance is not spent — only moved to
+ * the moment it is asked for. At rest the row still separates itself from its
+ * own subtitle by weight and colour, not by colour alone.
+ */
+export const LINK_QUIET =
+  "font-bold text-[#fa3250] no-underline hover:text-[#d81f3c] hover:underline";
+
+/**
  * Errors sit in the same red family as the accent, a shade deeper. On their
  * site red is simply the loud colour; a separate error hue would be a fourth
  * red on the page rather than a clearer signal.

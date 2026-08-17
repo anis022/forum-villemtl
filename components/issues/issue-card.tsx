@@ -35,6 +35,7 @@ export function IssueCard({
 }) {
   const t = getDictionary(lang);
   const href = `/${lang}/sujets/${issue.id}`;
+  const additionalSupporters = Math.max(0, issue.voteCount - issue.supporters.length);
 
   return (
     // The provider spans the whole card because the words and the control that
@@ -58,7 +59,9 @@ export function IssueCard({
               <ProfileLink author={issue.author} lang={lang} className="truncate hover:underline">
                 {authorName(issue.author, t.issue.anonymousAuthor)}
               </ProfileLink>
-              {issue.author.isOfficial && <OfficialBadge lang={lang} />}
+              {issue.author.isOfficial && (
+                <OfficialBadge lang={lang} elected={issue.author.isElected} />
+              )}
             </p>
             <p className={`mt-0.5 truncate text-[13px] leading-[18px] ${MUTED}`}>
               {formatDateShort(issue.createdAt, lang)}
@@ -103,11 +106,13 @@ export function IssueCard({
         {/* Who is already behind this, before asking the reader to join them. */}
         {issue.supporters.length > 0 && (
           <div className="mb-3.5 flex items-center gap-2">
-            <FacePile people={issue.supporters} total={issue.voteCount} />
+            <FacePile people={issue.supporters} />
             <p className={`text-[13px] leading-[18px] ${MUTED}`}>
-              {issue.hasVoted
-                ? t.vote.youAndOthers(issue.voteCount - 1)
-                : t.vote.othersSupport(issue.voteCount)}
+              {additionalSupporters > 0
+                ? t.vote.additionalSupport(additionalSupporters)
+                : issue.hasVoted
+                  ? t.vote.youAndOthers(issue.voteCount - 1)
+                  : t.vote.othersSupport(issue.voteCount)}
             </p>
           </div>
         )}

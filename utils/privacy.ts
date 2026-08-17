@@ -86,8 +86,12 @@ const frPolicy: Policy = {
           kind: "table",
           head: ["Renseignement", "D'où il vient", "Qui le voit"],
           rows: [
-            ["Adresse courriel", "Vous, à l'inscription", "Vous et le cabinet"],
-            ["Prénom et nom", "Vous, à l'inscription", "Tout le monde"],
+            // Neither of these comes from the person any more: there is no
+            // sign-up form to type them into, and the account is created from
+            // the membership list at the first sign-in. Saying "vous, à
+            // l'inscription" here would now be false.
+            ["Adresse courriel", "La liste des membres d'Ensemble Montréal", "Vous et le cabinet"],
+            ["Prénom et nom", "La liste des membres d'Ensemble Montréal", "Tout le monde"],
             ["Photo de profil", "Vous, si vous en ajoutez une", "Tout le monde"],
             ["Signalements : texte, photo, position", "Vous, quand vous publiez", "Tout le monde"],
             ["Réponses", "Vous, quand vous répondez", "Tout le monde"],
@@ -258,8 +262,8 @@ const enPolicy: Policy = {
           kind: "table",
           head: ["Information", "Where it comes from", "Who sees it"],
           rows: [
-            ["Email address", "You, at sign-up", "You and the borough office"],
-            ["First and last name", "You, at sign-up", "Everyone"],
+            ["Email address", "The Ensemble Montréal membership list", "You and the borough office"],
+            ["First and last name", "The Ensemble Montréal membership list", "Everyone"],
             ["Profile photo", "You, if you add one", "Everyone"],
             ["Reports: text, photo, location", "You, when you post", "Everyone"],
             ["Replies", "You, when you reply", "Everyone"],

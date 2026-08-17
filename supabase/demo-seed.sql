@@ -51,6 +51,11 @@
 
 -- Efface la fournée précédente, s'il y en a une.
 delete from auth.users where raw_app_meta_data ->> 'seed' = 'villemtl-demo';
+-- Et les adhésions inventées qui allaient avec. Le drapeau `seeded` de la
+-- migration 0025 est ce qui distingue ces lignes-là de l'export réel, aussi
+-- bien ici que dans `npm run members`, qui les laisse tranquilles.
+delete from public.members where seeded;
+delete from public.staff where seeded;
 
 create or replace function pg_temp.demo_id(key text) returns uuid
 language sql immutable as $$
@@ -113,6 +118,41 @@ insert into demo_people (key, first_name, last_name, email, joined_days, officia
   ('thiagarajah', 'Milany',       'Thiagarajah',  'demo.thiagarajah@montreal.ca',        428, true),
   ('teodoresco',  'Alexandre',    'Teodoresco',   'demo.teodoresco@montreal.ca',         428, true),
   ('moroz',       'Sonny',        'Moroz',        'demo.moroz@montreal.ca',              425, true);
+
+-- Le forum est réservé aux membres depuis la migration 0025 : un compte ne se
+-- crée que pour une adresse inscrite au registre, et les vingt résidents
+-- d'ici n'y sont pas — sans ces lignes, l'insertion ci-dessous échoue au
+-- premier d'entre eux. On les inscrit donc, marqués `seeded` pour que le
+-- chargement de l'export réel ne les emporte pas et pour que la ligne de ménage
+-- en haut du fichier sache lesquelles reprendre.
+--
+--
+-- Adhésion prise le jour de l'inscription du compte et valable deux ans, donc
+-- courante pour tout le monde : ce fichier sert à remplir un forum, et une
+-- moitié de la communauté muette pour cause d'adhésion échue ne montrerait
+-- aucun des écrans qu'on cherche à voir.
+insert into public.members (email, first_name, last_name, district, joined_on, expires_on, seeded)
+select
+  p.email,
+  p.first_name,
+  p.last_name,
+  'Côte-des-Neiges',
+  (now() - (p.joined_days || ' days')::interval)::date,
+  (now() - (p.joined_days || ' days')::interval + interval '2 years')::date,
+  true
+from demo_people p
+where not p.official;
+
+-- Et les quatre élus au tableau du cabinet, migration 0026. Le domaine
+-- @montreal.ca ne suffit plus : depuis cette migration seules les neuf adresses
+-- nommées ouvrent la porte, et demo.valenzuela@montreal.ca n'en fait pas
+-- partie — c'est justement une adresse qui n'est celle de personne. Marquées
+-- `seeded`, avec elected à vrai : ce sont bien les quatre personnes qui siègent
+-- au conseil d'arrondissement qu'on met en situation ici.
+insert into public.staff (email, first_name, last_name, elected, seeded)
+select p.email, p.first_name, p.last_name, true, true
+from demo_people p
+where p.official;
 
 -- Les colonnes de jetons sont mises à '' plutôt que laissées nulles : GoTrue les
 -- lit comme des chaînes et une valeur nulle fait échouer la connexion avec une

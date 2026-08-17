@@ -16,6 +16,7 @@ type ProfileRow = {
   first_name: string;
   last_name: string;
   role: string;
+  elected?: boolean | null;
   avatar_url: string | null;
 } | null;
 
@@ -58,6 +59,12 @@ const toAuthor = (profile: ProfileRow): Author => ({
   lastName: profile?.last_name ?? "",
   avatarUrl: profile?.avatar_url ?? null,
   isOfficial: profile?.role === "official",
+  // `?? false` rather than trusting the column to be there: `elected` arrives
+  // with migration 0026 and is selected alongside `role`, so on a database that
+  // has not caught up the field is simply absent — the same reason `avatar_url`
+  // is handled the way it is below. Absent means "not elected", which is the
+  // safe direction for a claim to hold office.
+  isElected: profile?.elected ?? false,
 });
 
 const toIssue = (
@@ -84,17 +91,24 @@ const toIssue = (
 });
 
 /**
- * `avatar_url` arrives with migration 0009. Until it is applied, asking for it
- * fails the whole query and would empty the feed, so the first failure flips
- * this flag and every later query omits the column. One wasted round trip on
- * one request, instead of a blank site until someone runs the migration.
+ * `avatar_url` arrives with migration 0009 and `elected` with 0026. Until those
+ * are applied, asking for the column fails the whole query and would empty the
+ * feed, so the first failure flips this flag and every later query asks for
+ * neither. One wasted round trip on one request, instead of a blank site until
+ * someone runs the migration.
+ *
+ * One flag for both, rather than one each: this is the path that runs on a
+ * database nobody has migrated, and losing the avatars along with the badge for
+ * the length of that window is not worth a second retry to avoid.
  */
-let hasAvatarColumn = true;
+let hasLateProfileColumns = true;
 const profileFields = () =>
-  hasAvatarColumn ? "id, first_name, last_name, role, avatar_url" : "id, first_name, last_name, role";
+  hasLateProfileColumns
+    ? "id, first_name, last_name, role, elected, avatar_url"
+    : "id, first_name, last_name, role";
 
-const missingAvatar = (message: string | undefined) =>
-  Boolean(message && message.includes("avatar_url"));
+const missingLateProfileColumn = (message: string | undefined) =>
+  Boolean(message && (message.includes("avatar_url") || message.includes("elected")));
 
 /**
  * Same arrangement as `avatar_url` above, for `body_preview` (migration 0013).
@@ -225,8 +239,8 @@ export async function listIssues(
     hasBodyPreview = false;
     ({ data, error } = await run());
   }
-  if (error && missingAvatar(error.message)) {
-    hasAvatarColumn = false;
+  if (error && missingLateProfileColumn(error.message)) {
+    hasLateProfileColumns = false;
     ({ data, error } = await run());
   }
   if (error || !data) return { issues: [], hasMore: false };
@@ -282,8 +296,8 @@ export async function getIssue(id: string): Promise<Issue | null> {
   const run = () => supabase.from("issues").select(issueSelect("body")).eq("id", id).maybeSingle();
 
   let { data, error } = await run();
-  if (error && missingAvatar(error.message)) {
-    hasAvatarColumn = false;
+  if (error && missingLateProfileColumn(error.message)) {
+    hasLateProfileColumns = false;
     ({ data, error } = await run());
   }
   if (error || !data) return null;
@@ -368,8 +382,8 @@ export async function listComments(
     hasThreads = false;
     ({ data, error } = await run());
   }
-  if (error && missingAvatar(error.message)) {
-    hasAvatarColumn = false;
+  if (error && missingLateProfileColumn(error.message)) {
+    hasLateProfileColumns = false;
     ({ data, error } = await run());
   }
   if (error || !data) return { comments: [], hasMore: false, threaded: hasThreads };

@@ -1,18 +1,8 @@
 import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
-import { SiteFooter } from "@/components/site-footer";
 import { CouncilChat } from "@/components/council/council-chat";
 import { getSessionUser } from "@/utils/supabase/auth";
 import { getDictionary, isLocale } from "@/utils/i18n";
-import {
-  HERO_BAND,
-  MUTED,
-  PAGE_HERO_INNER,
-  PAGE_INTRO,
-  PAGE_MAIN,
-  PAGE_SHELL,
-  PAGE_TITLE,
-} from "@/components/ui/styles";
 
 /**
  * The council, asked a question instead of browsed.
@@ -43,31 +33,20 @@ export default async function CouncilPage({
   const user = await getSessionUser();
 
   return (
-    <div className={PAGE_SHELL}>
+    <div className="flex h-dvh min-h-0 flex-col overflow-hidden bg-[#f7f3ee] text-[#1a1a1a]">
       <SiteHeader user={user} lang={lang} />
 
-      <div className={HERO_BAND}>
-        <div className={PAGE_HERO_INNER}>
-          <h1 className={PAGE_TITLE}>{t.council.title}</h1>
-          <p className={PAGE_INTRO}>{t.council.intro}</p>
+      <main className="flex min-h-0 flex-1 flex-col px-3 pb-3 pt-3 sm:px-4 sm:pb-4 lg:px-5 lg:pb-5">
+        <div className="council-workspace mx-auto flex min-h-0 w-full max-w-[1500px] flex-1 flex-col overflow-hidden rounded-[18px] border border-[#ded7d0] bg-white shadow-[0_8px_26px_rgba(31,22,16,0.08)]">
+          <h1 className="sr-only">{t.council.title}</h1>
+
+          <CouncilChat lang={lang} />
+
+          <p className="shrink-0 border-t border-[#e9e2dc] bg-[#fffdfb] px-4 py-2.5 text-[11px] leading-[17px] text-[#8a858c] sm:px-6 lg:px-7">
+            {t.council.disclaimer}
+          </p>
         </div>
-      </div>
-
-      {/* Full page measure rather than the reading column: the conversation
-          keeps a reading measure of its own inside, and the sources need a
-          column beside it rather than under it. */}
-      <main className={PAGE_MAIN}>
-        <CouncilChat lang={lang} />
-
-        {/* Said once, at the bottom, where somebody who has read an answer will
-            meet it. Repeating it under every reply would train people to stop
-            seeing it. */}
-        <p className={`mt-10 max-w-[720px] text-[13px] leading-[20px] ${MUTED}`}>
-          {t.council.disclaimer}
-        </p>
       </main>
-
-      <SiteFooter lang={lang} />
     </div>
   );
 }

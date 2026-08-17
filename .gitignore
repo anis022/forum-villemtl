@@ -49,6 +49,13 @@ dev.log
 # generated seed, regenerate with npm run sync:events
 events-seed.sql
 
+# membership export - names, home addresses, phone numbers and what each person
+# paid a political party. Never committed. Load it with `npm run members` and
+# keep the file wherever it was exported to.
+Membre*.csv
+*membres*.csv
+*members*.csv
+
 # local ingestion artifacts (PDFs, audio, transcripts) - regenerate with scripts/py
 /data
 .venv-asr/
@@ -56,3 +63,8 @@ events-seed.sql
 # Python bytecode from scripts/py
 __pycache__/
 *.pyc
+
+# local note the staff list was typed from. The list itself lives in
+# supabase/migrations/0026_staff.sql, which is the one the database reads —
+# a second copy in the tree is a copy that drifts.
+staff emails.txt

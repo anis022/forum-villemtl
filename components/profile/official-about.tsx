@@ -1,6 +1,6 @@
 import { say, type Official } from "@/utils/officials";
 import { getDictionary, type Locale } from "@/utils/i18n";
-import { CARD, LINK, MUTED } from "@/components/ui/styles";
+import { CARD, LINK_QUIET, MUTED } from "@/components/ui/styles";
 
 /**
  * What an elected person's profile says beyond their activity: the seats they
@@ -34,7 +34,12 @@ export function OfficialAbout({ person, lang }: { person: Official; lang: Locale
           <li key={say(mandate.body, lang)} className="py-3 first:pt-0 last:pb-0">
             <p className="text-[15px] font-bold leading-[22px] break-words">
               {mandate.url ? (
-                <a href={mandate.url} target="_blank" rel="noopener noreferrer" className={LINK}>
+                <a
+                  href={mandate.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={LINK_QUIET}
+                >
                   {say(mandate.body, lang)}
                   <span className="sr-only"> {t.footer.newWindow}</span>
                 </a>

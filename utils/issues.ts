@@ -50,7 +50,20 @@ export type Author = {
   firstName: string;
   lastName: string;
   avatarUrl: string | null;
+  /**
+   * Speaks for the borough office: their replies are marked as official answers
+   * and they can move a topic's status. True for the nine people on the staff
+   * list, elected or not.
+   */
   isOfficial: boolean;
+  /**
+   * Holds a seat on the borough council. A strict subset of `isOfficial`, and
+   * separate from it because the checkmark beside a name asserts an office —
+   * four of the nine hold one and the other five do not, and the badge that
+   * said "Élu·e" beside all of them was the site making a claim about people
+   * that was not true of most of them.
+   */
+  isElected: boolean;
 };
 
 /** A person who has backed an issue, shown in the face pile. */

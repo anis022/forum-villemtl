@@ -59,7 +59,7 @@ export function formatDateShort(iso: string, lang: Locale) {
 /**
  * Category and status sit side by side, but they answer different questions —
  * what this is about, and where it stands — so they must not look alike. The
- * category is an outline pill; status is filled and carries a dot.
+ * category is an outline pill and status is filled.
  */
 export function CategoryTag({ category, lang }: { category: Category; lang: Locale }) {
   return (
@@ -72,35 +72,47 @@ export function CategoryTag({ category, lang }: { category: Category; lang: Loca
   );
 }
 
-/**
- * Status carries a dot as well as a colour: colour alone is not a signal for
- * anyone who cannot separate these hues.
- */
-const STATUS_STYLES: Record<Status, { pill: string; dot: string }> = {
-  open: { pill: "bg-[#faf1e8] text-[#6e6a72]", dot: "bg-[#a09a94]" },
-  answered: { pill: "bg-[#e8e8f6] text-[#2a2a86]", dot: "bg-[#2a2a86]" },
-  resolved: { pill: "bg-[#e4f2eb] text-[#0b6042]", dot: "bg-[#0b6042]" },
+/** Status is always written out, so its colour is never the only signal. */
+const STATUS_STYLES: Record<Status, string> = {
+  open: "bg-[#faf1e8] text-[#6e6a72]",
+  answered: "bg-[#e8e8f6] text-[#2a2a86]",
+  resolved: "bg-[#e4f2eb] text-[#0b6042]",
 };
 
 export function StatusTag({ status, lang }: { status: Status; lang: Locale }) {
-  const style = STATUS_STYLES[status];
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold sm:gap-1.5 sm:px-2.5 sm:py-1 sm:text-[12px] ${style.pill}`}
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-bold sm:px-2.5 sm:py-1 sm:text-[12px] ${STATUS_STYLES[status]}`}
     >
-      <span aria-hidden="true" className={`h-1.5 w-1.5 shrink-0 rounded-full ${style.dot}`} />
       {getDictionary(lang).statuses[status]}
     </span>
   );
 }
 
-/** Verified checkmark shown beside an elected official's name. */
-export function OfficialBadge({ lang }: { lang: Locale }) {
-  const label = getDictionary(lang).official.badge;
+/**
+ * Verified checkmark shown beside the name of someone who speaks for the
+ * borough office.
+ *
+ * Two of them, because nine people carry it and only four were elected. The
+ * mark said "Élu·e de la Ville de Montréal" beside every one of them, which for
+ * the five who work at the office was the site claiming they hold a seat they
+ * do not — a small label, and a real thing to be wrong about on a forum whose
+ * whole subject is who represents whom.
+ *
+ * The distinction is carried in colour and in the label, not in the shape: both
+ * are a filled check, because both mean the same thing to a reader scanning a
+ * thread — this reply comes from the office and not from a neighbour. Red is
+ * the accent every action on the site already uses; indigo is the colour the
+ * palette reserves for "an official spoke", which is exactly what the staff
+ * mark says and all it says.
+ */
+export function OfficialBadge({ lang, elected }: { lang: Locale; elected: boolean }) {
+  const t = getDictionary(lang).official;
+  const label = elected ? t.badge : t.staffBadge;
   return (
     <span title={label} aria-label={label} className="inline-flex shrink-0 align-middle">
       <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
-        <circle cx="8" cy="8" r="8" fill="#fa3250" />
+        <circle cx="8" cy="8" r="8" fill={elected ? "#fa3250" : "#2a2a86"} />
         <path
           d="M4.6 8.3l2.2 2.2 4.6-4.7"
           stroke="#fff"

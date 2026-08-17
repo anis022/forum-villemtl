@@ -113,10 +113,10 @@ export function CommentThread({
             <ProfileLink author={comment.author} lang={lang} className="font-bold hover:underline">
               {name}
             </ProfileLink>
-            {comment.author.isOfficial && <OfficialBadge lang={lang} />}
-            <span aria-hidden="true" className={MUTED}>
-              ·
-            </span>
+            {comment.author.isOfficial && (
+              <OfficialBadge lang={lang} elected={comment.author.isElected} />
+            )}
+            <span aria-hidden="true" className={MUTED}>·</span>
             <span className={MUTED}>{formatDate(comment.createdAt, lang)}</span>
           </div>
 

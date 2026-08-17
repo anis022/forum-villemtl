@@ -1,15 +1,13 @@
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { IssuePhoto } from "@/components/issues/issue-photo";
-import { ProjectStatusTag } from "@/components/projects/project-timeline";
 import { getSessionUser } from "@/utils/supabase/auth";
-import { ALL_PROJECTS, say } from "@/utils/projects";
+import { ALL_PROJECTS, isPast, say } from "@/utils/projects";
 import { getDictionary, isLocale } from "@/utils/i18n";
 import {
   CARD,
-  CARD_INTERACTIVE,
   HERO_BAND,
   MUTED,
   PAGE_HERO_INNER,
@@ -51,45 +49,56 @@ export default async function ProjectsPage({ params }: { params: Promise<{ lang:
           // One column on a phone, two from `md`. A project card leads with a
           // photograph, and three across makes each one too small to read as
           // one — which is the whole reason the photo is there.
-          <ul className="grid gap-5 md:grid-cols-2">
+          <ul className="space-y-5">
             {ALL_PROJECTS.map((project) => {
               const lead = project.photos[0];
+              const upcoming = project.milestones.filter((milestone) => !isPast(milestone.on)).length;
               return (
                 <li key={project.slug}>
                   <Link
                     href={`/${lang}/projets/${project.slug}`}
-                    className={`${CARD_INTERACTIVE} flex h-full flex-col overflow-hidden`}
+                    className="group grid overflow-hidden rounded-[18px] border border-[#e5ded7] bg-white shadow-[0_2px_8px_rgba(31,22,16,0.05)] transition-shadow hover:shadow-[0_8px_24px_rgba(31,22,16,0.09)] md:grid-cols-[minmax(320px,0.9fr)_minmax(0,1.1fr)]"
                   >
                     {/* Whole rather than cropped, the same treatment a report's
                         photo gets — see IssuePhoto. */}
-                    <IssuePhoto
-                      src={lead.src}
-                      alt=""
-                      cap="max-h-[260px]"
-                      sizes="(min-width: 768px) 560px, 100vw"
-                    />
+                    <div className="relative min-h-[230px] overflow-hidden bg-[#eee8e1] md:min-h-[360px]">
+                      <Image
+                        src={lead.src}
+                        alt=""
+                        fill
+                        sizes="(min-width: 768px) 560px, 100vw"
+                        className="object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                      />
+                    </div>
 
-                    <div className="flex flex-1 flex-col p-4 sm:p-5">
-                      <div className="flex items-start justify-between gap-3">
-                        <h2 className="text-[19px] font-bold leading-[27px] break-words">
+                    <div className="flex min-w-0 flex-col p-5 sm:p-7 md:p-8 lg:p-9">
+                      <div>
+                        <h2 className="text-[24px] font-semibold leading-[31px] tracking-[-0.015em] break-words sm:text-[28px] sm:leading-[36px]">
                           {say(project.title, lang)}
                         </h2>
-                        <ProjectStatusTag status={project.status} lang={lang} />
                       </div>
 
                       <p className={`mt-1 text-[13px] leading-[18px] ${MUTED}`}>
                         {project.address}
                       </p>
 
-                      <p className={`mt-3 text-[15px] leading-[23px] ${MUTED}`}>
+                      <p className={`mt-5 max-w-[58ch] text-[16px] leading-[25px] ${MUTED}`}>
                         {say(project.summary, lang)}
                       </p>
 
-                      {/* Pushed to the bottom so cards of different summary
-                          lengths still line their footers up. */}
-                      <p className={`mt-auto pt-4 text-[13px] font-bold ${MUTED}`}>
-                        {t.projects.milestoneCount(project.milestones.length)}
-                      </p>
+                      <div className="mt-auto flex flex-wrap items-center justify-between gap-4 pt-7">
+                        <span className="text-[13px] font-medium text-[#6e6a72]">
+                          {upcoming > 0
+                            ? `${upcoming} ${t.projects.nextSteps.toLocaleLowerCase(lang)}`
+                            : t.projects.status.done}
+                        </span>
+                        <span className="inline-flex items-center gap-2 text-[14px] font-semibold text-[#fa3250]">
+                          {t.projects.viewProject}
+                          <svg className="h-4 w-4 transition-transform group-hover:translate-x-0.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path d="M5 12h14m-5-5 5 5-5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </span>
+                      </div>
                     </div>
                   </Link>
                 </li>

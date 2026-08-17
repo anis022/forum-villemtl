@@ -10,7 +10,7 @@ import { getDictionary, type ErrorCode, type Locale } from "@/utils/i18n";
 import { ALERT, BTN_PRIMARY, FIELD, LABEL, LINK } from "@/components/ui/styles";
 
 /**
- * Signing in without a password.
+ * One door, and the membership list decides who comes through it.
  *
  * There is nothing to remember and nothing stored: you type your address, a
  * six-digit code arrives, you type the code. The database holds no password
@@ -18,19 +18,23 @@ import { ALERT, BTN_PRIMARY, FIELD, LABEL, LINK } from "@/components/ui/styles";
  * which also means no "forgot password" screen, because there is nothing to
  * forget.
  *
- * Two entrances rather than one. Signing in refuses to create an account
- * (`shouldCreateUser: false`) so that a typo in an address lands on "no account
- * for that email" instead of silently making a second, empty one under the
- * misspelling. Signing up asks for a name first, because that name is what
- * appears above every topic and reply, and there is no later step to collect it.
+ * There is no "create an account" screen either, and that is the change this
+ * file exists to make. Being a member *is* the account: the roster loaded by
+ * `npm run members` says who may sign in, and the first code sent to an address
+ * on it creates the account under the name the membership was taken out in.
+ * Nobody chooses their own display name at the door any more, which is why the
+ * form no longer asks for one.
  *
- * The cost of saying "no account for that email" out loud is that the form will
- * tell anyone whether a given address is registered. That is a real trade and it
- * is made deliberately: without it, a mistyped address just never receives a
- * code and the person is left staring at a screen that claims one was sent.
+ * The address is checked against the roster before a code is sent, so a member
+ * whose email was recorded with a typo reads a sentence about it instead of
+ * waiting on mail that is not coming. That check answers honestly, which means
+ * this form will tell anyone whether a given address is on a political party's
+ * membership list. It is a real disclosure, weighed in migration 0025 and
+ * accepted there; the sign-in endpoint's rate limit is what keeps it from being
+ * a bulk one.
  */
 
-type View = "signin" | "signup" | "code";
+type View = "signin" | "code";
 
 // Shared tokens, so the modal cannot drift from the rest of the site.
 const PRIMARY = `w-full ${BTN_PRIMARY}`;
@@ -59,16 +63,14 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
  */
 const MIN_CODE_DIGITS = 6;
 
-/**
- * What Supabase says when `shouldCreateUser: false` meets an address it has
- * never seen. Matched on the stable code first — the sentence is user-facing
- * text on their side and may be reworded.
- */
-const isUnknownAccount = (code: string | undefined, message: string) =>
-  code === "otp_disabled" || /signups not allowed/i.test(message);
-
 const isRateLimited = (code: string | undefined, status: number | undefined) =>
   code === "over_email_send_rate_limit" || status === 429;
+
+/** What `public.membership_status` answers, mapped to what the person reads. */
+const REFUSALS: Record<string, ErrorCode> = {
+  unknown: "notMember",
+  expired: "membershipExpired",
+};
 
 export function AuthModal({
   open,
@@ -90,9 +92,8 @@ export function AuthModal({
   const [height, setHeight] = useState<number | undefined>(undefined);
   const [mounted, setMounted] = useState(false);
 
-  /** Carried into the code screen: the address to verify against, and how we got there. */
+  /** Carried into the code screen: the address to verify against. */
   const [email, setEmail] = useState("");
-  const [cameFrom, setCameFrom] = useState<"signin" | "signup">("signin");
   const [cooldown, setCooldown] = useState(0);
   const [resent, setResent] = useState(false);
 
@@ -172,25 +173,38 @@ export function AuthModal({
     if (view === "code") codeRef.current?.focus();
   }, [view]);
 
-  /** Ask for a code. Shared by both entrances and by the resend button. */
-  const sendCode = async (
-    address: string,
-    mode: "signin" | "signup",
-    names?: { firstName: string; lastName: string },
-  ) => {
-    const { error: sendError } = await createClient().auth.signInWithOtp({
+  /** Check the roster, then ask for a code. Shared by the form and the resend. */
+  const sendCode = async (address: string) => {
+    const supabase = createClient();
+
+    const { data: status, error: rosterError } = await supabase.rpc("membership_status", {
+      addr: address,
+    });
+
+    /* Fail closed. If the roster cannot be reached we do not know whether this
+       address belongs here, and sending the code anyway would let anyone with
+       an existing account through during exactly the outage where the gate
+       matters. A new account would still be refused — the trigger behind
+       auth.users checks the same roster — but an old one would not. */
+    if (rosterError) {
+      console.error("[auth] the membership check failed:", rosterError);
+      return "codeSendFailed" as const;
+    }
+
+    const refusal = REFUSALS[String(status)];
+    if (refusal) return refusal;
+
+    /* `shouldCreateUser: true` on the only entrance there is. It used to be
+       false here, to keep a typo from silently making a second empty account
+       under the misspelling — the roster check above now does that job, and
+       does it better, because it also refuses addresses that are spelled
+       perfectly and simply are not members. */
+    const { error: sendError } = await supabase.auth.signInWithOtp({
       email: address,
-      options: {
-        // The one line that separates the two entrances.
-        shouldCreateUser: mode === "signup",
-        // Read by the `on_auth_user_created` trigger into public.profiles, and
-        // only ever applied when this call is the one that creates the account.
-        ...(names ? { data: { first_name: names.firstName, last_name: names.lastName } } : {}),
-      },
+      options: { shouldCreateUser: true },
     });
 
     if (!sendError) return null;
-    if (isUnknownAccount(sendError.code, sendError.message)) return "noAccount" as const;
     if (isRateLimited(sendError.code, sendError.status)) return "tooManyCodes" as const;
 
     /* Everything else collapses into one sentence on screen, deliberately: an
@@ -199,10 +213,11 @@ export function AuthModal({
        a dialog helps nobody. It still has to go somewhere, though — without
        this the only symptom of a misconfigured mail setup is a generic failure
        with no thread to pull. The console is that somewhere. */
-    console.error(
-      "[auth] sending the code failed:",
-      { status: sendError.status, code: sendError.code, message: sendError.message },
-    );
+    console.error("[auth] sending the code failed:", {
+      status: sendError.status,
+      code: sendError.code,
+      message: sendError.message,
+    });
     return "codeSendFailed" as const;
   };
 
@@ -243,27 +258,19 @@ export function AuthModal({
       return;
     }
 
-    const address = String(form.get("email") ?? "").trim();
-    const firstName = String(form.get("firstName") ?? "").trim();
-    const lastName = String(form.get("lastName") ?? "").trim();
+    const address = String(form.get("email") ?? "")
+      .trim()
+      .toLowerCase();
 
     // Validated here rather than by the browser: native constraint bubbles are
     // in the browser's own language and styling, which breaks the UI's uniformity.
-    if (view === "signup" && (!firstName || !lastName)) {
-      setError("nameRequired");
-      return;
-    }
     if (!EMAIL.test(address)) {
       setError("emailInvalid");
       return;
     }
 
     setPending(true);
-    const failure = await sendCode(
-      address,
-      view,
-      view === "signup" ? { firstName, lastName } : undefined,
-    );
+    const failure = await sendCode(address);
     setPending(false);
 
     if (failure) {
@@ -272,7 +279,6 @@ export function AuthModal({
     }
 
     setEmail(address);
-    setCameFrom(view);
     setCooldown(RESEND_SECONDS);
     setView("code");
   };
@@ -282,9 +288,7 @@ export function AuthModal({
     setError(null);
     setResent(false);
     setPending(true);
-    // No names on a resend: if the account was going to be created, the first
-    // request already created it, and passing them again would change nothing.
-    const failure = await sendCode(email, cameFrom);
+    const failure = await sendCode(email);
     setPending(false);
     if (failure) {
       setError(failure);
@@ -294,23 +298,18 @@ export function AuthModal({
     setResent(true);
   };
 
-  const switchTo = (next: View) => {
-    setError(null);
-    setResent(false);
-    setView(next);
-  };
-
   // Rendered outside #page-root so the page blur never touches the dialog.
   if (!mounted) return null;
 
-  const title = view === "code" ? t.auth.codeTitle : view === "signin" ? t.auth.signIn : t.auth.signUp;
+  const title = view === "code" ? t.auth.codeTitle : t.auth.signIn;
 
   /**
    * Only the code screen has a second line, and it carries a fact the person
    * needs: which address the code went to, so a typo is visible before they go
-   * looking through a mailbox that will never receive it. The two entrances say
-   * nothing under their heading — a labelled email field does not need a
-   * sentence explaining that it is an email field.
+   * looking through a mailbox that will never receive it. The sign-in screen
+   * says nothing under its heading — a labelled email field does not need a
+   * sentence explaining that it is an email field, and what does need saying
+   * about membership sits next to the button instead.
    */
   const subtitle = view === "code" ? t.auth.codeSentTo(email) : null;
 
@@ -334,11 +333,11 @@ export function AuthModal({
           if (event.target === event.currentTarget) onClose();
         }}
       >
-        {/* The sign-up view is taller than a 320x568 screen, and taller still
-            than what is left of any phone once the keyboard is up. The shell is
-            capped to the viewport less the overlay's padding and the panel
-            scrolls inside it; `scrollHeight` is unaffected by the cap, so the
-            height animation between views still measures the full content. */}
+        {/* The shell is capped to the viewport less the overlay's padding and
+            the panel scrolls inside it — a refusal message runs to three lines
+            on a 320px screen, and there is less room again once the keyboard is
+            up. `scrollHeight` is unaffected by the cap, so the height animation
+            between views still measures the full content. */}
         <div
           className="auth-panel-shell max-h-[calc(100dvh-2rem)] w-[min(28rem,100%)] overflow-hidden rounded-[18px] bg-white shadow-2xl"
           style={{ height }}
@@ -348,150 +347,114 @@ export function AuthModal({
             key={view}
             className="auth-panel max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain"
           >
-          {/* Brand bar, echoing the site header. */}
-          <div className="flex items-center justify-center border-b border-[#e9e0d6] px-5 py-4 sm:px-6 sm:py-5 md:px-8">
-            <Image
-              src="/logo-ensemble-mtl.png"
-              alt="Ensemble Montréal"
-              width={469}
-              height={166}
-              className="h-10 w-auto"
-            />
-          </div>
+            {/* Brand bar, echoing the site header. */}
+            <div className="flex items-center justify-center border-b border-[#e9e0d6] px-5 py-4 sm:px-6 sm:py-5 md:px-8">
+              <Image
+                src="/logo-ensemble-mtl.png"
+                alt="Ensemble Montréal"
+                width={469}
+                height={166}
+                className="h-10 w-auto"
+              />
+            </div>
 
-          {/* Tighter gutters on a phone: at 320px the panel is 288px wide, and
-              24px of padding a side leaves the fields visibly cramped. */}
-          <div className="px-5 py-6 sm:px-6 sm:py-7 md:px-8">
-            <h2 id="auth-modal-title" className="text-[24px] leading-[32px]">
-              {title}
-            </h2>
-            {/* `break-words`: the address is printed back here and a long one
-                has no space in it to wrap at. */}
-            {subtitle && <p className="mt-2 break-words text-[#6e6a72]">{subtitle}</p>}
+            {/* Tighter gutters on a phone: at 320px the panel is 288px wide, and
+                24px of padding a side leaves the fields visibly cramped. */}
+            <div className="px-5 py-6 sm:px-6 sm:py-7 md:px-8">
+              <h2 id="auth-modal-title" className="text-[24px] leading-[32px]">
+                {title}
+              </h2>
+              {/* `break-words`: the address is printed back here and a long one
+                  has no space in it to wrap at. */}
+              {subtitle && <p className="mt-2 break-words text-[#6e6a72]">{subtitle}</p>}
 
-            <form onSubmit={submit} noValidate className="mt-6">
-              {view === "signup" && (
-                <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div>
-                    <label htmlFor="auth-first-name" className={LABEL}>
-                      {t.auth.firstName}
+              <form onSubmit={submit} noValidate className="mt-6">
+                {view === "code" ? (
+                  <div className="mb-5">
+                    <label htmlFor="auth-code" className={LABEL}>
+                      {t.auth.codeLabel}
+                    </label>
+                    {/* `inputMode numeric` brings up the digit keypad, and
+                        `one-time-code` lets iOS and Android offer the code
+                        straight from the notification instead of making someone
+                        leave the page to read their mail. Spaced and centred
+                        because a run of digits reads as a code that way and as a
+                        quantity otherwise.
+
+                        `maxLength` is a paste guard, not the code's length — see
+                        MIN_CODE_DIGITS. The tracking is loose enough to read as
+                        grouped digits and tight enough that ten of them still fit
+                        the 288px the panel has on a 320px screen. */}
+                    <input
+                      ref={codeRef}
+                      id="auth-code"
+                      name="code"
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      maxLength={12}
+                      disabled={pending}
+                      className={`${FIELD} text-center text-[20px] font-bold tracking-[0.3em]`}
+                    />
+                  </div>
+                ) : (
+                  <div className="mb-5">
+                    <label htmlFor="auth-email" className={LABEL}>
+                      {t.auth.email}
                     </label>
                     <input
-                      id="auth-first-name"
-                      name="firstName"
-                      type="text"
-                      autoComplete="given-name"
+                      id="auth-email"
+                      name="email"
+                      type="email"
+                      autoComplete="email"
                       disabled={pending}
                       className={FIELD}
                     />
                   </div>
-                  <div>
-                    <label htmlFor="auth-last-name" className={LABEL}>
-                      {t.auth.lastName}
-                    </label>
-                    <input
-                      id="auth-last-name"
-                      name="lastName"
-                      type="text"
-                      autoComplete="family-name"
-                      disabled={pending}
-                      className={FIELD}
-                    />
-                  </div>
-                </div>
-              )}
+                )}
 
-              {view === "code" ? (
-                <div className="mb-5">
-                  <label htmlFor="auth-code" className={LABEL}>
-                    {t.auth.codeLabel}
-                  </label>
-                  {/* `inputMode numeric` brings up the digit keypad, and
-                      `one-time-code` lets iOS and Android offer the code
-                      straight from the notification instead of making someone
-                      leave the page to read their mail. Spaced and centred
-                      because a run of digits reads as a code that way and as a
-                      quantity otherwise.
+                {error && (
+                  <p role="alert" className={`mb-5 ${ALERT}`}>
+                    {t.errors[error]}
+                  </p>
+                )}
 
-                      `maxLength` is a paste guard, not the code's length — see
-                      MIN_CODE_DIGITS. The tracking is loose enough to read as
-                      grouped digits and tight enough that ten of them still fit
-                      the 288px the panel has on a 320px screen. */}
-                  <input
-                    ref={codeRef}
-                    id="auth-code"
-                    name="code"
-                    type="text"
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    maxLength={12}
-                    disabled={pending}
-                    className={`${FIELD} text-center text-[20px] font-bold tracking-[0.3em]`}
-                  />
-                </div>
-              ) : (
-                <div className="mb-5">
-                  <label htmlFor="auth-email" className={LABEL}>
-                    {t.auth.email}
-                  </label>
-                  <input
-                    id="auth-email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    disabled={pending}
-                    className={FIELD}
-                  />
-                </div>
-              )}
+                {resent && (
+                  <p
+                    role="status"
+                    className="mb-5 rounded-[12px] border border-[#f8c4cd] bg-[#fde8eb] px-4 py-3 text-[15px] text-[#d81f3c]"
+                  >
+                    {t.auth.resendDone}
+                  </p>
+                )}
 
-              {error && (
-                <p role="alert" className={`mb-5 ${ALERT}`}>
-                  {t.errors[error]}
-                </p>
-              )}
+                <button type="submit" disabled={pending} className={PRIMARY}>
+                  {pending ? t.auth.working : view === "signin" ? t.auth.submitSignIn : t.auth.submitCode}
+                </button>
 
-              {resent && (
-                <p
-                  role="status"
-                  className="mb-5 rounded-[12px] border border-[#f8c4cd] bg-[#fde8eb] px-4 py-3 text-[15px] text-[#d81f3c]"
-                >
-                  {t.auth.resendDone}
-                </p>
-              )}
+                {/* Who the forum is for, that the account appears by itself, and
+                    that the name on it is the one from the membership. All three
+                    used to be answered by a sign-up form that no longer exists,
+                    and this is the only screen left to answer them on. Under the
+                    button rather than above it: nobody reads a preamble, and
+                    everybody looks at what sits next to the thing they are about
+                    to press. */}
+                {view === "signin" && (
+                  <p className="mt-3 text-[13px] leading-[19px] text-[#6e6a72]">
+                    {t.auth.collectionNotice}{" "}
+                    <a href={`/${lang}/confidentialite`} className={LINK}>
+                      {t.privacy.title}
+                    </a>
+                  </p>
+                )}
+              </form>
 
-              <button type="submit" disabled={pending} className={PRIMARY}>
-                {pending
-                  ? t.auth.working
-                  : view === "signin"
-                    ? t.auth.submitSignIn
-                    : view === "signup"
-                      ? t.auth.submitSignUp
-                      : t.auth.submitCode}
-              </button>
-
-              {/* Only on the form that actually collects something. Signing in
-                  hands over an address the account already has; creating one is
-                  the moment a name enters the site, and it is the moment the
-                  law wants the purposes said out loud. Under the button rather
-                  than above it: nobody reads a preamble, and everybody looks at
-                  what sits next to the thing they are about to press. */}
-              {view === "signup" && (
-                <p className="mt-3 text-[13px] leading-[19px] text-[#6e6a72]">
-                  {t.auth.collectionNotice}{" "}
-                  <a href={`/${lang}/confidentialite`} className={LINK}>
-                    {t.privacy.title}
-                  </a>
-                </p>
-              )}
-            </form>
-
-            {/* `inline-block py-2` on the switches: these are the last thing
-                a phone user reaches for and a bare line of text is a 24px
-                target. */}
-            <div className="mt-6 border-t border-[#e9e0d6] pt-4 text-center">
-              {view === "code" ? (
-                <>
+              {/* Only the code screen has anything to put here now that there is
+                  no second entrance to switch to. `inline-block py-2` on the
+                  buttons: these are the last thing a phone user reaches for and
+                  a bare line of text is a 24px target. */}
+              {view === "code" && (
+                <div className="mt-6 border-t border-[#e9e0d6] pt-4 text-center">
                   <p>
                     <button
                       type="button"
@@ -505,27 +468,19 @@ export function AuthModal({
                   <p>
                     <button
                       type="button"
-                      onClick={() => switchTo(cameFrom)}
+                      onClick={() => {
+                        setError(null);
+                        setResent(false);
+                        setView("signin");
+                      }}
                       className={`${LINK} inline-block py-2`}
                     >
                       {t.auth.changeEmail}
                     </button>
                   </p>
-                </>
-              ) : (
-                <p>
-                  {view === "signin" ? t.auth.noAccount : t.auth.hasAccount}{" "}
-                  <button
-                    type="button"
-                    onClick={() => switchTo(view === "signin" ? "signup" : "signin")}
-                    className={`${LINK} inline-block py-2`}
-                  >
-                    {view === "signin" ? t.auth.signUp : t.auth.signIn}
-                  </button>
-                </p>
+                </div>
               )}
             </div>
-          </div>
           </div>
         </div>
       </div>

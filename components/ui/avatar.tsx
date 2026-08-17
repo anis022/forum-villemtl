@@ -94,15 +94,12 @@ export function Avatar({
  */
 export function FacePile({
   people,
-  total,
   size = "sm",
 }: {
   people: AvatarPerson[];
-  total: number;
   size?: keyof typeof SIZES;
 }) {
   if (!people.length) return null;
-  const extra = total - people.length;
 
   return (
     <span className="inline-flex items-center">
@@ -116,9 +113,6 @@ export function FacePile({
           />
         ))}
       </span>
-      {extra > 0 && (
-        <span className="ml-2 text-[13px] text-[#6e6a72]">+{extra}</span>
-      )}
     </span>
   );
 }

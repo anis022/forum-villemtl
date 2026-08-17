@@ -1,3 +1,5 @@
+import { DEFAULT_BOROUGH } from "@/utils/boroughs";
+
 // One basemap for the whole site, so the events map, the reports map and the
 // location picker cannot drift apart.
 //
@@ -10,20 +12,19 @@ export const TILE_URL =
   "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
 
 /**
- * The borough, with padding. Every map on the site is fenced to this, and the
- * report form refuses a pin outside it.
+ * The borough every map opens on, with padding. The report form refuses a pin
+ * outside it.
  *
- * Defined here rather than beside the events or the issues, because both were
- * carrying their own copy and a boundary that disagrees with itself is worse
- * than no boundary.
+ * The numbers live in `utils/boroughs.ts` now. Both the events map and the
+ * issues map used to carry their own copy, and a boundary that disagrees with
+ * itself is worse than no boundary; these two names stay because half the map
+ * code reads them, and a borough is still one per deployment until a resident's
+ * choice reaches the maps.
  */
-export const BOROUGH_BOUNDS: [[number, number], [number, number]] = [
-  [45.4495, -73.665],
-  [45.5095, -73.598],
-];
+export const BOROUGH_BOUNDS = DEFAULT_BOROUGH.bounds;
 
 /** Centre of the borough, for anything that needs a point rather than a box. */
-export const BOROUGH_CENTER: [number, number] = [45.4795, -73.6315];
+export const BOROUGH_CENTER = DEFAULT_BOROUGH.center;
 
 /**
  * Open every map on the whole borough, and make that view the floor.
@@ -78,7 +79,7 @@ export const TILE_OPTIONS = {
 } as const;
 
 /** Served from our own origin: see scripts/ingest/borough-outline.ts. */
-const OUTLINE_URL = "/cdn-ndg.geojson";
+const OUTLINE_URL = DEFAULT_BOROUGH.outlineUrl;
 
 type BoroughFeature = {
   geometry: { type: string; coordinates: number[][][][] };

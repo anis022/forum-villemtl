@@ -78,7 +78,9 @@ export default async function IssuePage({
                   >
                     {authorName(issue.author, t.issue.anonymousAuthor)}
                   </ProfileLink>
-                  {issue.author.isOfficial && <OfficialBadge lang={lang} />}
+                  {issue.author.isOfficial && (
+                    <OfficialBadge lang={lang} elected={issue.author.isElected} />
+                  )}
                 </p>
                 <p className={`mt-0.5 truncate text-[13px] leading-[18px] ${MUTED}`}>
                   {formatDateShort(issue.createdAt, lang)}

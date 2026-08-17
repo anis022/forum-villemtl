@@ -175,6 +175,24 @@ summary:focus-visible,
   outline-offset: -1px;
 }
 
+/* The council workspace contains full-width controls and a disclosure that
+   spans the chat column on phones. An outer halo around those large surfaces
+   reads like an error box, so keep the keyboard cue inside their own shape. */
+.council-workspace summary:focus-visible,
+.council-workspace button:focus-visible,
+.council-workspace textarea:focus-visible,
+.council-workspace a:focus-visible {
+  box-shadow: none;
+  outline: 1px solid rgba(42, 42, 134, 0.42);
+  outline-offset: -1px;
+}
+
+.project-progress summary:focus-visible {
+  box-shadow: none;
+  outline: 1px solid rgba(42, 42, 134, 0.42);
+  outline-offset: -1px;
+}
+
 /* The ring is a box-shadow, so it traces whatever radius the element already
    has — and anything left at 0 got a hard-cornered rectangle around it while
    its neighbours got rounded ones. Give every focusable element a floor in the

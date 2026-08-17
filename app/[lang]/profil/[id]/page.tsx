@@ -5,12 +5,15 @@ import { SiteFooter } from "@/components/site-footer";
 import { getSessionUser } from "@/utils/supabase/auth";
 import {
   getActivity,
+  getBoroughOf,
   getCounts,
   getProfile,
   type ActivityItem,
   type ProfileCounts,
   type PublicProfile,
 } from "@/utils/supabase/profile";
+import { DEFAULT_BOROUGH_SLUG } from "@/utils/boroughs";
+import { BoroughChoice } from "@/components/profile/borough-choice";
 import { officialByProfileId, officialBySlug } from "@/utils/officials";
 import { getDictionary, isLocale, dateLocale } from "@/utils/i18n";
 import { CARD, MUTED, PAGE_MAIN, PAGE_SHELL } from "@/components/ui/styles";
@@ -80,10 +83,17 @@ export default async function ProfilePage({
     lastName: official!.surname,
     avatarUrl: `/elus/${official!.slug}.jpg`,
     isOfficial: true,
+    // This branch only runs for someone in utils/officials.ts, which is the
+    // list of people who sit on the borough council — so the seat is the
+    // reason the page exists at all, not something to look up.
+    isElected: true,
     joinedAt: "",
   };
 
   const isSelf = viewer?.id === profile.id;
+  // Only for the person themselves: nobody else's borough is on show here, and
+  // fetching it for every visitor would be a query per profile view.
+  const borough = isSelf ? await getBoroughOf(profile.id) : DEFAULT_BOROUGH_SLUG;
   const locale = dateLocale(lang);
 
   const fullName = official
@@ -149,7 +159,7 @@ export default async function ProfilePage({
                   {fullName || t.issue.anonymousAuthor}
                   {profile.isOfficial && (
                     <span className="ml-2 inline-flex align-middle">
-                      <OfficialBadge lang={lang} />
+                      <OfficialBadge lang={lang} elected={profile.isElected} />
                     </span>
                   )}
                 </h1>
@@ -240,6 +250,23 @@ export default async function ProfilePage({
               );
             })}
           </ol>
+        )}
+
+        {/* Only on your own profile. The borough comes before the account
+            controls: it is a setting somebody might come here to change, and
+            those two are a door out. */}
+        {isSelf && (
+          <BoroughChoice
+            lang={lang}
+            chosen={borough}
+            labels={{
+              title: t.account.boroughTitle,
+              body: t.account.boroughBody,
+              only: t.account.boroughOnly,
+              saved: t.account.boroughSaved,
+              failed: t.errors.boroughFailed,
+            }}
+          />
         )}
 
         {/* Only on your own profile, and last. Nobody arrives here to leave —

@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { IssuePhoto } from "@/components/issues/issue-photo";
-import { ProjectStatusTag, ProjectTimeline } from "@/components/projects/project-timeline";
+import { ProjectTimeline } from "@/components/projects/project-timeline";
 import { ContentViewTracker } from "@/components/analytics/content-view-tracker";
 import { getSessionUser } from "@/utils/supabase/auth";
 import { ALL_PROJECTS, projectBySlug, say } from "@/utils/projects";
@@ -52,28 +52,32 @@ export default async function ProjectPage({
             anything — but the timeline comes before the photograph and the
             prose: what a resident opens this page to find out is where the
             thing stands and what happens next. */}
-        <header className="mt-4 flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h1 className="text-[26px] leading-[34px] break-words md:text-[34px] md:leading-[42px]">
+        <header className="mt-4 grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+          <div className="min-w-0 max-w-[820px]">
+            <h1 className="text-[30px] font-semibold leading-[38px] tracking-[-0.025em] break-words md:text-[42px] md:leading-[50px]">
               {say(project.title, lang)}
             </h1>
-            <p className={`mt-1 text-[15px] ${MUTED}`}>{project.address}</p>
+            <p className={`mt-2 text-[14px] ${MUTED}`}>{project.address}</p>
+            <p className="mt-4 max-w-[68ch] text-[17px] leading-[27px] text-[#4f4a50]">
+              {say(project.summary, lang)}
+            </p>
           </div>
-          <ProjectStatusTag status={project.status} lang={lang} />
         </header>
 
-        <section className="mt-5">
-          <h2 className="text-[18px] font-bold leading-[26px]">{t.projects.timeline}</h2>
-          <div className={`${CARD} mt-3 overflow-hidden px-4 sm:px-6 lg:px-8`}>
+        <section className="mt-8">
+          <h2 className="text-[20px] font-semibold leading-[28px] tracking-[-0.01em] sm:text-[22px]">
+            {t.projects.timeline}
+          </h2>
+          <div className="mt-3">
             <ProjectTimeline
               milestones={project.milestones}
               lang={lang}
-              label={`${t.projects.timeline} — ${say(project.title, lang)}`}
+              label={`${t.projects.timeline} : ${say(project.title, lang)}`}
             />
           </div>
         </section>
 
-        <article className={`${CARD} mt-8 overflow-hidden`}>
+        <article className={`${CARD} mt-10 overflow-hidden`}>
           <IssuePhoto
             src={lead.src}
             alt={say(lead.caption, lang)}
@@ -81,16 +85,19 @@ export default async function ProjectPage({
             sizes="(min-width: 1024px) 1100px, 100vw"
           />
 
-          <div className="p-4 md:p-6">
+          <div className="p-5 md:p-7">
             {/* The lead photo's caption sits under the image rather than over
                 it: laid on top it competes with the picture, and a caption that
                 says "photographed in 1982" has to be readable or the picture is
                 misleading. */}
             <p className={`text-[13px] leading-[19px] ${MUTED}`}>
-              {say(lead.caption, lang)} <span className="opacity-70">— {lead.credit}</span>
+              {say(lead.caption, lang)} <span className="opacity-70">· {lead.credit}</span>
             </p>
 
-            <div className={`${READABLE} mx-0 mt-5 space-y-4`}>
+            <h2 className="mt-5 text-[20px] font-semibold leading-[28px] tracking-[-0.01em]">
+              {t.projects.about}
+            </h2>
+            <div className={`${READABLE} mx-0 mt-3 space-y-4`}>
               {project.description.map((paragraph, i) => (
                 <p key={i} className="max-w-[68ch] text-[17px] leading-[27px]">
                   {say(paragraph, lang)}

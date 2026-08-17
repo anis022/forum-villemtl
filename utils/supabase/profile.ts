@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { createClient } from "./server";
+import { DEFAULT_BOROUGH_SLUG, isBoroughSlug, type BoroughSlug } from "@/utils/boroughs";
 
 export type PublicProfile = {
   id: string;
@@ -7,6 +8,8 @@ export type PublicProfile = {
   lastName: string;
   avatarUrl: string | null;
   isOfficial: boolean;
+  /** Holds a seat on the borough council — see `Author.isElected`. */
+  isElected: boolean;
   joinedAt: string;
 };
 
@@ -33,7 +36,7 @@ export async function getProfile(id: string): Promise<PublicProfile | null> {
   // return a 404 — so fall back to the fields that have always been there.
   let { data } = await supabase
     .from("profiles")
-    .select("id, first_name, last_name, avatar_url, role, created_at")
+    .select("id, first_name, last_name, avatar_url, role, elected, created_at")
     .eq("id", id)
     .maybeSingle();
 
@@ -52,8 +55,34 @@ export async function getProfile(id: string): Promise<PublicProfile | null> {
     lastName: (data.last_name as string) ?? "",
     avatarUrl: (data.avatar_url as string | null) ?? null,
     isOfficial: data.role === "official",
+    // Absent on the fallback select above, and on a database that has not run
+    // migration 0026 — both mean "cannot be shown as elected", which is the
+    // direction a claim to hold office should fail in.
+    isElected: (data as { elected?: boolean | null }).elected === true,
     joinedAt: data.created_at as string,
   };
+}
+
+/**
+ * The borough a person chose, asked for on its own rather than folded into
+ * `getProfile`.
+ *
+ * Separate because it is read in one place, by the account panel on your own
+ * profile, and because a column added in migration 0024 must not be able to
+ * take the profile page down on a deployment where that migration has not run
+ * yet. Anything unexpected reads as the default, which is what a resident who
+ * has never chosen already has.
+ */
+export async function getBoroughOf(id: string): Promise<BoroughSlug> {
+  const supabase = await sb();
+  const { data } = await supabase
+    .from("profiles")
+    .select("borough")
+    .eq("id", id)
+    .maybeSingle();
+
+  const chosen = data?.borough;
+  return typeof chosen === "string" && isBoroughSlug(chosen) ? chosen : DEFAULT_BOROUGH_SLUG;
 }
 
 /**

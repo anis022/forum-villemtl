@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import type { ErrorCode } from "@/utils/i18n";
+import { isBoroughSlug } from "@/utils/boroughs";
 
 export type ProfileResult = { ok: true } | { ok: false; error: ErrorCode };
 
@@ -13,6 +14,30 @@ const TYPES: Record<string, string> = {
   "image/png": "png",
   "image/webp": "webp",
 };
+
+/**
+ * Record which borough the signed-in person is here about.
+ *
+ * The slug is checked against the same list the selector was drawn from, not
+ * trusted from the form: a server action is a public endpoint, and the check
+ * constraint in migration 0024 would otherwise be the only thing between a
+ * hand-written request and a profile pointing at a borough with no data behind
+ * it.
+ */
+export async function updateBorough(slug: string): Promise<ProfileResult> {
+  const supabase = createClient(await cookies());
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "notSignedIn" };
+  if (!isBoroughSlug(slug)) return { ok: false, error: "boroughUnknown" };
+
+  const { error } = await supabase.from("profiles").update({ borough: slug }).eq("id", user.id);
+  if (error) return { ok: false, error: "boroughFailed" };
+
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
 
 /**
  * Replace the signed-in user's avatar.

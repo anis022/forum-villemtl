@@ -158,10 +158,10 @@ export function FeedToolbar({
           disabled={pending}
           onClick={togglePanel}
           className={
-            "map-filter-trigger inline-flex h-10 items-center gap-2 rounded-full border px-3.5 text-[13px] font-semibold shadow-[0_2px_8px_rgba(26,26,26,0.08)] transition-colors " +
+            "map-filter-trigger inline-flex h-10 items-center gap-2 rounded-full border px-3.5 text-[13px] font-semibold transition-colors " +
             (open
-              ? "border-[#2a2a86] bg-[#2a2a86] text-white"
-              : "border-[#ded6cd] bg-white text-[#1a1a1a] hover:border-[#5d56b4]")
+              ? "border-[#fa3250] bg-[#fa3250] text-white"
+              : "border-[#e9e0d6] bg-white text-[#2a2a86] hover:border-[#fa3250] hover:text-[#fa3250]")
           }
         >
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -169,7 +169,7 @@ export function FeedToolbar({
           </svg>
           {labels.filters}
           {activeCount > 0 && (
-            <span className={"grid h-5 min-w-5 place-items-center rounded-full px-1 text-[11px] tabular-nums " + (open ? "bg-white text-[#2a2a86]" : "bg-[#fa3250] text-white")}>
+            <span className={"grid h-5 min-w-5 place-items-center rounded-full px-1 text-[11px] tabular-nums " + (open ? "bg-white text-[#fa3250]" : "bg-[#fa3250] text-white")}>
               {activeCount}
             </span>
           )}
@@ -180,13 +180,11 @@ export function FeedToolbar({
             ref={popoverRef}
             id="forum-filter-panel"
             style={{ maxHeight: panelMaxHeight }}
-            className="absolute -right-[15px] top-[calc(100%+8px)] z-30 flex w-[min(380px,calc(100vw-20px))] flex-col overflow-hidden rounded-[14px] border border-[#ddd4cb] bg-white shadow-[0_10px_28px_rgba(26,26,26,0.13)] sm:right-0 sm:rounded-[12px]"
+            className="absolute -right-[15px] top-[calc(100%+8px)] z-30 flex w-[min(400px,calc(100vw-32px))] flex-col overflow-hidden rounded-[12px] border border-[#ded7d0] bg-[#fffdfb] shadow-[0_8px_24px_rgba(31,22,16,0.08)] sm:right-0"
           >
-            <fieldset className="shrink-0 px-4 pb-3 pt-4">
-              <legend className="text-[14px] font-semibold text-[#1a1a1a]">
-                {labels.sortLabel}
-              </legend>
-              <div className="mt-2 grid grid-cols-2 gap-x-4">
+            <div className="shrink-0 px-4 py-4">
+              <p className="mb-2 text-[13px] font-semibold text-[#373238]">{labels.sortLabel}</p>
+              <div className="grid grid-cols-2 rounded-[12px] bg-[#f1ede8] p-1">
                 <FilterOption active={draftSort === "top"} onClick={() => setDraftSort("top")}>
                   {labels.sortTop}
                 </FilterOption>
@@ -194,16 +192,16 @@ export function FeedToolbar({
                   {labels.sortNew}
                 </FilterOption>
               </div>
-            </fieldset>
+            </div>
 
-            <div className="flex min-h-0 flex-1 flex-col border-t border-[#eee6dd] px-4 pt-3">
-              <p id="feed-filter-categories" className="shrink-0 text-[14px] font-semibold text-[#1a1a1a]">
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden border-t border-[#e9e2dc] px-2 pb-2 pt-3">
+              <p id="feed-filter-categories" className="mb-1 px-2 text-[13px] font-semibold text-[#373238]">
                 {labels.filterCategories}
               </p>
               <div
                 role="group"
                 aria-labelledby="feed-filter-categories"
-                className="mt-2 min-h-0 flex-1 overflow-y-auto overscroll-contain pb-2 pr-1"
+                className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1"
               >
                   <button
                     type="button"
@@ -211,9 +209,9 @@ export function FeedToolbar({
                     onClick={() => setDraftCategories([])}
                     className={categoryClass(draftSelected.size === 0)}
                   >
-                    <span className="min-w-0 flex-1">{labels.allCategories}</span>
-                    <span className="text-[12px] font-medium text-[#8a858c] tabular-nums">{totalCount}</span>
-                    <FilterCheck active={draftSelected.size === 0} />
+                    <span>{labels.allCategories}</span>
+                    <span className="ml-auto text-[12px] font-medium text-[#8a858c] tabular-nums">{totalCount}</span>
+                    <Check active={draftSelected.size === 0} />
                   </button>
                   {categories.map((category) => {
                     const active = draftSelected.has(category.key);
@@ -226,15 +224,15 @@ export function FeedToolbar({
                         className={categoryClass(active)}
                       >
                         <span className="min-w-0 truncate">{category.label}</span>
-                        <span className="text-[12px] font-medium text-[#8a858c] tabular-nums">{category.count}</span>
-                        <FilterCheck active={active} />
+                        <span className="ml-auto text-[12px] font-medium text-[#8a858c] tabular-nums">{category.count}</span>
+                        <Check active={active} />
                       </button>
                     );
                   })}
               </div>
             </div>
 
-            <div className="relative z-10 flex shrink-0 items-center justify-between gap-3 border-t border-[#eee6dd] bg-white px-4 py-3">
+            <div className="flex shrink-0 items-center justify-between gap-3 border-t border-[#e9e2dc] bg-white px-4 py-3">
               <button
                 type="button"
                 disabled={draftSort === "top" && draftCategories.length === 0}
@@ -242,14 +240,14 @@ export function FeedToolbar({
                   setDraftSort("top");
                   setDraftCategories([]);
                 }}
-                className="map-filter-option min-h-9 px-1 text-[13px] font-semibold text-[#5d56b4] underline-offset-4 hover:text-[#fa3250] hover:underline disabled:cursor-default disabled:text-[#aaa4a8] disabled:no-underline"
+                className="map-filter-option min-h-9 px-1 text-[13px] font-semibold text-[#2a2a86] underline-offset-4 hover:text-[#fa3250] hover:underline disabled:cursor-default disabled:text-[#aaa4a8] disabled:no-underline"
               >
                 {labels.resetFilters}
               </button>
               <button
                 type="button"
                 onClick={applyFilters}
-                className="map-filter-option min-h-9 rounded-full border border-[#fa3250] bg-[#fa3250] px-5 text-[13px] font-semibold text-white transition-colors hover:border-[#d81f3c] hover:bg-[#d81f3c]"
+                className="map-filter-option min-h-9 rounded-[10px] border border-[#fa3250] bg-[#fa3250] px-5 text-[13px] font-semibold text-white transition-colors hover:border-[#d81f3c] hover:bg-[#d81f3c]"
               >
                 {labels.applyFilters}
               </button>
@@ -275,13 +273,13 @@ function FilterOption({
       type="button"
       aria-pressed={active}
       onClick={onClick}
-      className={`map-filter-option flex min-h-[38px] min-w-0 items-center gap-2 border-b border-[#f2ece6] py-2 text-left text-[13px] leading-[18px] transition-colors ${
-        active
-          ? "font-semibold text-[#1a1a1a]"
-          : "font-medium text-[#6e6a72] hover:text-[#1a1a1a]"
-      }`}
+      className={
+        "map-filter-option min-h-9 rounded-[9px] px-3 text-center text-[13px] font-semibold transition-colors " +
+        (active
+          ? "border border-[#fa3250] bg-white text-[#fa3250] shadow-[0_1px_2px_rgba(250,50,80,0.08)]"
+          : "border border-transparent text-[#6e686e] hover:text-[#2a2a86]")
+      }
     >
-      <RadioMark active={active} />
       {children}
     </button>
   );
@@ -289,34 +287,16 @@ function FilterOption({
 
 function categoryClass(active: boolean) {
   return (
-    "map-filter-option flex min-h-[38px] w-full items-center gap-2 border-b border-[#f2ece6] py-2 text-left text-[13px] leading-[18px] transition-colors " +
-    (active ? "font-semibold text-[#1a1a1a]" : "font-medium text-[#6e6a72] hover:text-[#1a1a1a]")
+    "map-filter-option flex min-h-10 w-full items-center gap-2 rounded-[10px] px-2.5 py-2 text-left text-[13px] transition-colors hover:bg-[#f5f1ed] " +
+    (active ? "font-semibold text-[#2a2a86]" : "font-normal text-[#625d63]")
   );
 }
 
-function RadioMark({ active }: { active: boolean }) {
+function Check({ active }: { active: boolean }) {
   return (
-    <span
-      aria-hidden="true"
-      className={`grid h-4 w-4 shrink-0 place-items-center rounded-full border ${
-        active ? "border-[#5d56b4]" : "border-[#cfc6bd]"
-      }`}
-    >
-      {active && <span className="h-2 w-2 rounded-full bg-[#5d56b4]" />}
-    </span>
-  );
-}
-
-function FilterCheck({ active }: { active: boolean }) {
-  return (
-    <span
-      aria-hidden="true"
-      className={`grid h-4 w-4 shrink-0 place-items-center rounded-full border ${
-        active ? "border-[#fa3250] bg-[#fa3250] text-white" : "border-[#cfc6bd]"
-      }`}
-    >
+    <span className={"grid h-[17px] w-[17px] shrink-0 place-items-center rounded-[3px] border " + (active ? "border-[#fa3250] bg-[#fa3250] text-white" : "border-[#bdb5ae] bg-white")}>
       {active && (
-        <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true">
           <path d="m2.5 6.2 2.1 2.1 4.8-4.8" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       )}

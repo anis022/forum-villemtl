@@ -13,6 +13,7 @@
     "ingest:dry": "node --experimental-strip-types scripts/ingest/dry-run.ts",
     "backfill": "node --env-file-if-exists=.env --env-file-if-exists=.env.local --experimental-strip-types scripts/ingest/backfill.ts",
     "migrate": "node --env-file-if-exists=.env --env-file-if-exists=.env.local --experimental-strip-types scripts/db/apply.ts",
+    "members": "node --env-file-if-exists=.env --env-file-if-exists=.env.local --experimental-strip-types scripts/db/members.ts",
     "sync:events": "node --env-file-if-exists=.env --env-file-if-exists=.env.local --experimental-strip-types scripts/ingest/events.ts",
     "outline": "node --experimental-strip-types scripts/ingest/borough-outline.ts",
     "moderation:check": "node --env-file-if-exists=.env --env-file-if-exists=.env.local --experimental-strip-types scripts/db/moderation-check.ts"
