@@ -270,11 +270,24 @@ function Source({
         </p>
         {c.what && <p className={`text-[14px] leading-[21px] break-words ${MUTED}`}>{c.what}</p>}
 
-        {c.quote && (
-          <blockquote className="mt-2.5 border-l-2 border-[#d8d2cb] pl-3 text-[14px] leading-[22px] break-words text-[#4f4a50]">
-            « {c.quote} »
-          </blockquote>
-        )}
+        {/* Guillemets only where somebody is known to have said the words.
+            A question row prints a name and then the recording around that
+            name, which holds the chair, the resident and the borough's answer
+            with nothing marking the changes. Wrapping that in quotation marks
+            under the resident's name is the site asserting they said it, and
+            for the length of a reply that is somebody else's words in their
+            mouth. Unquoted, and captioned for what it is. */}
+        {c.quote &&
+          (c.attributed ? (
+            <blockquote className="mt-2.5 border-l-2 border-[#d8d2cb] pl-3 text-[14px] leading-[22px] break-words text-[#4f4a50]">
+              « {c.quote} »
+            </blockquote>
+          ) : (
+            <div className="mt-2.5 border-l-2 border-[#d8d2cb] pl-3">
+              <p className="text-[14px] leading-[22px] break-words text-[#4f4a50]">{c.quote}</p>
+              <p className={`mt-1 text-[12px] leading-[18px] ${MUTED}`}>{t.aroundMoment}</p>
+            </div>
+          ))}
 
         <span className="flex flex-wrap items-center gap-x-4">
           {c.startS !== null ? (

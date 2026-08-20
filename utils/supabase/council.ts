@@ -57,6 +57,7 @@ type QuestionRow = {
   end_s: number | null;
   transcript: string | null;
   lexical: boolean;
+  heard: boolean;
   similarity: number | null;
 };
 
@@ -77,6 +78,7 @@ function toQuestion(r: QuestionRow, terms: string[]): QuestionHit {
     transcript: r.transcript,
     excerpt: r.transcript ? excerptAround(r.transcript, terms) : null,
     lexical: r.lexical,
+    heard: r.heard,
     similarity: r.similarity === null ? null : Number(r.similarity),
   };
 }
@@ -99,6 +101,7 @@ export async function answerAboutQuestions(
     query: trimmed,
     expanded: trimmed,
     counted: [],
+    heard: [],
     related: [],
     people: 0,
     meetings: 0,
@@ -122,13 +125,19 @@ export async function answerAboutQuestions(
 
   const terms = searchTerms(expanded);
   const hits = (data as QuestionRow[]).map((r) => toQuestion(r, terms));
+
+  // Three buckets from two booleans. `lexical` is the clerk's record and is the
+  // only one that becomes a number; `heard` is the recording, which says the
+  // words were spoken without saying by whom; neither is a neighbour.
   const counted = hits.filter((h) => h.lexical);
-  const related = hits.filter((h) => !h.lexical);
+  const heard = hits.filter((h) => !h.lexical && h.heard);
+  const related = hits.filter((h) => !h.lexical && !h.heard);
 
   return {
     query: trimmed,
     expanded,
     counted,
+    heard,
     related,
     people: distinctPeople(counted),
     meetings: distinctMeetings(counted),
@@ -459,6 +468,9 @@ export async function getMeeting(youtubeId: string): Promise<{
       startS: row.start_s === null ? null : Number(row.start_s),
       endS: row.end_s === null ? null : Number(row.end_s),
       transcript: (row.transcript as string | null) ?? null,
+      // Nothing was searched for, so neither tier applies: this row is the
+      // sitting's own list, not a match.
+      heard: false,
       excerpt: (row.transcript as string | null) ?? null,
       lexical: true,
       similarity: null,

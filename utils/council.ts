@@ -29,15 +29,32 @@ export type QuestionHit = {
   speakingOrder: number;
   startS: number | null;
   endS: number | null;
-  /** The full spoken turn, kept for anyone who wants it. */
+  /**
+   * The recording from the moment this name was called to the moment the next
+   * one was, capped at ten minutes.
+   *
+   * NOT this person's words, and it must never be labelled as them. The
+   * alignment pass has no speaker diarisation, so the window holds the chair's
+   * housekeeping, the question, the borough's answer to it, and sometimes the
+   * beginning of the next turn, with nothing separating them. Anything shown
+   * from here is "the recording around this moment", which is true, rather than
+   * "what this resident said", which the data cannot support.
+   */
   transcript: string | null;
   /** The window around the match — what the card shows. */
   excerpt: string | null;
   /**
-   * True when the row literally contains the words searched for. Only these
-   * are counted — see `CouncilAnswer`.
+   * True when the words are in the subject the clerk recorded against this
+   * name. Only these may be counted — see `CouncilAnswer`.
    */
   lexical: boolean;
+  /**
+   * True when the words were found in `transcript` rather than in the clerk's
+   * subject line. Real about the recording, unattributable to this person, and
+   * therefore never counted. It travels beside `lexical` so a caller can say
+   * which of the two it is holding instead of guessing from the absence.
+   */
+  heard: boolean;
   similarity: number | null;
 };
 
@@ -134,11 +151,16 @@ export type SearchHit = {
 /**
  * What the page states out loud.
  *
- * The split between `counted` and `related` is the honest part of this feature.
- * `counted` holds rows that contain the words asked about, so "three residents"
- * means three residents a reader can check by reading the quotes. `related`
- * holds rows an embedding placed nearby that contain none of those words: worth
- * reading, never worth counting.
+ * The split into tiers is the honest part of this feature, and there are three
+ * of them because there are three different things a match can mean.
+ *
+ * `counted` is the clerk's own line: the borough published these words beside
+ * this name, so "three residents" means three a reader can verify in a PDF.
+ * `heard` is the recording around that person's turn, which establishes that
+ * the words were said in the room and nothing at all about who said them.
+ * `related` is an embedding's neighbourhood, which establishes even less.
+ *
+ * Only the first is ever a number.
  *
  * An earlier attempt tried to count by similarity instead. It could not be made
  * to work — the notes in migration 0007 and 0018 record why, and the short
@@ -149,7 +171,23 @@ export type CouncilAnswer = {
   query: string;
   /** After bilingual widening — shown so a reader knows what was searched. */
   expanded: string;
+  /**
+   * Rows where the clerk wrote these words against this name. Countable,
+   * because a reader can open the proces-verbal and find the same line.
+   */
   counted: QuestionHit[];
+  /**
+   * Rows where the words are in the recording around this person's turn.
+   *
+   * These used to sit in `counted`, and that was the single worst inaccuracy on
+   * the site: the window carries the borough's answer as well as the question,
+   * so "twenty-three residents raised parks" was counting officials replying
+   * about parks. Measured against the clerk's record the same query stood at
+   * five. They are kept, because finding the moment is genuinely useful, and
+   * they are kept out of every number.
+   */
+  heard: QuestionHit[];
+  /** Neither, but near in meaning. Never counted, never quoted as anyone. */
   related: QuestionHit[];
   /** Distinct humans among `counted`. This is the number in the headline. */
   people: number;

@@ -118,6 +118,10 @@ const fr = {
 
     sources: "Ce sur quoi la réponse s'appuie",
     sourceNumber: (n: number) => `Appui ${n}`,
+    // Said under an extract that carries a name but is not that person's words.
+    // The recording runs from the moment the name is called to the next name,
+    // so the borough's reply sits inside it and nothing separates the voices.
+    aroundMoment: "Enregistrement à ce moment de la séance. On ne sait pas qui parle : la réponse de l'administration s'y trouve aussi.",
     moreSources: (n: number) => (n === 1 ? "1 appui de plus" : `${n} appuis de plus`),
     sourceCount: (n: number) => (n === 1 ? "Voir l'appui" : `Voir les ${n} appuis`),
     hideSources: "Replier",
@@ -632,6 +636,7 @@ const en: Dictionary = {
 
     sources: "What this answer rests on",
     sourceNumber: (n: number) => `Source ${n}`,
+    aroundMoment: "The recording at this point in the sitting. Who is speaking is not known: the borough's reply is in here too.",
     moreSources: (n: number) => (n === 1 ? "1 more source" : `${n} more sources`),
     sourceCount: (n: number) => (n === 1 ? "See the source" : `See the ${n} sources`),
     hideSources: "Fold away",

@@ -127,6 +127,20 @@ export type Citation = {
   what: string | null;
   /** The words themselves, verbatim. Null when the row is a record, not speech. */
   quote: string | null;
+  /**
+   * Whether `who` is known to have said `quote`.
+   *
+   * False on every question row, and the page has to say so. The clerk's record
+   * is solid on who spoke and in what order; the recording is solid on what was
+   * said and when. What nothing here establishes is which of them said which
+   * words, because the alignment window runs from one name being called to the
+   * next and carries the borough's answer inside it. Printing that under a
+   * resident's name as a quotation puts an official's words in their mouth.
+   *
+   * A passage from the recording is `true` in the only sense that matters: it
+   * carries no name at all, so it claims nothing about anybody.
+   */
+  attributed: boolean;
   youtubeId: string;
   startS: number | null;
   pvUrl: string | null;
@@ -204,6 +218,9 @@ export function councilTools() {
       who: hit.name,
       what: hit.subject,
       quote: hit.excerpt ? clip(hit.excerpt) : null,
+      // The clerk's subject line beside this name is attributed; the words in
+      // the window beside it are not, and the two arrive in the same row.
+      attributed: false,
       youtubeId: hit.youtubeId,
       startS: hit.startS,
       pvUrl: hit.pvUrl,
@@ -217,6 +234,9 @@ export function councilTools() {
       who: hit.movedBy,
       what: `${hit.number} ${unshout(resolutionTitle(hit.title))}`,
       quote: hit.body ? clip(hit.body) : null,
+      // The minutes name the mover of a resolution and print its text. Both
+      // come from the same published document.
+      attributed: true,
       youtubeId: hit.youtubeId,
       startS: hit.startS,
       pvUrl: hit.pvUrl ?? hit.odjUrl,
@@ -230,6 +250,8 @@ export function councilTools() {
       who: hit.name,
       what: hit.topic,
       quote: null,
+      // No quote to misattribute: this is the clerk's line and nothing else.
+      attributed: true,
       youtubeId: hit.youtubeId,
       startS: hit.startS,
       pvUrl: hit.pvUrl,
@@ -267,6 +289,8 @@ export function councilTools() {
               who: hit.speaker,
               what: null,
               quote: clip(hit.text),
+              // Carries no name, so it claims nothing about anyone.
+              attributed: true,
               youtubeId: hit.youtubeId,
               startS: hit.startS,
               pvUrl: null,
@@ -283,10 +307,13 @@ export function councilTools() {
     chercher_questions_du_public: tool({
       description:
         "Cherche dans les questions posées par le public pendant les périodes de questions, orales " +
-        "et écrites. Renvoie les interventions qui contiennent littéralement les mots cherchés " +
-        "(comptes), le nombre de personnes et de séances distinctes, et des interventions " +
-        "rapprochées par le sens qui ne contiennent aucun de ces mots (rapprochees) et ne doivent " +
-        "donc jamais être comptées.",
+        "et écrites. Trois champs, et ils ne disent pas la même chose. « comptes » : le greffe a " +
+        "inscrit ces mots comme sujet de cette personne, c'est le seul champ qui donne un nombre. " +
+        "« entendus » : les mots figurent dans l'enregistrement autour du tour de parole de cette " +
+        "personne, ce qui prouve que le sujet a été abordé dans la salle mais pas qui l'a abordé, " +
+        "car l'extrait contient aussi la réponse de l'administration. « rapprochees » : un simple " +
+        "voisinage de sens. Ni « entendus » ni « rapprochees » ne se comptent, et aucun des deux " +
+        "ne s'attribue à quelqu'un.",
       inputSchema: z.object({
         sujet: z
           .string()
@@ -311,7 +338,19 @@ export function councilTools() {
             sujet: hit.subject,
             mode: hit.mode,
             moment_s: hit.startS,
-            extrait: hit.excerpt ? clip(hit.excerpt, 700) : null,
+            // Named `enregistrement_autour` and not `extrait`, because the model
+            // writes what the field is called. Given `extrait` beside
+            // `personne` it wrote "X a dit ...", and the window it was quoting
+            // routinely holds the borough's reply rather than X.
+            enregistrement_autour: hit.excerpt ? clip(hit.excerpt, 700) : null,
+          })),
+          entendus: answer.heard.slice(0, MAX_ROWS).map((hit) => ({
+            source: citeQuestion(hit),
+            personne_au_micro_a_ce_moment: hit.name,
+            date: hit.meetingDate,
+            sujet_inscrit: hit.subject,
+            moment_s: hit.startS,
+            enregistrement_autour: hit.excerpt ? clip(hit.excerpt, 700) : null,
           })),
           rapprochees: answer.related.slice(0, MAX_RELATED).map((hit) => ({
             personne: hit.name,
@@ -424,6 +463,8 @@ export function councilTools() {
             date: meeting.summary.meetingDate,
             who: meeting.summary.president,
             what: meeting.summary.title,
+            // Who chaired a sitting is in the minutes, and there is no quote.
+            attributed: true,
             quote: null,
             youtubeId: meeting.summary.youtubeId,
             startS: null,
@@ -517,6 +558,9 @@ export async function searchTheCorpus(question: string): Promise<Citation[]> {
       kind: "passage" as const,
       date: hit.meetingDate,
       who: hit.speaker,
+      // Diarisation has never run, so `speaker` is null on every row and this
+      // passage names nobody. That is why it can be quoted as it stands.
+      attributed: true,
       // No subject line: the clerk never wrote one for a passage, and the
       // sitting's own title is the date again, printed directly under the date.
       what: null,
@@ -536,6 +580,9 @@ export async function searchTheCorpus(question: string): Promise<Citation[]> {
       who: hit.name,
       what: hit.subject,
       quote: hit.excerpt ? clip(hit.excerpt) : null,
+      // Same window, same problem, and this is the path taken when no model
+      // answered at all. The page has to label it even here.
+      attributed: false,
       youtubeId: hit.youtubeId,
       startS: hit.startS,
       pvUrl: hit.pvUrl,
@@ -570,8 +617,9 @@ export const COUNCIL_SYSTEM_PROMPT = `Tu réponds aux résidentes et résidents 
 CE QUE TU PEUX AFFIRMER
 Uniquement ce que les outils t'ont renvoyé. Si les outils ne renvoient rien, dis-le franchement : les archives ne contiennent rien là-dessus. Ne devine pas, ne complète pas avec ce que tu sais du monde.
 N'invente jamais un numéro de résolution, un nom de personne ni une date. Si tu n'as pas la valeur sous les yeux, ne l'écris pas.
-Quand tu rapportes des propos, nomme la personne qui les a tenus et la date de la séance.
-Quand on te demande combien, donne le chiffre exact et dis ce que tu as compté : des personnes, des interventions, des séances ou des résolutions. Le champ « comptes » contient les lignes où les mots cherchés figurent littéralement, et c'est le seul champ que tu as le droit de compter. Le champ « rapprochees » vient d'un rapprochement de sens : mentionne-le si c'est éclairant, sans jamais l'additionner au compte.
+Quand tu rapportes des propos, nomme la personne qui les a tenus et la date de la séance. Une seule exception, et elle est absolue : le champ « enregistrement_autour » n'est attribué à personne. Il couvre le moment où le nom a été appelé jusqu'au nom suivant, donc il contient aussi bien la question que la réponse de l'administration. N'écris jamais « X a dit », « selon X » ni « X a demandé » à partir de ce champ. Écris « il en a été question à ce moment de la séance », ou cite le sujet inscrit au procès-verbal, qui lui est bien de cette personne.
+Quand on te demande combien, donne le chiffre exact et dis ce que tu as compté : des personnes, des interventions, des séances ou des résolutions. Le champ « comptes » est le seul que tu as le droit de compter : c'est le greffe qui a inscrit ces mots comme sujet de cette personne, et un lecteur peut le vérifier dans le procès-verbal. Le champ « entendus » dit que les mots ont été prononcés dans la salle à ce moment, sans dire par qui : mentionne-le comme tel si c'est utile, jamais dans un nombre. Le champ « rapprochees » vient d'un rapprochement de sens : mentionne-le si c'est éclairant, sans jamais l'additionner au compte.
+Si le chiffre de « comptes » est petit et celui de « entendus » plus grand, ne les additionne pas et ne présente pas le second comme une correction du premier. Dis le nombre inscrit au procès-verbal, puis dis que le sujet revient ailleurs dans les enregistrements.
 Une personne qui revient à trois séances est une personne, pas trois. Dis lequel des deux tu donnes.
 
 LES APPUIS

@@ -182,6 +182,29 @@ Ils touchaient aussi l'ancienne recherche, et le repli les rendait visibles.
    C'est aussi le chemin le moins cher, puisqu'il ne charge aucun modèle
    d'embedding.
 
+## Avant d'ouvrir aux résidents
+
+Trois sont hors du dépôt et personne d'autre ne peut les faire :
+
+1. **SMTP.** `signInWithOtp` passe par le SMTP intégré de Supabase, limité à
+   quelques envois par heure et documenté comme impropre à la production. La
+   connexion échoue silencieusement vers dix personnes dans l'heure. Resend ou
+   Postmark, plus SPF, DKIM et DMARC sur le domaine. Le code n'a rien à changer :
+   `auth-modal.tsx` distingue déjà le quota du reste et journalise le reste.
+2. **`PRIVACY_CONTACT` est toujours vide** (`utils/privacy.ts:33`), donc
+   `CONTACT_MISSING` est vrai et la page affiche un blanc. Pour un arrondissement
+   c'est le responsable désigné de la Ville, **Me Emmanuel Tani-Moore** ; son
+   adresse est publiée sur montreal.ca, page « Directive sur la gouvernance des
+   renseignements personnels ». À recopier telle quelle, sans l'inventer.
+3. **Clé Google.** Divulguée en clair. Le quota épuisé ne la rend pas inoffensive :
+   elle est attachée au projet Google, elle se recharge à minuit, et un tiers peut
+   la dépenser tous les jours avant les résidents. `npx vercel env rm` puis
+   `add`, vingt minutes.
+
+Gardé sciemment en l'état : `utils/translate.ts` continue d'appeler
+`clients5.google.com/translate_a/t`. Endpoint non documenté, aucune garantie ;
+décision prise de le remplacer le jour où il cassera.
+
 ## À reprendre, dans l'ordre
 
 1. **Remplacer la clé Google**, voir ci-dessus.
@@ -190,13 +213,53 @@ Ils touchaient aussi l'ancienne recherche, et le repli les rendait visibles.
 3. **Purger le cache après un ingest**, sinon une réponse d'avant la nouvelle
    séance survit un mois : `npx vercel cache invalidate --tag conseils-answers`.
 
-## Problèmes de fond, pas encore réglés
+## Ce que la fenêtre d'alignement faisait aux chiffres
 
-**1. La fenêtre d'alignement contient la réponse du conseil.**
-`scripts/py/align.py:405-413` va de l'appel du nom d'un résident jusqu'au nom
-suivant, plafonnée à 600 s, donc elle contient la question **et** la réponse de
-l'administration, sous le nom du résident. La vraie correction est de couper au
-premier changement de locuteur et d'étiqueter les deux moitiés.
+Mesuré le 20 août 2026, et c'était la pire inexactitude du site.
+
+`council_questions.tsv` était bâti sur le sujet inscrit par le greffe **et** sur
+`transcript`, qui est la fenêtre d'alignement. Or cette fenêtre n'est pas la
+parole de la personne : elle va de l'appel du nom au nom suivant, plafonnée à
+600 s, et contient l'intendance du président, la question, la réponse de
+l'administration, parfois le début du tour suivant. Donc « x personnes ont
+soulevé y » comptait des élus en train de répondre.
+
+| terme | affiché | au procès-verbal | facteur |
+| --- | --- | --- | --- |
+| parc | 23 | 5 | 4,6× |
+| taxes | 7 | 1 | 7,0× |
+| itinérance | 6 | 2 | 3,0× |
+| stationnement | 17 | 6 | 2,8× |
+| logement | 11 | 5 | 2,2× |
+| piste cyclable | 14 | 13 | 1,1× |
+
+**Corrigé** par la migration `0027_counted_means_said.sql`, qui coupe en trois
+au lieu de deux : `comptes` (le greffe l'a écrit à côté de ce nom, seul champ
+qui devient un nombre), `entendus` (les mots sont dans l'enregistrement autour
+du tour de parole, ce qui ne dit pas qui parle), `rapprochees` (voisinage de
+sens). Vérifié après application : parc 5 comptés / 18 entendus.
+
+L'affichage suit : `Citation.attributed` est faux sur toute ligne de question,
+et `council-chat.tsx` retire alors les guillemets et légende l'extrait pour ce
+qu'il est. Le prompt interdit nommément « X a dit » à partir de ce champ.
+
+### Une piste écartée, mesurée
+
+Couper la fenêtre au premier silence ne marche pas. Distribution des écarts
+entre segments pendant les périodes de questions : p50 0,28 s, p90 2,78 s,
+p95 10,9 s. Le seuil semble net, mais à la lecture les tours ne se séparent pas
+là : sur la séance du 9 mars, la question de Joël Coppieters, la réponse du
+maire et deux compléments de fonctionnaires tiennent dans un seul bloc sans
+aucun silence ≥ 8 s. Le balayage 3–15 s fait tomber la présence du sujet inscrit
+de 54 % à 26 %, c'est-à-dire qu'il coupe la question plutôt que la réponse.
+
+**La vraie correction reste la diarisation** — pyannote ou WhisperX sur l'audio
+déjà sur disque (1,5 G, `data/audio/`), puis de vrais tours de parole, puis
+re-ingestion. Une journée de travail et quatre à cinq heures de GPU. Tant
+qu'elle n'est pas faite, aucun texte de cette table ne s'attribue à qui que ce
+soit, et le code le dit maintenant à trois endroits.
+
+## Problèmes de fond, pas encore réglés
 
 **2. 34 % des questions orales ne s'alignent pas.** Ces sources s'affichent avec
 « Ce passage n'est pas repéré dans l'enregistrement ».
