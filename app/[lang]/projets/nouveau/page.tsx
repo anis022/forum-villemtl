@@ -42,7 +42,6 @@ export default async function NewProjectPage({
         ) : (
           <ProjectEditor
             lang={lang}
-            t={t}
             revisionId={null}
             projectId={null}
             initialSlug=""

@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { saveProject, uploadProjectPhoto } from "@/app/actions/projects";
 import type { ProjectContent } from "@/utils/projects";
-import type { getDictionary } from "@/utils/i18n";
+import { getDictionary, type Locale } from "@/utils/i18n";
 import {
   ALERT,
   BTN_PRIMARY,
@@ -37,7 +37,6 @@ import {
  * the largest project in the corpus is four photos and eleven dates.
  */
 
-type Dict = ReturnType<typeof getDictionary>;
 type Localized = { fr: string; en: string };
 
 const STATUSES = ["study", "decided", "underway", "done"] as const;
@@ -56,15 +55,15 @@ export const BLANK: ProjectContent = {
 
 export function ProjectEditor({
   lang,
-  t,
   revisionId,
   projectId,
   initialSlug,
   initialContent,
   sourceNote,
 }: {
-  lang: string;
-  t: Dict;
+  /* The dictionary is derived here, not passed: it holds functions, and a
+     function cannot cross the server/client boundary. See revision-queue.tsx. */
+  lang: Locale;
   /** Continues an existing proposal. Null starts one. */
   revisionId: string | null;
   /** The project being edited. Null creates one. */
@@ -74,7 +73,8 @@ export function ProjectEditor({
   /** What the cron read, shown so a reviewer can check rather than trust. */
   sourceNote: string | null;
 }) {
-  const a = t.projectAdmin;
+  const dict = getDictionary(lang);
+  const a = dict.projectAdmin;
   const router = useRouter();
   const [pending, start] = useTransition();
 
@@ -193,7 +193,7 @@ export function ProjectEditor({
             >
               {STATUSES.map((s) => (
                 <option key={s} value={s}>
-                  {t.projects.status[s]}
+                  {dict.projects.status[s]}
                 </option>
               ))}
             </select>

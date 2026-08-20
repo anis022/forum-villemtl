@@ -62,7 +62,7 @@ export default async function RevisionsPage({
                 {t.projectAdmin.newProject}
               </Link>
             </div>
-            <RevisionQueue lang={lang} t={t} revisions={revisions} />
+            <RevisionQueue lang={lang} revisions={revisions} />
           </div>
         )}
       </main>

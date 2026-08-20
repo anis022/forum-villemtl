@@ -56,7 +56,6 @@ export default async function EditRevisionPage({
         ) : (
           <ProjectEditor
             lang={lang}
-            t={t}
             revisionId={revision.id}
             projectId={revision.projectId}
             initialSlug={revision.slug}

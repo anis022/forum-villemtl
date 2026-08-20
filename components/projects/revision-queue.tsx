@@ -5,7 +5,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { approveProject, rejectProject } from "@/app/actions/projects";
 import type { Revision } from "@/utils/supabase/projects";
-import type { getDictionary } from "@/utils/i18n";
+import { getDictionary, type Locale } from "@/utils/i18n";
 import { ALERT, BTN_PRIMARY, BTN_SECONDARY, BTN_GHOST, CARD, MUTED } from "@/components/ui/styles";
 
 /**
@@ -21,18 +21,23 @@ import { ALERT, BTN_PRIMARY, BTN_SECONDARY, BTN_GHOST, CARD, MUTED } from "@/com
  * badge and the outcome cannot disagree.
  */
 
-type Dict = ReturnType<typeof getDictionary>;
-
+/*
+ * The dictionary is built here rather than handed down as a prop.
+ *
+ * It holds functions — `sourceNumber(n)`, `district(name)` — and a function
+ * cannot cross the server/client boundary, so passing the whole `t` object into
+ * a client component throws at render and the page shows "a server error
+ * occurred". Every other client component in this codebase takes `lang` and
+ * calls `getDictionary` itself; this now does too.
+ */
 export function RevisionQueue({
   lang,
-  t,
   revisions,
 }: {
-  lang: string;
-  t: Dict;
+  lang: Locale;
   revisions: Revision[];
 }) {
-  const a = t.projectAdmin;
+  const a = getDictionary(lang).projectAdmin;
   const router = useRouter();
   const [pending, start] = useTransition();
   const [error, setError] = useState<string | null>(null);
