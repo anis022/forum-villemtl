@@ -9,6 +9,11 @@
     "esModuleInterop": true,
     "module": "esnext",
     "moduleResolution": "bundler",
+    // utils/ingest/project-candidates.ts is imported both by the Next bundler
+    // and by `node --experimental-strip-types` in scripts/, and only one of the
+    // two resolves an extensionless relative path. Legal here because noEmit is
+    // set, and scripts/tsconfig.json has needed the same flag since it existed.
+    "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "react-jsx",

@@ -1,7 +1,8 @@
 import { cookies } from "next/headers";
 import { createClient } from "./server";
 import { listEvents } from "./events";
-import { ALL_PROJECTS, type Project } from "@/utils/projects";
+import { listProjects } from "./projects";
+import type { Project } from "@/utils/projects";
 import type { BoroughEvent } from "@/utils/events";
 
 export type TrendingItem =
@@ -17,10 +18,14 @@ type TrendRow = {
 };
 
 /** Upcoming events and one project, used honestly as discovery until traffic exists. */
-function discovery(events: BoroughEvent[], limit: number): TrendingItem[] {
+function discovery(
+  events: BoroughEvent[],
+  projects: Project[],
+  limit: number,
+): TrendingItem[] {
   const items: TrendingItem[] = [];
-  if (ALL_PROJECTS[0]) {
-    items.push({ kind: "project", id: ALL_PROJECTS[0].slug, views: 0, project: ALL_PROJECTS[0] });
+  if (projects[0]) {
+    items.push({ kind: "project", id: projects[0].slug, views: 0, project: projects[0] });
   }
   for (const event of events) {
     items.push({ kind: "event", id: event.id, views: 0, event });
@@ -29,20 +34,24 @@ function discovery(events: BoroughEvent[], limit: number): TrendingItem[] {
   return items.slice(0, limit);
 }
 
-/** Hydrate the database rank with the repository's projects and current event feed. */
+/** Hydrate the database rank with the published projects and current event feed. */
 export async function listTrendingContent(limit = 4): Promise<TrendingResult> {
-  const [events, cookieStore] = await Promise.all([listEvents(), cookies()]);
+  const [events, projects, cookieStore] = await Promise.all([
+    listEvents(),
+    listProjects(),
+    cookies(),
+  ]);
   const supabase = createClient(cookieStore);
   const { data, error } = await supabase.rpc("trending_content", {
     p_limit: Math.min(Math.max(limit * 3, limit), 20),
   });
 
   if (error || !data || data.length === 0) {
-    return { items: discovery(events, limit), hasTraffic: false };
+    return { items: discovery(events, projects, limit), hasTraffic: false };
   }
 
   const eventById = new Map(events.map((event) => [event.id, event]));
-  const projectBySlug = new Map(ALL_PROJECTS.map((project) => [project.slug, project]));
+  const projectBySlug = new Map(projects.map((project) => [project.slug, project]));
   const items: TrendingItem[] = [];
 
   for (const row of data as TrendRow[]) {
@@ -58,5 +67,5 @@ export async function listTrendingContent(limit = 4): Promise<TrendingResult> {
 
   return items.length > 0
     ? { items, hasTraffic: true }
-    : { items: discovery(events, limit), hasTraffic: false };
+    : { items: discovery(events, projects, limit), hasTraffic: false };
 }

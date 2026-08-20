@@ -6,17 +6,21 @@ import { IssuePhoto } from "@/components/issues/issue-photo";
 import { ProjectTimeline } from "@/components/projects/project-timeline";
 import { ContentViewTracker } from "@/components/analytics/content-view-tracker";
 import { getSessionUser } from "@/utils/supabase/auth";
-import { ALL_PROJECTS, projectBySlug, say } from "@/utils/projects";
+import { say } from "@/utils/projects";
+import { projectBySlug } from "@/utils/supabase/projects";
 import { getDictionary, isLocale } from "@/utils/i18n";
 import { CARD, MUTED, PAGE_MAIN, PAGE_SHELL, READABLE } from "@/components/ui/styles";
 
-/** The list is a handful of hand-written entries; prerender all of them. */
-export function generateStaticParams() {
-  return ALL_PROJECTS.flatMap((p) => [
-    { lang: "fr", slug: p.slug },
-    { lang: "en", slug: p.slug },
-  ]);
-}
+/*
+ * No `generateStaticParams` any more.
+ *
+ * It prerendered every project at build time, which was right while the list
+ * was a constant in the repository: the set could not change between deploys.
+ * It can now — the office publishes one through the waitlist and expects to see
+ * it — and a build-time list would answer 404 for anything approved since the
+ * last deploy. Rendered per request instead, which is also what the RLS on
+ * `public.projects` needs to be able to tell a resident from an official.
+ */
 
 export default async function ProjectPage({
   params,
@@ -26,7 +30,7 @@ export default async function ProjectPage({
   const { lang, slug } = await params;
   if (!isLocale(lang)) notFound();
 
-  const project = projectBySlug(slug);
+  const project = await projectBySlug(slug);
   if (!project) notFound();
 
   const t = getDictionary(lang);

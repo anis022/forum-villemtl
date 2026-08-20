@@ -4,7 +4,8 @@ import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { getSessionUser } from "@/utils/supabase/auth";
-import { ALL_PROJECTS, isPast, say } from "@/utils/projects";
+import { isPast, say } from "@/utils/projects";
+import { listProjects } from "@/utils/supabase/projects";
 import { getDictionary, isLocale } from "@/utils/i18n";
 import {
   CARD,
@@ -15,6 +16,7 @@ import {
   PAGE_MAIN,
   PAGE_SHELL,
   PAGE_TITLE,
+  LINK,
 } from "@/components/ui/styles";
 
 export default async function ProjectsPage({ params }: { params: Promise<{ lang: string }> }) {
@@ -23,6 +25,7 @@ export default async function ProjectsPage({ params }: { params: Promise<{ lang:
 
   const t = getDictionary(lang);
   const user = await getSessionUser();
+  const projects = await listProjects();
 
   return (
     <div className={PAGE_SHELL}>
@@ -40,7 +43,18 @@ export default async function ProjectsPage({ params }: { params: Promise<{ lang:
       </div>
 
       <main className={PAGE_MAIN}>
-        {ALL_PROJECTS.length === 0 ? (
+        {/* The only way into the waitlist, and it appears for nobody else. A
+            resident who somehow reaches that URL is told it is not for them,
+            but the link itself would just be a dead end in their way. */}
+        {user?.role === "official" && (
+          <p className="mb-5">
+            <Link className={LINK} href={`/${lang}/projets/revisions`}>
+              {t.projectAdmin.queueTitle}
+            </Link>
+          </p>
+        )}
+
+        {projects.length === 0 ? (
           <div className={`${CARD} px-6 py-10 text-center md:px-10`}>
             <p className="text-[18px] font-bold leading-[26px]">{t.projects.emptyTitle}</p>
             <p className={`mx-auto mt-2 max-w-[52ch] ${MUTED}`}>{t.projects.emptyBody}</p>
@@ -50,7 +64,7 @@ export default async function ProjectsPage({ params }: { params: Promise<{ lang:
           // photograph, and three across makes each one too small to read as
           // one — which is the whole reason the photo is there.
           <ul className="space-y-5">
-            {ALL_PROJECTS.map((project) => {
+            {projects.map((project) => {
               const lead = project.photos[0];
               const upcoming = project.milestones.filter((milestone) => !isPast(milestone.on)).length;
               return (

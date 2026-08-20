@@ -2,7 +2,7 @@ import { createHmac, randomUUID } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { projectBySlug } from "@/utils/projects";
+import { projectBySlug } from "@/utils/supabase/projects";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -45,10 +45,10 @@ export async function POST(request: NextRequest) {
 
   const supabase = createClient(url, key, { auth: { persistSession: false } });
 
-  // Projects live in the repository while events live in Supabase. Validate
-  // both before recording, otherwise arbitrary strings could pollute the rank.
+  // Both live in Supabase now. Validate either before recording, otherwise
+  // arbitrary strings could pollute the rank.
   if (parsed.contentType === "project") {
-    if (!projectBySlug(parsed.contentId)) {
+    if (!(await projectBySlug(parsed.contentId))) {
       return NextResponse.json({ error: "unknown content" }, { status: 404 });
     }
   } else {

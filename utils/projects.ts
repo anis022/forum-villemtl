@@ -1,14 +1,14 @@
 /**
- * The borough's projects, as this site tracks them.
+ * The shape of a project, and the one that was here before there was a table.
  *
- * Held as data in the repository rather than fetched, for the same reason as
- * `utils/officials.ts`: montreal.ca publishes project pages that are rebuilt,
- * renamed and retired on the city's own schedule, and a scraper that silently
- * returns nothing is worse than a file somebody edits after reading the
- * minutes. Everything here is written down somewhere public, and `sources`
- * says where.
+ * The data moved to `public.projects` in migration 0028 so that the borough
+ * office can maintain its own page without a deploy. What stays here is the
+ * type, and the type still matters: `content` in that table is JSONB, and this
+ * is the only written statement of what is supposed to be inside it. The SQL
+ * function `project_content_complete` checks the same rules from the other
+ * side, and the two must agree.
  *
- * Three things are required of every project, and the types enforce all three:
+ * Three things are required of every project:
  *
  *   description   what it is, in prose, in both languages
  *   photos        at least one, of the actual place
@@ -16,14 +16,17 @@
  *
  * That is a deliberately high bar. A project with a paragraph and no picture is
  * a press release; a project with pictures and no dates is an advertisement.
- * The bar is why this file currently holds one project instead of six: the
- * borough decided several things this year (the Loyola chalet, Mackenzie-King,
- * the Trenholme sports centre) that are real and cited in the council record,
- * but each is a single dated contract with no photograph of the place, and
- * padding this page with those would break the rule it exists to keep.
+ * The bar is why this file held one project instead of six: the borough decided
+ * several things this year (the Loyola chalet, Mackenzie-King, the Trenholme
+ * sports centre) that are real and cited in the council record, but each is a
+ * single dated contract with no photograph of the place.
  *
- * Photos are copied into `public/projets/` rather than hotlinked, and credited
- * in `public/projets/CREDITS.md`.
+ * Those are now exactly what the cron proposes and what the waitlist holds
+ * until somebody finishes them, which is a better answer than leaving them out.
+ *
+ * Photos seeded from here live in `public/projets/` and are credited in
+ * `public/projets/CREDITS.md`. Photos added through the site go to the
+ * `project-photos` storage bucket instead.
  */
 
 import type { Locale } from "@/utils/i18n";
@@ -88,7 +91,14 @@ export type Project = {
   sources: { label: Localized; url: string }[];
 };
 
-const PROJECTS: Project[] = [
+/**
+ * What the repository held before the table existed.
+ *
+ * Read once, by `scripts/db/seed-projects.ts`, to plant the row. Not read by
+ * any page: /projets reads the table. Kept rather than deleted so the seed can
+ * be re-run against a fresh database, and so the row's provenance is legible.
+ */
+export const SEEDED_PROJECTS: Project[] = [
   {
     slug: "theatre-empress",
     title: { fr: "Théâtre Empress", en: "Empress Theatre" },
@@ -246,11 +256,15 @@ const PROJECTS: Project[] = [
   },
 ];
 
-/** Newest activity first is wrong here: a project list is read as a directory. */
-export const ALL_PROJECTS: Project[] = PROJECTS;
-
-export const projectBySlug = (slug: string): Project | undefined =>
-  PROJECTS.find((p) => p.slug === slug);
+/**
+ * Everything about a project except which URL it lives at.
+ *
+ * This is what `public.projects.content` holds, and what a revision proposes.
+ * The slug is a column of its own on both tables, because a reviewer has to see
+ * the URL a proposal is claiming before it claims it, and because a new project
+ * has no row to read one from yet.
+ */
+export type ProjectContent = Omit<Project, "slug">;
 
 /**
  * How a milestone reads on the page: something that happened, or something
