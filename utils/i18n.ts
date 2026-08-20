@@ -472,7 +472,7 @@ const fr = {
     // more, so the sentence says where the name came from instead of who typed
     // it, which is the fact a member would otherwise have to guess at.
     collectionNotice:
-      "Réservé aux membres d'Ensemble Montréal dans Côte-des-Neiges–Notre-Dame-de-Grâce. Votre compte se crée à votre première connexion, sous le prénom et le nom de votre adhésion, qui seront publics à côté de ce que vous publierez. Votre courriel sert uniquement à vous connecter et n'est jamais affiché.",
+      "Réservé aux membres d'Ensemble Montréal dans CDN-NDG. Votre compte se crée à la première connexion, au nom de votre adhésion, qui sera public. Votre courriel n'est jamais affiché.",
     working: "Un instant…",
     codeTitle: "Code de vérification",
     codeSentTo: (email: string) => `Code envoyé à ${email}.`,
@@ -965,7 +965,7 @@ const en: Dictionary = {
     email: "Email",
     submitSignIn: "Continue",
     collectionNotice:
-      "For Ensemble Montréal members in Côte-des-Neiges–Notre-Dame-de-Grâce. Your account is created the first time you sign in, under the first and last name on your membership, which will be public beside anything you post. Your email only signs you in and is never displayed.",
+      "For Ensemble Montréal members in CDN-NDG. Your account is created on first sign-in, under the name on your membership, which will be public. Your email is never shown.",
     working: "One moment…",
     codeTitle: "Verification code",
     codeSentTo: (email: string) => `Code sent to ${email}.`,
