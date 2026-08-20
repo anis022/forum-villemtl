@@ -22,10 +22,10 @@ const SOCIALS = [
 /**
  * This was montreal.ca's footer: #212529 ground, four columns each capped by a
  * hairline rule, "Haut de page" hanging off the top right. It is theirs now,
- * and the first thing that changes is that it is not dark — ensemblemtl.org
+ * and the first thing that changes is that it is not dark: ensemblemtl.org
  * closes on the same warm cream the masthead opens with, wordmark at full
  * colour on the left, a heading and red arrow links on the right, then a thin
- * legal strip carrying the small print and the social marks.
+ * strip carrying the social marks.
  *
  * Every link is still a 40px row. Stacked one per line on a phone these are the
  * smallest targets on the site, and the rows carry the spacing the lists used to
@@ -51,7 +51,7 @@ export function SiteFooter({ lang }: { lang: Locale }) {
         { href: `/${lang}/sujets/nouveau`, label: t.home.report },
         { href: `/${lang}?tri=recents`, label: t.home.sortNew },
         // The policy has to be reachable from every page, which on this site
-        // means the footer — there is nowhere else that appears on all of them.
+        // means the footer, because nowhere else appears on all of them.
         { href: `/${lang}/confidentialite`, label: t.privacy.title },
       ],
     },
@@ -99,7 +99,7 @@ export function SiteFooter({ lang }: { lang: Locale }) {
             {/* montreal.ca used to sit here. A link to the city's own homepage
                 from a borough forum is the one link every visitor could already
                 find; what nobody can find unless it is said is that this thing
-                is open — so the column points at the source instead. */}
+                is open, so the column points at the source instead. */}
             <div>
               <p className={heading}>{t.footer.sourceCode}</p>
               <ul className="mt-2 space-y-0.5">
@@ -121,12 +121,11 @@ export function SiteFooter({ lang }: { lang: Locale }) {
         </div>
       </div>
 
-      {/* Their bottom strip: small print left, social marks right. */}
+      {/* Their bottom strip: the social marks, right. */}
       <div className="border-t border-[#e9e0d6]">
         <div
-          className={`${CONTAINER} flex flex-col-reverse items-start gap-2 py-3 sm:flex-row sm:items-center sm:justify-between`}
+          className={`${CONTAINER} flex flex-col-reverse items-start gap-2 py-3 sm:flex-row sm:items-center sm:justify-end`}
         >
-          <p className="max-w-[62ch] text-[13px] leading-[19px] text-[#6e6a72]">{t.footer.legal}</p>
           <div className="flex items-center gap-1">
             <ul className="flex items-center">
               {SOCIALS.map(({ label, href, Icon }) => (

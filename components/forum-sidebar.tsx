@@ -97,7 +97,7 @@ export function ForumSidebar({
                 ? item.event.title
                 : say(item.project.title, lang);
               const meta = item.kind === "event"
-                ? `${labels.event} — ${formatDateRange(item.event.startsOn, item.event.endsOn, locale)}`
+                ? `${labels.event}, ${formatDateRange(item.event.startsOn, item.event.endsOn, locale)}`
                 : labels.project;
               const content = (
                 <>

@@ -17,8 +17,8 @@
  * That is a deliberately high bar. A project with a paragraph and no picture is
  * a press release; a project with pictures and no dates is an advertisement.
  * The bar is why this file currently holds one project instead of six: the
- * borough decided several things this year — the Loyola chalet, Mackenzie-King,
- * the Trenholme sports centre — that are real and cited in the council record,
+ * borough decided several things this year (the Loyola chalet, Mackenzie-King,
+ * the Trenholme sports centre) that are real and cited in the council record,
  * but each is a single dated contract with no photograph of the place, and
  * padding this page with those would break the rule it exists to keep.
  *
@@ -42,7 +42,7 @@ export type ProjectStatus = "study" | "decided" | "underway" | "done";
 export type Milestone = {
   /** ISO date when the day is known, `YYYY` or `YYYY-MM` when it is not. */
   on: string;
-  /** Rendered when the date is deliberately vague — "été 2026", "2012–2015". */
+  /** Rendered when the date is deliberately vague: "été 2026", "2012–2015". */
   onLabel?: Localized;
   title: Localized;
   body?: Localized;
@@ -58,7 +58,7 @@ export type Milestone = {
 export type ProjectPhoto = {
   /** A path under `public/`. */
   src: string;
-  /** What it shows, and when — an archive photo has to say that it is one. */
+  /** What it shows, and when. An archive photo has to say that it is one. */
   caption: Localized;
   /** Author and licence. CC BY and CC BY-SA require this to be shown. */
   credit: string;
@@ -81,7 +81,7 @@ export type Project = {
   /**
    * What to look for in the council record, so the page can show the sittings
    * where residents actually raised it. Matched literally against the subject
-   * lines the clerk recorded — see `councilMentions`.
+   * lines the clerk recorded. See `councilMentions`.
    */
   councilTerm?: string;
   /** Further reading, shown at the foot of the page. */
@@ -100,8 +100,8 @@ const PROJECTS: Project[] = [
     address: "5560, rue Sherbrooke Ouest",
     description: [
       {
-        fr: "Le Théâtre Empress a ouvert en 1927 au 5560, rue Sherbrooke Ouest. Il est l'œuvre de l'architecte Joseph-Alcide Chaussé, avec des intérieurs d'Emmanuel Briffa, et c'est la seule salle au Canada construite dans le style néo-égyptien — les figures et le disque ailé de la façade datent de l'engouement qui a suivi la découverte du tombeau de Toutânkhamon.",
-        en: "The Empress Theatre opened in 1927 at 5560 Sherbrooke Street West. It was designed by architect Joseph-Alcide Chaussé with interiors by Emmanuel Briffa, and it is the only Egyptian Revival theatre ever built in Canada — the figures and winged disc on the façade come from the craze that followed the opening of Tutankhamun's tomb.",
+        fr: "Le Théâtre Empress a ouvert en 1927 au 5560, rue Sherbrooke Ouest. Il est l'œuvre de l'architecte Joseph-Alcide Chaussé, avec des intérieurs d'Emmanuel Briffa, et c'est la seule salle au Canada construite dans le style néo-égyptien. Les figures et le disque ailé de la façade datent de l'engouement qui a suivi la découverte du tombeau de Toutânkhamon.",
+        en: "The Empress Theatre opened in 1927 at 5560 Sherbrooke Street West. It was designed by architect Joseph-Alcide Chaussé with interiors by Emmanuel Briffa, and it is the only Egyptian Revival theatre ever built in Canada. The figures and winged disc on the façade come from the craze that followed the opening of Tutankhamun's tomb.",
       },
       {
         fr: "La salle a fonctionné 65 ans, en dernier lieu sous le nom de Cinéma V, jusqu'à ce qu'un incendie la ferme en 1992. La Ville de Montréal en est devenue propriétaire en 1999 et l'arrondissement en a pris possession en 2011. Depuis, trois projets de relance se sont succédé sans aboutir, et le bâtiment s'est détérioré au point d'être jugé structurellement non sécuritaire.",
@@ -127,7 +127,7 @@ const PROJECTS: Project[] = [
           fr: "La file d'attente devant l'Empress, photographiée par Conrad Poirier. Fonds de Bibliothèque et Archives nationales du Québec.",
           en: "The queue outside the Empress, photographed by Conrad Poirier. From the Bibliothèque et Archives nationales du Québec collection.",
         },
-        credit: "Conrad Poirier, BAnQ — domaine public",
+        credit: "Conrad Poirier, BAnQ (domaine public)",
       },
       {
         src: "/projets/empress-cinema-v.jpg",
@@ -257,7 +257,7 @@ export const projectBySlug = (slug: string): Project | undefined =>
  * scheduled. Derived from the date rather than stored, so the page does not
  * quietly keep calling a passed deadline "à venir" months afterwards.
  *
- * A bare `YYYY` or `YYYY-MM` is padded to the *end* of its period — a milestone
+ * A bare `YYYY` or `YYYY-MM` is padded to the *end* of its period: a milestone
  * dated "2026" is not in the past until 2026 is.
  */
 export const isPast = (on: string, now = new Date()): boolean => {

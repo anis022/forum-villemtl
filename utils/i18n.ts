@@ -1,5 +1,5 @@
 // UI strings only. User-written content (issue titles, bodies, comments) is
-// never translated — it is shown exactly as the author wrote it.
+// never translated. It is shown exactly as the author wrote it.
 
 export const LOCALES = ["fr", "en"] as const;
 export type Locale = (typeof LOCALES)[number];
@@ -45,6 +45,8 @@ const fr = {
     account: "Mon profil",
     signOut: "Se déconnecter",
     otherLanguage: "English",
+    beta: "Version bêta",
+    betaShort: "Bêta",
   },
   nav: {
     sections: "Sections",
@@ -402,7 +404,7 @@ const fr = {
     // « Annuler » sort d'une confirmation de retrait, la seule qui reste.
     cancelEdit: "Annuler",
     collectionNotice:
-      "Votre nom, le texte, la photo et l'épingle seront publics et resteront en ligne tant que vous ne les retirerez pas. Si vous publiez depuis chez vous, l'épingle indique où vous habitez.",
+      "Votre nom, le texte, la photo et l'épingle seront publics et resteront en ligne tant que vous ne les retirerez pas.",
     editedByAuthor: (date: string) => `modifié le ${date}`,
     editedByOfficial: (date: string) => `modifié par le cabinet le ${date}`,
     withdraw: "Retirer",
@@ -464,7 +466,7 @@ const fr = {
     submitSignIn: "Continuer",
     // Replaces the sign-up form's notice. There is no form to consent at any
     // more, so the sentence says where the name came from instead of who typed
-    // it — that is the fact a member would otherwise have to guess at.
+    // it, which is the fact a member would otherwise have to guess at.
     collectionNotice:
       "Réservé aux membres d'Ensemble Montréal dans Côte-des-Neiges–Notre-Dame-de-Grâce. Votre compte se crée à votre première connexion, sous le prénom et le nom de votre adhésion, qui seront publics à côté de ce que vous publierez. Votre courriel sert uniquement à vous connecter et n'est jamais affiché.",
     working: "Un instant…",
@@ -485,9 +487,6 @@ const fr = {
     newWindow: "(nouvelle fenêtre)",
     tagline:
       "Un espace pour parler de Côte-des-Neiges–Notre-Dame-de-Grâce. Soulevez un enjeu, ou appuyez celui d'une voisine ou d'un voisin.",
-    // Said plainly and on every page, because the site used to wear the city's
-    // masthead and someone who saw it then could reasonably still think so.
-    legal: "Forum CDN-NDG, projet à code ouvert. Ce site n'est pas un service de la Ville de Montréal.",
   },
   translate: {
     action: "Traduire",
@@ -547,7 +546,7 @@ const fr = {
       "Cet endroit est hors de Côte-des-Neiges–Notre-Dame-de-Grâce. Choisissez un point dans l'arrondissement.",
     boroughUnknown: "Cet arrondissement n'est pas encore couvert par le forum.",
     boroughFailed: "Votre arrondissement n'a pas pu être enregistré. Réessayez.",
-    // Ce qui est refusé, et pourquoi — sans nommer les mots en cause, qui
+    // Ce qui est refusé, et pourquoi, sans nommer les mots en cause, qui
     // seraient autant d'indications pour recommencer autrement.
     //
     // La deuxième phrase n'est pas de la politesse : le refus est décidé par un
@@ -568,6 +567,8 @@ const en: Dictionary = {
     account: "My profile",
     signOut: "Sign out",
     otherLanguage: "Français",
+    beta: "Beta version",
+    betaShort: "Beta",
   },
   nav: {
     sections: "Sections",
@@ -899,7 +900,7 @@ const en: Dictionary = {
     backToIssue: "← Back to the topic",
     cancelEdit: "Cancel",
     collectionNotice:
-      "Your name, the text, the photo and the pin will be public and stay online until you withdraw them. If you post from home, the pin says where you live.",
+      "Your name, the text, the photo and the pin will be public and stay online until you withdraw them.",
     editedByAuthor: (date: string) => `edited on ${date}`,
     editedByOfficial: (date: string) => `edited by an official on ${date}`,
     withdraw: "Withdraw",
@@ -978,7 +979,6 @@ const en: Dictionary = {
     newWindow: "(opens in a new window)",
     tagline:
       "A place to talk about Côte-des-Neiges–Notre-Dame-de-Grâce. Raise an issue, or back a neighbour's.",
-    legal: "Forum CDN-NDG, an open-source project. This site is not a Ville de Montréal service.",
   },
   translate: {
     action: "Translate",

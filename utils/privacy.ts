@@ -1,7 +1,7 @@
 // The privacy policy, as content rather than as markup.
 //
 // The forum is run by the borough office of Côte-des-Neiges–Notre-Dame-de-Grâce
-// — councillors, the borough mayor and their political staff — which makes it a
+// (councillors, the borough mayor and their political staff), which makes it a
 // *public body*. The law that applies is therefore the Loi sur l'accès aux
 // documents des organismes publics et sur la protection des renseignements
 // personnels (A-2.1) as amended by Loi 25, not the private-sector act.
@@ -11,8 +11,8 @@
 // the internal assessment, not on a page a resident reads to find out whether
 // their address is public.
 //
-// It lives here rather than in `utils/i18n.ts` because it is not UI chrome —
-// it is a document, it will be revised by people who are not editing components,
+// It lives here rather than in `utils/i18n.ts` because it is not UI chrome.
+// It is a document, it will be revised by people who are not editing components,
 // and dropping two thousand words into the dictionary would bury every label in
 // it.
 
@@ -23,7 +23,7 @@ import type { Locale } from "@/utils/i18n";
  *
  * MUST BE SET before this page is announced anywhere. A public body's requests
  * go to its responsable de l'accès aux documents et de la protection des
- * renseignements personnels — for a borough that is the Ville de Montréal's
+ * renseignements personnels. For a borough that is the Ville de Montréal's
  * designated person, not an address invented here.
  *
  * It renders as a visible blank until it is filled, which is the point: a
@@ -68,7 +68,6 @@ const frPolicy: Policy = {
             "Votre prénom, votre nom et votre photo de profil apparaissent à côté de chacune de vos publications.",
             "Le texte de vos signalements et de vos réponses est public.",
             "La photo jointe à un signalement est publique. Regardez-la avant de l'envoyer : une plaque d'immatriculation, un visage ou un numéro de porte s'y trouvent parfois sans qu'on l'ait voulu.",
-            "L'épingle que vous posez sur la carte est publique et précise. Si vous signalez quelque chose depuis chez vous, cette épingle indique où vous habitez.",
             "Les sujets que vous appuyez sont publics : votre visage apparaît parmi les personnes qui les soutiennent.",
           ],
         },
@@ -214,7 +213,7 @@ const frPolicy: Policy = {
           kind: "list",
           items: [
             "Savoir ce que nous détenons sur vous, et en obtenir copie. Le bouton « Télécharger mes données » sur votre profil vous en donne un fichier immédiatement.",
-            "Faire corriger un renseignement inexact — y compris une erreur dans la transcription d'une séance du conseil, qui est produite par machine et peut se tromper sur ce que vous avez dit.",
+            "Faire corriger un renseignement inexact, y compris une erreur dans la transcription d'une séance du conseil, qui est produite par machine et peut se tromper sur ce que vous avez dit.",
             "Retirer un signalement ou une réponse, à tout moment, vous-même.",
             "Fermer votre compte. Votre courriel, votre nom et votre photo sont alors supprimés ; vos messages restent en ligne, détachés de votre identité, pour ne pas trouer les discussions auxquelles d'autres ont participé. Retirez d'abord ceux que vous ne voulez pas laisser.",
             "Vous plaindre à la Commission d'accès à l'information du Québec si notre réponse ne vous satisfait pas.",
@@ -244,7 +243,6 @@ const enPolicy: Policy = {
             "Your first name, last name and profile photo appear beside everything you post.",
             "The text of your reports and replies is public.",
             "A photo attached to a report is public. Look at it before sending: a licence plate, a face or a door number sometimes ends up in frame.",
-            "The pin you place on the map is public and precise. If you report something from home, that pin says where you live.",
             "The topics you back are public: your face appears among the people supporting them.",
           ],
         },
@@ -379,7 +377,7 @@ const enPolicy: Policy = {
           kind: "list",
           items: [
             "To know what we hold about you and get a copy. The “Download my data” button on your profile gives you a file straight away.",
-            "To have inaccurate information corrected — including an error in the transcript of a council meeting, which is produced by machine and can get what you said wrong.",
+            "To have inaccurate information corrected, including an error in the transcript of a council meeting, which is produced by machine and can get what you said wrong.",
             "To withdraw a report or a reply, at any time, yourself.",
             "To close your account. Your email, name and photo are deleted; your messages stay online, detached from your identity, so as not to tear holes in conversations other people took part in. Withdraw the ones you do not want to leave behind first.",
             "To complain to the Commission d'accès à l'information du Québec if our answer does not satisfy you.",
