@@ -20,7 +20,8 @@
     "members": "node --env-file-if-exists=.env --env-file-if-exists=.env.local --experimental-strip-types scripts/db/members.ts",
     "sync:events": "node --env-file-if-exists=.env --env-file-if-exists=.env.local --experimental-strip-types scripts/ingest/events.ts",
     "outline": "node --experimental-strip-types scripts/ingest/borough-outline.ts",
-    "moderation:check": "node --env-file-if-exists=.env --env-file-if-exists=.env.local --experimental-strip-types scripts/db/moderation-check.ts"
+    "moderation:check": "node --env-file-if-exists=.env --env-file-if-exists=.env.local --experimental-strip-types scripts/db/moderation-check.ts",
+    "polls:check": "node --env-file-if-exists=.env --env-file-if-exists=.env.local --experimental-strip-types scripts/db/polls-check.ts"
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.42",

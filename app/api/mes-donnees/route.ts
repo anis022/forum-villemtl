@@ -28,7 +28,7 @@ export async function GET() {
     return Response.json({ error: "not_signed_in" }, { status: 401 });
   }
 
-  const [profile, issues, comments, votes, flags] = await Promise.all([
+  const [profile, issues, comments, votes, polls, pollVotes, mapResponses, flags] = await Promise.all([
     supabase
       .from("profiles")
       .select("first_name, last_name, role, avatar_url, created_at")
@@ -48,6 +48,21 @@ export async function GET() {
       .from("votes")
       .select("issue_id")
       .eq("user_id", user.id),
+    supabase
+      .from("polls")
+      .select("id, question, description, total_vote_count, created_at")
+      .eq("author_id", user.id)
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("poll_votes")
+      .select("poll_id, option_id, created_at, updated_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("poll_map_responses")
+      .select("id, poll_id, lat, lon, description, image_path, created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: true }),
     // Returns nothing for a resident — the SELECT policy on this table is
     // officials-only. Asked for anyway rather than skipped: an official
     // exporting their own account should get their own dismissals, and leaving
@@ -73,6 +88,9 @@ export async function GET() {
     signalements: issues.data ?? [],
     reponses: comments.data ?? [],
     appuis: (votes.data ?? []).map((v) => v.issue_id),
+    sondages_crees: polls.data ?? [],
+    votes_aux_sondages: pollVotes.data ?? [],
+    points_ajoutes_aux_sondages: mapResponses.data ?? [],
     moderation_traitee_par_vous: flags.data ?? [],
   };
 

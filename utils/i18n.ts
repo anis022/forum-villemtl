@@ -36,6 +36,23 @@ export type ErrorCode =
   | "locationOutside"
   | "boroughUnknown"
   | "boroughFailed"
+  | "pollQuestionTooShort"
+  | "pollQuestionTooLong"
+  | "pollDescriptionTooLong"
+  | "pollOptionsCount"
+  | "pollOptionEmpty"
+  | "pollOptionTooLong"
+  | "pollOptionDuplicate"
+  | "pollPublishFailed"
+  | "pollChoiceRequired"
+  | "pollVoteFailed"
+  | "pollKindInvalid"
+  | "pollPinLimitInvalid"
+  | "pollPinRequired"
+  | "pollSettingMismatch"
+  | "pollPinDescriptionTooLong"
+  | "pollPinLimitReached"
+  | "pollPinFailed"
   | "messageRefused";
 
 const fr = {
@@ -548,6 +565,98 @@ const fr = {
     deleteReplyYes: "Supprimer définitivement",
     deleting: "Suppression…",
   },
+  poll: {
+    label: "Sondage citoyen",
+    ctaTitle: "Vous souhaitez plutôt consulter les citoyen·ne·s?",
+    ctaBody: "Créez un sondage et recueillez l’avis des membres sur une question précise.",
+    ctaButton: "Créer un sondage",
+    backToForum: "← Retour au forum",
+    backToPolls: "← Retour aux sondages",
+    listTitle: "Sondages citoyens",
+    listSubtitle:
+      "Répondez aux questions publiées par l’équipe d’Ensemble Montréal et consultez les résultats en temps réel.",
+    latestTitle: "Sondages citoyens",
+    seeAll: "Voir tous les sondages",
+    emptyTitle: "Aucun sondage pour le moment",
+    emptyBody: "Les nouveaux sondages publiés par l’équipe apparaîtront ici.",
+    newTitle: "Créer un sondage citoyen",
+    newSubtitle:
+      "Posez une question claire, puis choisissez un vote classique ou une consultation interactive sur la carte. Le sondage sera visible par tout le monde dès sa publication.",
+    modeTitle: "Type de sondage",
+    modeHint: "Choisissez la manière dont les membres pourront répondre.",
+    choiceModeTitle: "Sondage classique",
+    choiceModeBody: "Les citoyen·ne·s choisissent une réponse parmi votre liste.",
+    mapModeTitle: "Sondage sur la carte",
+    mapModeBody: "Les citoyen·ne·s répondent en déposant un point à un endroit précis.",
+    questionLabel: "Question du sondage",
+    questionPlaceholder: "Ex. : Quelle amélioration devrait être priorisée dans ce parc?",
+    descriptionLabel: "Contexte",
+    optional: "(facultatif)",
+    descriptionPlaceholder: "Ajoutez les renseignements utiles pour aider les citoyen·ne·s à répondre.",
+    choicesTitle: "Choix de réponse",
+    choicesHint: "Ajoutez entre 2 et 10 choix. Leur ordre sera conservé.",
+    choiceLabel: (n: number) => `Choix ${n}`,
+    choicePlaceholder: "Écrivez un choix de réponse",
+    addChoice: "Ajouter un choix",
+    removeChoice: "Retirer ce choix",
+    editChoices: "Modifier les choix",
+    saveChoices: "Enregistrer les choix",
+    cancelEdit: "Annuler",
+    editWarning:
+      "Renommer un choix garde ses votes. Retirer un choix supprime les votes qui lui ont été donnés.",
+    removeKeepsNoVotes: (n: number) =>
+      n === 1 ? "Retirer ce choix supprimera 1 vote" : `Retirer ce choix supprimera ${n} votes`,
+    mapSettingsTitle: "Personnaliser les points sur la carte",
+    mapSettingsHint:
+      "Décidez exactement ce que les citoyen·ne·s pourront joindre à chaque point.",
+    allowPinDescriptionTitle: "Autoriser une description",
+    allowPinDescriptionBody: "Un court texte pourra expliquer pourquoi cet endroit est choisi.",
+    allowPinImageTitle: "Autoriser une photo",
+    allowPinImageBody: "Une image pourra être jointe au point et sera optimisée en WebP.",
+    maxPinsTitle: "Points permis par membre",
+    maxPinsBody: "Limite le nombre de contributions qu’une même personne peut déposer.",
+    maxPinsChoice: (n: number) => (n === 1 ? "1 point" : `${n} points`),
+    publish: "Publier le sondage",
+    publishing: "Publication…",
+    collectionNotice:
+      "La question, le contexte et les résultats agrégés seront publics. Le choix individuel de chaque membre ne sera jamais affiché publiquement.",
+    votes: (n: number) => (n === 1 ? "1 vote" : `${n} votes`),
+    mapResponses: (n: number) => (n === 1 ? "1 point citoyen" : `${n} points citoyens`),
+    open: "Voir et voter",
+    resultsTitle: "Résultats",
+    chooseTitle: "Votre réponse",
+    submitVote: "Enregistrer mon vote",
+    updateVote: "Modifier mon vote",
+    voting: "Enregistrement…",
+    selected: "Votre choix",
+    membersOnly:
+      "Les résultats sont publics. Seuls les membres d’Ensemble Montréal peuvent voter.",
+    mapMembersOnly:
+      "Tout le monde peut consulter la carte. Seuls les membres d’Ensemble Montréal peuvent y ajouter un point.",
+    changeHint: "Vous pouvez modifier votre choix en tout temps.",
+    noVotes: "Aucun vote pour le moment.",
+    addPinTitle: "Ajouter votre point",
+    addPinBody: "Cliquez sur la carte pour indiquer l’endroit qui répond à la question.",
+    pinLocation: "Emplacement",
+    pinDescriptionLabel: "Description du point",
+    pinDescriptionPlaceholder: "Expliquez brièvement votre choix…",
+    pinPhotoLabel: "Photo du point",
+    pinPhotoChoose: "Choisir une photo",
+    pinPhotoHint: "JPEG, PNG ou WebP, 5 Mo maximum. Conversion automatique en WebP.",
+    submitPin: "Ajouter ce point",
+    submittingPin: "Ajout…",
+    mapEmpty: "Aucun point n’a encore été ajouté sur cette carte.",
+    mapContributionsTitle: "Contributions citoyennes",
+    contributionLabel: "Point citoyen",
+    noPinDetails: "Aucun détail ajouté.",
+    pinAllowance: (current: number, max: number) =>
+      max === 1
+        ? "Vous pouvez ajouter un point à ce sondage."
+        : `Vous avez ajouté ${current} point${current > 1 ? "s" : ""} sur ${max}.`,
+    pinLimitNotice: "Vous avez atteint la limite de points prévue pour ce sondage.",
+    mapPublicNotice:
+      "L’emplacement, la description et la photo ajoutés à un point sont publics. Votre nom n’est pas affiché avec la contribution.",
+  },
   profile: {
     topics: "Sujets",
     replies: "Réponses",
@@ -671,6 +780,23 @@ const fr = {
       "Cet endroit est hors de Côte-des-Neiges–Notre-Dame-de-Grâce. Choisissez un point dans l'arrondissement.",
     boroughUnknown: "Cet arrondissement n'est pas encore couvert par le forum.",
     boroughFailed: "Votre arrondissement n'a pas pu être enregistré. Réessayez.",
+    pollQuestionTooShort: "La question doit contenir au moins 5 caractères.",
+    pollQuestionTooLong: "La question ne peut pas dépasser 200 caractères.",
+    pollDescriptionTooLong: "Le contexte ne peut pas dépasser 2000 caractères.",
+    pollOptionsCount: "Ajoutez entre 2 et 10 choix de réponse.",
+    pollOptionEmpty: "Chaque choix de réponse doit contenir du texte.",
+    pollOptionTooLong: "Un choix de réponse ne peut pas dépasser 120 caractères.",
+    pollOptionDuplicate: "Chaque choix de réponse doit être différent.",
+    pollPublishFailed: "La publication du sondage a échoué. Veuillez réessayer.",
+    pollChoiceRequired: "Choisissez une réponse avant d’enregistrer votre vote.",
+    pollVoteFailed: "Votre vote n’a pas pu être enregistré. Veuillez réessayer.",
+    pollKindInvalid: "Choisissez un type de sondage valide.",
+    pollPinLimitInvalid: "Choisissez une limite de 1 à 10 points par membre.",
+    pollPinRequired: "Ajoutez un point en cliquant sur la carte.",
+    pollSettingMismatch: "Cette contribution contient un élément désactivé par le sondage.",
+    pollPinDescriptionTooLong: "La description du point ne peut pas dépasser 1000 caractères.",
+    pollPinLimitReached: "Vous avez atteint la limite de points pour ce sondage.",
+    pollPinFailed: "Le point n’a pas pu être ajouté. Veuillez réessayer.",
     // Ce qui est refusé, et pourquoi, sans nommer les mots en cause, qui
     // seraient autant d'indications pour recommencer autrement.
     //
@@ -1159,6 +1285,96 @@ const en: Dictionary = {
     deleteReplyYes: "Delete permanently",
     deleting: "Deleting…",
   },
+  poll: {
+    label: "Citizen poll",
+    ctaTitle: "Would you rather consult residents?",
+    ctaBody: "Create a poll and gather members’ views on a specific question.",
+    ctaButton: "Create a poll",
+    backToForum: "← Back to the forum",
+    backToPolls: "← Back to polls",
+    listTitle: "Citizen polls",
+    listSubtitle:
+      "Answer questions published by the Ensemble Montréal team and see results in real time.",
+    latestTitle: "Citizen polls",
+    seeAll: "See all polls",
+    emptyTitle: "No polls yet",
+    emptyBody: "New polls published by the team will appear here.",
+    newTitle: "Create a citizen poll",
+    newSubtitle:
+      "Ask a clear question, then choose a classic vote or an interactive map consultation. The poll will be visible to everyone as soon as it is published.",
+    modeTitle: "Poll type",
+    modeHint: "Choose how members will be able to answer.",
+    choiceModeTitle: "Classic poll",
+    choiceModeBody: "Residents choose one answer from your list.",
+    mapModeTitle: "Map poll",
+    mapModeBody: "Residents answer by placing a point at a specific location.",
+    questionLabel: "Poll question",
+    questionPlaceholder: "E.g. Which improvement should be prioritized in this park?",
+    descriptionLabel: "Context",
+    optional: "(optional)",
+    descriptionPlaceholder: "Add any useful information that will help residents answer.",
+    choicesTitle: "Answer choices",
+    choicesHint: "Add between 2 and 10 choices. Their order will be preserved.",
+    choiceLabel: (n: number) => `Choice ${n}`,
+    choicePlaceholder: "Write an answer choice",
+    addChoice: "Add a choice",
+    removeChoice: "Remove this choice",
+    editChoices: "Edit the choices",
+    saveChoices: "Save the choices",
+    cancelEdit: "Cancel",
+    editWarning:
+      "Renaming a choice keeps its votes. Removing a choice deletes the votes cast for it.",
+    removeKeepsNoVotes: (n: number) =>
+      n === 1 ? "Removing this choice will delete 1 vote" : `Removing this choice will delete ${n} votes`,
+    mapSettingsTitle: "Customize map points",
+    mapSettingsHint: "Decide exactly what residents may attach to each point.",
+    allowPinDescriptionTitle: "Allow a description",
+    allowPinDescriptionBody: "A short text may explain why this place was selected.",
+    allowPinImageTitle: "Allow a photo",
+    allowPinImageBody: "An image may be attached to the point and will be optimized as WebP.",
+    maxPinsTitle: "Points allowed per member",
+    maxPinsBody: "Limits how many contributions the same person may place.",
+    maxPinsChoice: (n: number) => (n === 1 ? "1 point" : `${n} points`),
+    publish: "Publish poll",
+    publishing: "Publishing…",
+    collectionNotice:
+      "The question, context and aggregate results will be public. Each member’s individual choice will never be displayed publicly.",
+    votes: (n: number) => (n === 1 ? "1 vote" : `${n} votes`),
+    mapResponses: (n: number) => (n === 1 ? "1 resident point" : `${n} resident points`),
+    open: "View and vote",
+    resultsTitle: "Results",
+    chooseTitle: "Your answer",
+    submitVote: "Save my vote",
+    updateVote: "Change my vote",
+    voting: "Saving…",
+    selected: "Your choice",
+    membersOnly: "Results are public. Only Ensemble Montréal members can vote.",
+    mapMembersOnly:
+      "Everyone can view the map. Only Ensemble Montréal members can add a point.",
+    changeHint: "You may change your choice at any time.",
+    noVotes: "No votes yet.",
+    addPinTitle: "Add your point",
+    addPinBody: "Click the map to indicate the place that answers the question.",
+    pinLocation: "Location",
+    pinDescriptionLabel: "Point description",
+    pinDescriptionPlaceholder: "Briefly explain your choice…",
+    pinPhotoLabel: "Point photo",
+    pinPhotoChoose: "Choose a photo",
+    pinPhotoHint: "JPEG, PNG or WebP, 5 MB maximum. Automatically converted to WebP.",
+    submitPin: "Add this point",
+    submittingPin: "Adding…",
+    mapEmpty: "No point has been added to this map yet.",
+    mapContributionsTitle: "Resident contributions",
+    contributionLabel: "Resident point",
+    noPinDetails: "No details added.",
+    pinAllowance: (current: number, max: number) =>
+      max === 1
+        ? "You may add one point to this poll."
+        : `You have added ${current} point${current === 1 ? "" : "s"} out of ${max}.`,
+    pinLimitNotice: "You have reached the point limit set for this poll.",
+    mapPublicNotice:
+      "The location, description and photo added to a point are public. Your name is not displayed with the contribution.",
+  },
   profile: {
     topics: "Topics",
     replies: "Replies",
@@ -1270,6 +1486,23 @@ const en: Dictionary = {
       "That spot is outside Côte-des-Neiges–Notre-Dame-de-Grâce. Pick a point inside the borough.",
     boroughUnknown: "The forum does not cover that borough yet.",
     boroughFailed: "Your borough could not be saved. Please try again.",
+    pollQuestionTooShort: "The question must be at least 5 characters.",
+    pollQuestionTooLong: "The question cannot exceed 200 characters.",
+    pollDescriptionTooLong: "The context cannot exceed 2,000 characters.",
+    pollOptionsCount: "Add between 2 and 10 answer choices.",
+    pollOptionEmpty: "Every answer choice must contain text.",
+    pollOptionTooLong: "An answer choice cannot exceed 120 characters.",
+    pollOptionDuplicate: "Every answer choice must be different.",
+    pollPublishFailed: "The poll could not be published. Please try again.",
+    pollChoiceRequired: "Choose an answer before saving your vote.",
+    pollVoteFailed: "Your vote could not be saved. Please try again.",
+    pollKindInvalid: "Choose a valid poll type.",
+    pollPinLimitInvalid: "Choose a limit of 1 to 10 points per member.",
+    pollPinRequired: "Add a point by clicking the map.",
+    pollSettingMismatch: "This contribution contains something disabled by the poll.",
+    pollPinDescriptionTooLong: "The point description cannot exceed 1,000 characters.",
+    pollPinLimitReached: "You have reached the point limit for this poll.",
+    pollPinFailed: "The point could not be added. Please try again.",
     messageRefused:
       "This message was not published: an automatic filter found abusive or threatening language in it. Rewrite it without targeting anyone, or ask for a person to review it. See the Privacy page.",
   },

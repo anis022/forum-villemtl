@@ -5,7 +5,9 @@ import { CARD_INTERACTIVE, MUTED } from "@/components/ui/styles";
 import { Avatar, FacePile } from "@/components/ui/avatar";
 import { TranslateButton, Translated, TranslationProvider } from "@/components/translate";
 import { IssuePhoto } from "./issue-photo";
+import { PollBallot } from "@/components/polls/poll-ballot";
 import { VoteButton } from "./vote-button";
+import type { Ballot } from "@/utils/polls";
 import { ShareButton } from "./share-button";
 import {
   CategoryTag,
@@ -26,10 +28,13 @@ import {
  */
 export function IssueCard({
   issue,
+  ballot,
   canVote,
   lang,
 }: {
   issue: Issue;
+  /** Present when this topic asks a question with choices under it. */
+  ballot?: Ballot;
   canVote: boolean;
   lang: Locale;
 }) {
@@ -86,6 +91,12 @@ export function IssueCard({
             <Translated field="body">{issue.body}</Translated>
           </p>
         </Link>
+
+        {ballot && (
+          <div className="mt-3.5">
+            <PollBallot ballot={ballot} canVote={canVote} lang={lang} compact />
+          </div>
+        )}
       </div>
 
       {/* Full bleed and large, the way every feed people already read presents

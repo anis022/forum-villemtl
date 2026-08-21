@@ -50,7 +50,7 @@ export type Policy = {
 };
 
 const frPolicy: Policy = {
-  updated: "11 août 2026",
+  updated: "20 août 2026",
   intro:
     "Ce forum est tenu par le cabinet de l'arrondissement de Côte-des-Neiges–Notre-Dame-de-Grâce. Cette page dit ce qu'il recueille sur vous, ce qui en devient public, combien de temps c'est gardé et ce que vous pouvez exiger. Elle est écrite pour être lue en entier en quelques minutes.",
   sections: [
@@ -69,6 +69,8 @@ const frPolicy: Policy = {
             "Le texte de vos signalements et de vos réponses est public.",
             "La photo jointe à un signalement est publique. Regardez-la avant de l'envoyer : une plaque d'immatriculation, un visage ou un numéro de porte s'y trouvent parfois sans qu'on l'ait voulu.",
             "Les sujets que vous appuyez sont publics : votre visage apparaît parmi les personnes qui les soutiennent.",
+            "Les résultats des sondages sont publics, mais votre choix individuel ne l'est pas : il n'est jamais affiché publiquement.",
+            "Les points ajoutés aux sondages cartographiques sont publics, avec leur emplacement, leur description et leur photo lorsqu'il y en a. Votre nom n'est pas affiché avec le point.",
           ],
         },
         {
@@ -95,6 +97,16 @@ const frPolicy: Policy = {
             ["Signalements : texte, photo, position", "Vous, quand vous publiez", "Tout le monde"],
             ["Réponses", "Vous, quand vous répondez", "Tout le monde"],
             ["Appuis", "Vous, quand vous appuyez un sujet", "Tout le monde"],
+            [
+              "Vote à un sondage",
+              "Vous, quand vous répondez",
+              "Vous et le système; seul le résultat agrégé est public",
+            ],
+            [
+              "Point sur un sondage cartographique : emplacement, texte et photo",
+              "Vous, quand vous ajoutez un point",
+              "Tout le monde, sans votre nom",
+            ],
             [
               "Consultation d'un événement ou d'un projet",
               "Votre ouverture de sa fiche ou de son lien",
@@ -127,6 +139,8 @@ const frPolicy: Policy = {
             "Publier vos signalements et vos réponses, et les rattacher à votre nom, parce qu'un forum où personne ne signe n'est pas une discussion de quartier.",
             "Situer les signalements sur une carte, pour que l'arrondissement sache où intervenir.",
             "Compter les appuis, parce que les sujets les plus soutenus sont traités en priorité.",
+            "Compter les réponses aux sondages et vous permettre de modifier votre choix sans voter deux fois.",
+            "Afficher sur une carte les endroits proposés par les membres dans un sondage cartographique.",
             "Classer les événements et les projets les plus consultés sur les sept derniers jours.",
             "Vous connecter et vous reconnaître d'une visite à l'autre.",
             "Repérer les propos injurieux ou menaçants avant qu'ils ne soient publiés.",
@@ -225,7 +239,7 @@ const frPolicy: Policy = {
 };
 
 const enPolicy: Policy = {
-  updated: "11 August 2026",
+  updated: "20 August 2026",
   intro:
     "This forum is run by the borough office of Côte-des-Neiges–Notre-Dame-de-Grâce. This page says what it collects about you, what becomes public, how long it is kept, and what you can require of us. It is written to be read in full in a few minutes.",
   sections: [
@@ -244,6 +258,8 @@ const enPolicy: Policy = {
             "The text of your reports and replies is public.",
             "A photo attached to a report is public. Look at it before sending: a licence plate, a face or a door number sometimes ends up in frame.",
             "The topics you back are public: your face appears among the people supporting them.",
+            "Poll results are public, but your individual choice is not: it is never displayed publicly.",
+            "Points added to map polls are public, including their location, description and photo when provided. Your name is not displayed with the point.",
           ],
         },
         {
@@ -266,6 +282,16 @@ const enPolicy: Policy = {
             ["Reports: text, photo, location", "You, when you post", "Everyone"],
             ["Replies", "You, when you reply", "Everyone"],
             ["Backing", "You, when you back a topic", "Everyone"],
+            [
+              "Poll vote",
+              "You, when you answer",
+              "You and the system; only the aggregate result is public",
+            ],
+            [
+              "Map poll point: location, text and photo",
+              "You, when you add a point",
+              "Everyone, without your name",
+            ],
             [
               "Opening an event or project",
               "You, when you open its page or link",
@@ -294,6 +320,8 @@ const enPolicy: Policy = {
             "To publish your reports and replies under your name, because a forum nobody signs is not a neighbourhood conversation.",
             "To place reports on a map, so the borough knows where to act.",
             "To count backing, because the most-supported topics are handled first.",
+            "To count poll answers and let you change your choice without voting twice.",
+            "To show on a map the places members propose in a map poll.",
             "To rank the events and projects most often opened during the last seven days.",
             "To sign you in and recognise you from one visit to the next.",
             "To catch abusive or threatening language before it is published.",

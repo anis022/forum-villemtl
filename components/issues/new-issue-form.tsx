@@ -1,16 +1,26 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useEffect, useState } from "react";
 import { createIssue, type ActionState } from "@/app/actions/issues";
 import { CATEGORY_KEYS } from "@/utils/issues";
 import { getDictionary, type Locale } from "@/utils/i18n";
-import { ALERT, BTN_PRIMARY, CARD, FIELD, LABEL, LINK, MUTED } from "@/components/ui/styles";
+import {
+  ALERT,
+  BTN_SECONDARY,
+  BTN_PRIMARY,
+  CARD,
+  FIELD,
+  LABEL,
+  LINK,
+  MUTED,
+} from "@/components/ui/styles";
 import { CharacterCounter } from "@/components/ui/character-counter";
 import { LocationPicker } from "./location-picker";
 
 const initial: ActionState = { error: null };
 
-export function NewIssueForm({ lang }: { lang: Locale }) {
+export function NewIssueForm({ lang }: { lang: Locale; isAdmin?: boolean }) {
   const t = getDictionary(lang);
   const [state, formAction, pending] = useActionState(createIssue, initial);
   const [preview, setPreview] = useState<string | null>(null);
@@ -29,6 +39,29 @@ export function NewIssueForm({ lang }: { lang: Locale }) {
     <form action={formAction} noValidate className={`${CARD} p-6`}>
       {/* Lets the action localize its redirect and revalidation paths. */}
       <input type="hidden" name="locale" value={lang} />
+
+      {/* A ballot is a topic with choices under it, so the way in sits on the
+          form that writes a topic rather than on a page of its own. Butter and
+          indigo, which the site already uses for "here is something you can
+          also do" — the aubergine this replaced was a colour invented for
+          polls and used nowhere else, which is what made the feature look
+          bolted on. */}
+      <section className="mb-6 grid gap-4 rounded-[14px] border border-[#f2eadf] bg-[#fffbe5] p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:p-5">
+        <div>
+          <h2 className="text-[17px] font-bold leading-[24px] text-[#2a2a86]">
+            {t.poll.ctaTitle}
+          </h2>
+          <p className={`mt-1 max-w-[58ch] text-[14px] leading-[21px] ${MUTED}`}>
+            {t.poll.ctaBody}
+          </p>
+        </div>
+        <Link href={`/${lang}/sujets/sondage`} className={`${BTN_SECONDARY} shrink-0`}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M5 6h14M5 12h9M5 18h6M17 15v6m-3-3h6" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
+          </svg>
+          {t.poll.ctaButton}
+        </Link>
+      </section>
 
       <div className="mb-5">
         <label htmlFor="issue-title" className={LABEL}>

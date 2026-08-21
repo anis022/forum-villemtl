@@ -58,6 +58,10 @@ export const FIELD =
 export const BTN_PRIMARY =
   "inline-flex items-center justify-center gap-2 rounded-[10px] border border-[#fa3250] bg-[#fa3250] px-5 py-[10px] text-[15px] font-bold leading-[22px] text-white transition-all hover:bg-[#d81f3c] hover:border-[#d81f3c] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60";
 
+/** Same control shape as the primary action, in the masthead aubergine. */
+export const BTN_AUBERGINE =
+  "inline-flex items-center justify-center gap-2 rounded-[10px] border border-[#32004a] bg-[#32004a] px-5 py-[10px] text-[15px] font-bold leading-[22px] text-white transition-all hover:border-[#4d0a68] hover:bg-[#4d0a68] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60";
+
 export const BTN_SECONDARY =
   "inline-flex items-center justify-center gap-2 rounded-[10px] border border-[#e9e0d6] bg-white px-5 py-[10px] text-[15px] font-bold leading-[22px] text-[#fa3250] transition-all hover:border-[#fa3250] hover:bg-[#fde8eb] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60";
 

@@ -12,6 +12,7 @@ import { ForumSidebar } from "@/components/forum-sidebar";
 import { getSessionContext } from "@/utils/supabase/auth";
 import { listActiveMembers } from "@/utils/supabase/community";
 import { categoryCounts, FEED_PAGE, listIssues } from "@/utils/supabase/issues";
+import { ballotsForIssues } from "@/utils/supabase/polls";
 import { listTrendingContent } from "@/utils/supabase/trending";
 import { CATEGORY_KEYS, type Category } from "@/utils/issues";
 import { getDictionary, isLocale } from "@/utils/i18n";
@@ -81,6 +82,12 @@ export default async function Home({
   ]);
   const { user, canParticipate } = viewer;
   const { issues, hasMore } = feed;
+
+  // One round trip for whichever topics on this page carry a ballot, rather
+  // than a join onto every topic that will never have one.
+  const ballots = mapView
+    ? new Map()
+    : await ballotsForIssues(issues.map((issue) => issue.id));
 
   /**
    * A feed URL that keeps whatever the reader already set, overriding only what
@@ -290,7 +297,12 @@ export default async function Home({
                 className="result-item"
                 style={{ animationDelay: `${Math.min(index, 8) * 35}ms` }}
               >
-                <IssueCard issue={issue} canVote={canParticipate} lang={lang} />
+                <IssueCard
+                  issue={issue}
+                  ballot={ballots.get(issue.id)}
+                  canVote={canParticipate}
+                  lang={lang}
+                />
               </div>
             ))
           )}

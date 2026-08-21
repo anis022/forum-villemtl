@@ -19,6 +19,8 @@ import {
   formatDateShort,
 } from "@/components/issues/issue-meta";
 import { getSessionContext } from "@/utils/supabase/auth";
+import { ballotForIssue } from "@/utils/supabase/polls";
+import { PollPanel } from "@/components/polls/poll-panel";
 import { REPLIES_PAGE, getIssue, listComments } from "@/utils/supabase/issues";
 import { editedByOther } from "@/utils/issues";
 import { IssueActions } from "@/components/issues/issue-actions";
@@ -38,7 +40,11 @@ export default async function IssuePage({
 
   const t = getDictionary(lang);
   const { r } = await searchParams;
-  const [viewer, issue] = await Promise.all([getSessionContext(), getIssue(id)]);
+  const [viewer, issue, ballot] = await Promise.all([
+    getSessionContext(),
+    getIssue(id),
+    ballotForIssue(id),
+  ]);
   if (!issue) notFound();
   const { user, canParticipate } = viewer;
 
@@ -122,6 +128,17 @@ export default async function IssuePage({
             <p className="mt-3 max-w-[68ch] whitespace-pre-wrap break-words text-[17px] leading-[27px]">
               <Translated field="body">{issue.body}</Translated>
             </p>
+
+            {ballot && (
+              <div className="mt-5">
+                <PollPanel
+                  ballot={ballot}
+                  canVote={canParticipate}
+                  canEdit={isAuthor || isOfficial}
+                  lang={lang}
+                />
+              </div>
+            )}
           </div>
 
           {/* Full bleed: the photo is what the report is about, so it gets more
