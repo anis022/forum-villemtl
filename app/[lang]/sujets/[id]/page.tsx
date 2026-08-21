@@ -21,6 +21,7 @@ import {
 import { getSessionContext } from "@/utils/supabase/auth";
 import { ballotForIssue } from "@/utils/supabase/polls";
 import { PollPanel } from "@/components/polls/poll-panel";
+import { AddPin } from "@/components/polls/add-pin";
 import { REPLIES_PAGE, getIssue, listComments } from "@/utils/supabase/issues";
 import { editedByOther } from "@/utils/issues";
 import { IssueActions } from "@/components/issues/issue-actions";
@@ -219,6 +220,12 @@ export default async function IssuePage({
           </div>
         </article>
         </TranslationProvider>
+
+        {/* Leaving a pin and leaving a reply are the same kind of act, so the
+            way in to both sits in the same part of the page. */}
+        {ballot?.kind === "map" && canParticipate && (
+          <AddPin ballot={ballot} lang={lang} />
+        )}
 
         <section className="mt-10">
           <h2 className="border-b border-[#e9e0d6] pb-4 text-[24px] leading-[32px] md:text-[32px] md:leading-[40px]">

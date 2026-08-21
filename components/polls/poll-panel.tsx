@@ -2,7 +2,6 @@
 
 import { PollBallot } from "./poll-ballot";
 import { PollMap } from "./poll-map";
-import { MapResponseForm } from "./map-response-form";
 import type { BallotDetail } from "@/utils/polls";
 import { getDictionary, type Locale } from "@/utils/i18n";
 import { MUTED } from "@/components/ui/styles";
@@ -48,15 +47,6 @@ export function PollPanel({
         <p className={`text-[14px] ${MUTED}`}>
           {t.poll.mapResponses(ballot.mapResponseCount)}
         </p>
-        {canVote && ballot.viewerMapResponseCount < ballot.maxPinsPerMember && (
-          <MapResponseForm
-            pollId={ballot.id}
-            issueId={ballot.issueId}
-            allowDescription={ballot.allowPinDescription}
-            allowImage={ballot.allowPinImage}
-            lang={lang}
-          />
-        )}
       </div>
     );
   }
