@@ -14,12 +14,17 @@ export function MapResponseForm({
   issueId,
   allowDescription,
   allowImage,
+  initialLat,
+  initialLon,
   lang,
 }: {
   pollId: string;
   issueId: string;
   allowDescription: boolean;
   allowImage: boolean;
+  /** Chosen on the map above, when that is how the reader got here. */
+  initialLat?: number;
+  initialLon?: number;
   lang: Locale;
 }) {
   const t = getDictionary(lang);
@@ -44,8 +49,8 @@ export function MapResponseForm({
         <span className={LABEL}>{t.poll.pinLocation}</span>
         <LocationPicker
           disabled={pending}
-          defaultLat={state.values?.lat}
-          defaultLon={state.values?.lon}
+          defaultLat={state.values?.lat ?? initialLat}
+          defaultLon={state.values?.lon ?? initialLon}
           labels={{
             hint: "",
             chosen: t.issue.locationChosen,

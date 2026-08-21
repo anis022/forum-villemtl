@@ -13,6 +13,7 @@ import {
   TILE_URL,
   addBoroughOutline,
   frameBorough,
+  BOROUGH_BOUNDS,
 } from "@/utils/map";
 
 export function PollMap({
@@ -21,6 +22,7 @@ export function PollMap({
   labels,
   height = "h-[360px] md:h-[480px]",
   showDetails = true,
+  propose,
 }: {
   responses: PollMapResponse[];
   lang: Locale;
@@ -34,6 +36,20 @@ export function PollMap({
    * turns one entry in a list into a page.
    */
   showDetails?: boolean;
+  /**
+   * Makes the map itself the way in to leaving a point.
+   *
+   * Absent for a reader who may not answer, or who has used their allowance:
+   * clicking would then propose something that is going to be refused.
+   */
+  propose?: {
+    /** The question on the pin. */
+    ask: string;
+    /** The button that says yes. */
+    confirm: string;
+    cancel: string;
+    onConfirm: (lat: number, lon: number) => void;
+  };
   labels: {
     mapLabel: string;
     contribution: string;
@@ -85,6 +101,70 @@ export function PollMap({
         popup.appendChild(text);
         marker.bindPopup(popup, { maxWidth: 300 });
       });
+
+      if (!propose) return;
+
+      /*
+       * Click the place, then say yes.
+       *
+       * A click alone would post a point every time somebody dragged the map a
+       * pixel too slowly, and a point is a public contribution under a real
+       * name. So the click only *proposes*: a pin appears where the finger
+       * landed, in the accent rather than in the colour real answers use, and
+       * asks. Saying no takes it away and nothing was written.
+       *
+       * The confirmation is a popup on the pin rather than a bar under the map
+       * because it is about that spot, and a reader who has just clicked is
+       * looking at that spot.
+       */
+      let pending: import("leaflet").Marker | null = null;
+      const clear = () => {
+        if (pending) map.removeLayer(pending);
+        pending = null;
+      };
+
+      map.on("click", (event: import("leaflet").LeafletMouseEvent) => {
+        const { lat, lng } = event.latlng;
+        if (!L.latLngBounds(BOROUGH_BOUNDS).contains([lat, lng])) return;
+
+        clear();
+        pending = L.marker([lat, lng], { icon: proposedPinIcon(L), zIndexOffset: 500 }).addTo(map);
+
+        const box = document.createElement("div");
+        box.className = "poll-map-propose";
+        const ask = document.createElement("p");
+        ask.textContent = propose.ask;
+        ask.style.cssText = "margin:0 0 8px;font-weight:700";
+        box.appendChild(ask);
+
+        const row = document.createElement("div");
+        row.style.cssText = "display:flex;gap:8px";
+        const yes = document.createElement("button");
+        yes.type = "button";
+        yes.textContent = propose.confirm;
+        yes.style.cssText =
+          "border:0;border-radius:9px;background:#a3162c;color:#fff;font-weight:700;padding:8px 12px;cursor:pointer";
+        yes.onclick = () => {
+          map.closePopup();
+          propose.onConfirm(lat, lng);
+        };
+        const no = document.createElement("button");
+        no.type = "button";
+        no.textContent = propose.cancel;
+        no.style.cssText =
+          "border:1px solid #e9e0d6;border-radius:9px;background:#fff;color:#6e6a72;font-weight:700;padding:8px 12px;cursor:pointer";
+        no.onclick = () => {
+          map.closePopup();
+          clear();
+        };
+        row.append(yes, no);
+        box.appendChild(row);
+
+        pending.bindPopup(box, { closeButton: false }).openPopup();
+        // Dismissing the popup any other way must not leave a pin standing
+        // where nothing was submitted.
+        pending.on("popupclose", clear);
+      });
     })();
 
     return () => {
@@ -92,7 +172,7 @@ export function PollMap({
       mapRef.current?.remove();
       mapRef.current = null;
     };
-  }, [labels, responses]);
+  }, [labels, responses, propose]);
 
   return (
     <div>
@@ -152,5 +232,25 @@ function mapPinIcon(L: typeof import("leaflet")) {
     </svg>`,
     iconSize: [34, 34],
     iconAnchor: [17, 34],
+  });
+}
+
+/**
+ * The pin that is only being offered.
+ *
+ * Hollow and in the forum's accent, where a real answer is solid indigo: a
+ * reader glancing at the map has to be able to tell what has been contributed
+ * from what they are in the middle of contributing.
+ */
+function proposedPinIcon(L: typeof import("leaflet")) {
+  return L.divIcon({
+    className: "",
+    html: `<svg width="38" height="38" viewBox="0 0 24 24" style="filter:drop-shadow(0 1px 3px rgba(26,26,26,.4))">
+      <path d="M12 2.2c-4 0-7.2 3.2-7.2 7.2 0 5.2 7.2 12.4 7.2 12.4s7.2-7.2 7.2-12.4c0-4-3.2-7.2-7.2-7.2z"
+            fill="#fff" stroke="#a3162c" stroke-width="2"/>
+      <circle cx="12" cy="9.4" r="2.6" fill="#a3162c"/>
+    </svg>`,
+    iconSize: [38, 38],
+    iconAnchor: [19, 38],
   });
 }

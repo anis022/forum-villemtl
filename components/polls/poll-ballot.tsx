@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { useRouter } from "next/navigation";
 import { votePoll, type PollActionState } from "@/app/actions/polls";
 import { sharePercent, type Ballot } from "@/utils/polls";
 import { getDictionary, type Locale } from "@/utils/i18n";
@@ -42,6 +43,7 @@ export function PollBallot({
   compact?: boolean;
 }) {
   const t = getDictionary(lang);
+  const router = useRouter();
   const action = votePoll.bind(null, ballot.id, ballot.issueId);
   const [state, formAction, pending] = useActionState(action, initial);
 
@@ -59,6 +61,24 @@ export function PollBallot({
           lang={lang}
           height={compact ? "h-[240px] sm:h-[300px]" : "h-[360px] md:h-[480px]"}
           showDetails={!compact}
+          {...(canVote
+            ? {
+                propose: {
+                  ask: t.poll.addPinConfirm,
+                  confirm: t.poll.addPinTitle,
+                  cancel: t.poll.cancelEdit,
+                  // Both views land on the topic, with the place already
+                  // chosen. From the feed that is a navigation; from the topic
+                  // it opens the form further down the page it is already on.
+                  // One destination either way, so there is one implementation
+                  // of "the point they picked".
+                  onConfirm: (lat: number, lon: number) =>
+                    router.push(
+                      `/${lang}/sujets/${ballot.issueId}?pin=${lat.toFixed(6)},${lon.toFixed(6)}`,
+                    ),
+                },
+              }
+            : {})}
           labels={{
             mapLabel: t.poll.mapContributionsTitle,
             contribution: t.poll.contributionLabel,
