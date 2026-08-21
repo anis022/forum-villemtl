@@ -7,7 +7,7 @@ import { ShareButton } from "@/components/issues/share-button";
 import { CommentForm } from "@/components/issues/comment-form";
 import { CommentThread } from "@/components/issues/comment-thread";
 import { IssuePhoto } from "@/components/issues/issue-photo";
-import { TranslateButton, Translated, TranslationProvider } from "@/components/translate";
+import { TranslateButton, TranslationProvider } from "@/components/translate";
 import { StatusControls } from "@/components/issues/status-controls";
 import {
   CategoryTag,
