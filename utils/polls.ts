@@ -37,11 +37,18 @@ export type Ballot = {
   allowPinDescription: boolean;
   allowPinImage: boolean;
   maxPinsPerMember: number;
+  /**
+   * The pins, for a map ballot, and empty for every other kind.
+   *
+   * Carried on the plain `Ballot` rather than only on the detail shape, because
+   * the feed draws the map too: a map with no points reads as "nobody has
+   * answered" rather than as "this was not fetched".
+   */
+  mapResponses: PollMapResponse[];
 };
 
-/** Everything a map ballot needs on the topic's own page, where the map lives. */
+/** What a map ballot needs on the topic's own page, where answers are taken. */
 export type BallotDetail = Ballot & {
-  mapResponses: PollMapResponse[];
   viewerMapResponseCount: number;
 };
 

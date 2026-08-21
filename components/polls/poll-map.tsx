@@ -19,9 +19,12 @@ export function PollMap({
   responses,
   lang,
   labels,
+  height = "h-[360px] md:h-[480px]",
 }: {
   responses: PollMapResponse[];
   lang: Locale;
+  /** Tailwind height classes. The feed asks for a shorter map than the topic. */
+  height?: string;
   labels: {
     mapLabel: string;
     contribution: string;
@@ -89,7 +92,7 @@ export function PollMap({
         ref={containerRef}
         role="region"
         aria-label={labels.mapLabel}
-        className="h-[360px] w-full overflow-hidden rounded-[14px] border border-[#e9e0d6] md:h-[480px]"
+        className={`${height} w-full overflow-hidden rounded-[14px] border border-[#e9e0d6]`}
       />
 
       {responses.length === 0 ? (

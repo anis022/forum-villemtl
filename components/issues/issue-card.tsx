@@ -113,7 +113,12 @@ export function IssueCard({
         </Link>
       )}
 
-      <div className="p-3.5 sm:p-5">
+      {/* No padding on top unless a photograph put something above it.
+          Otherwise this block's top padding stacked under the previous block's
+          bottom padding and the footer's own rule added a third gap on top of
+          those two — about fifty pixels of nothing between a ballot and the
+          buttons that act on it. */}
+      <div className={`px-3.5 pb-3.5 sm:px-5 sm:pb-5 ${issue.imageUrl ? "pt-3.5 sm:pt-5" : ""}`}>
         {/* Who is already behind this, before asking the reader to join them. */}
         {issue.supporters.length > 0 && (
           <div className="mb-3.5 flex items-center gap-2">

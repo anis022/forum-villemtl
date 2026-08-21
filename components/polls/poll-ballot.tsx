@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { votePoll, type PollActionState } from "@/app/actions/polls";
 import { sharePercent, type Ballot } from "@/utils/polls";
 import { getDictionary, type Locale } from "@/utils/i18n";
+import { PollMap } from "./poll-map";
 import { MUTED } from "@/components/ui/styles";
 
 const initial: PollActionState = { error: null };
@@ -52,9 +53,22 @@ export function PollBallot({
 
   if (ballot.kind === "map") {
     return (
-      <p className={`text-[14px] leading-[21px] ${MUTED}`}>
-        {t.poll.mapResponses(ballot.mapResponseCount)}
-      </p>
+      <div className="flex flex-col gap-2">
+        <PollMap
+          responses={ballot.mapResponses ?? []}
+          lang={lang}
+          height={compact ? "h-[240px] sm:h-[300px]" : "h-[360px] md:h-[480px]"}
+          labels={{
+            mapLabel: t.poll.mapContributionsTitle,
+            contribution: t.poll.contributionLabel,
+            empty: t.poll.mapEmpty,
+            noDetails: t.poll.noPinDetails,
+          }}
+        />
+        <p className={`text-[13px] leading-[18px] ${MUTED}`}>
+          {t.poll.mapResponses(ballot.mapResponseCount)}
+        </p>
+      </div>
     );
   }
 
@@ -130,10 +144,9 @@ export function PollBallot({
         );
       })}
 
-      <p className={`mt-0.5 text-[13px] leading-[18px] ${MUTED}`}>
+      <p className={`text-[13px] leading-[18px] ${MUTED}`}>
         {t.poll.votes(ballot.totalVoteCount)}
-        {answered && ` · ${t.poll.changeHint}`}
-        {!canVote && ballot.totalVoteCount === 0 && ` · ${t.poll.membersOnly}`}
+        {!canVote && ` · ${t.poll.membersOnly}`}
       </p>
 
       {state.error && (

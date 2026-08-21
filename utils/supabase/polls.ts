@@ -22,6 +22,7 @@ type BallotRow = {
   max_pins_per_member: number;
   my_option_id: string | null;
   options: { id: string; label: string; voteCount: number }[];
+  map_responses: PollMapResponseRow[];
 };
 
 type PollMapResponseRow = {
@@ -58,6 +59,7 @@ const toBallot = (row: BallotRow): Ballot => ({
   allowPinDescription: row.allow_pin_description,
   allowPinImage: row.allow_pin_image,
   maxPinsPerMember: row.max_pins_per_member,
+  mapResponses: (row.map_responses ?? []).map(toMapResponse),
 });
 
 async function getSupabase() {
@@ -96,33 +98,22 @@ export async function ballotForIssue(issueId: string): Promise<BallotDetail | nu
   const ballot = ballots.get(issueId);
   if (!ballot) return null;
 
-  if (ballot.kind !== "map") {
-    return { ...ballot, mapResponses: [], viewerMapResponseCount: 0 };
-  }
+  if (ballot.kind !== "map") return { ...ballot, viewerMapResponseCount: 0 };
 
+  // The pins already came back with the ballot. The only thing left to ask is
+  // how many this viewer has left, which decides whether they are offered the
+  // form, and which nobody else may see.
   const supabase = await getSupabase();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  if (!user) return { ...ballot, viewerMapResponseCount: 0 };
 
-  const [responses, mine] = await Promise.all([
-    supabase
-      .from("poll_map_responses_public")
-      .select("id, lat, lon, description, image_path, created_at")
-      .eq("poll_id", ballot.id)
-      .order("created_at", { ascending: true }),
-    user
-      ? supabase
-          .from("poll_map_responses")
-          .select("id", { count: "exact", head: true })
-          .eq("poll_id", ballot.id)
-          .eq("user_id", user.id)
-      : Promise.resolve({ count: 0 }),
-  ]);
+  const mine = await supabase
+    .from("poll_map_responses")
+    .select("id", { count: "exact", head: true })
+    .eq("poll_id", ballot.id)
+    .eq("user_id", user.id);
 
-  return {
-    ...ballot,
-    mapResponses: ((responses.data ?? []) as PollMapResponseRow[]).map(toMapResponse),
-    viewerMapResponseCount: mine.count ?? 0,
-  };
+  return { ...ballot, viewerMapResponseCount: mine.count ?? 0 };
 }
