@@ -44,7 +44,7 @@ export default async function IssuePage({
   const { r, edit } = await searchParams;
   const [viewer, issue, ballot] = await Promise.all([
     getSessionContext(),
-    getIssue(id),
+    getIssue(id, lang),
     ballotForIssue(id),
   ]);
   if (!issue) notFound();

@@ -9,6 +9,7 @@ import { DEFAULT_LOCALE, isLocale, type ErrorCode, type Locale } from "@/utils/i
 import { BOROUGH_BOUNDS } from "@/utils/map";
 import { CATEGORY_KEYS, type Category } from "@/utils/issues";
 import { imageFileToWebp } from "@/utils/server-image";
+import { translateForOffice } from "@/utils/official-translation";
 
 export type PollActionState = {
   error: ErrorCode | null;
@@ -126,6 +127,15 @@ export async function createPoll(
 
   if (isBlocked(error)) return { error: "messageRefused", values };
   if (error || typeof data !== "string") return { error: "pollPublishFailed", values };
+
+  // A poll is a topic, so an official one is bilingual like any other. The
+  // choices themselves stay in the language they were written in: they are
+  // often a street name or a single word, and a machine rendering of "Sherbrooke"
+  // is a risk taken for nothing.
+  const translation = await translateForOffice(question, description, locale);
+  if (translation) {
+    await supabase.from("issues").update(translation).eq("id", data);
+  }
 
   revalidatePath(`/${locale}`);
   revalidatePath(`/${locale}/sujets/${data}`);

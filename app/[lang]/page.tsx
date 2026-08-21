@@ -76,6 +76,7 @@ export default async function Home({
       limit: shown,
       search: query,
       categories: mapView ? [] : selectedCategories,
+      lang,
     }),
     categoryCounts(),
     sidebarPromise,

@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 import { CATEGORY_KEYS, type Category } from "@/utils/issues";
 import { isBlocked, type Score } from "@/utils/moderation";
+import { NO_TRANSLATION, translateForOffice } from "@/utils/official-translation";
 import { DEFAULT_LOCALE, isLocale, type ErrorCode, type Locale } from "@/utils/i18n";
 import { imageFileToWebp } from "@/utils/server-image";
 
@@ -164,8 +165,47 @@ export async function createIssue(
   if (isBlocked(error)) return { error: "messageRefused", values };
   if (error || !data) return { error: "publishFailed", values };
 
+  await storeOfficialTranslation(supabase, user.id, data.id, title, body, locale);
+
   revalidatePath(`/${locale}`);
   redirect(`/${locale}/sujets/${data.id}`);
+}
+
+/**
+ * Store the other language, for a post the office published.
+ *
+ * A second statement rather than part of the insert, because it waits on a
+ * network call: folding it in would hold the row open across an eight-second
+ * timeout on a third party nobody here controls. The post is saved first and
+ * the translation catches up a moment later.
+ *
+ * Silent when the author is not on the staff, which is the common case and the
+ * one that must cost nothing.
+ */
+async function storeOfficialTranslation(
+  supabase: Awaited<ReturnType<typeof requireUser>>["supabase"],
+  userId: string,
+  issueId: string,
+  title: string | null,
+  body: string,
+  locale: Locale,
+) {
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", userId)
+    .maybeSingle();
+  if (profile?.role !== "official") return;
+
+  const translation = await translateForOffice(title, body, locale);
+
+  // Written either way. On an edit the columns already hold the old wording,
+  // and a translation that failed to refresh would go on being served as though
+  // it were the post -- see `NO_TRANSLATION`.
+  await supabase
+    .from("issues")
+    .update(translation ?? NO_TRANSLATION)
+    .eq("id", issueId);
 }
 
 /**
@@ -484,6 +524,8 @@ export async function updateIssue(
     });
     if (ballotError) return { error: "publishFailed", values };
   }
+
+  await storeOfficialTranslation(supabase, user.id, issueId, title, body, locale);
 
   revalidatePath(`/${locale}`);
   revalidatePath(`/${locale}/sujets/${issueId}`);

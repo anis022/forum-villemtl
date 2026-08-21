@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { createClient } from "./server";
+import type { Locale } from "@/utils/i18n";
 import type {
   Author,
   Category,
@@ -24,6 +25,9 @@ type IssueRow = {
   id: string;
   title: string;
   body: string;
+  translated_title?: string | null;
+  translated_body?: string | null;
+  translated_to?: string | null;
   category: Category;
   status: Status;
   vote_count: number;
@@ -67,14 +71,34 @@ const toAuthor = (profile: ProfileRow): Author => ({
   isElected: profile?.elected ?? false,
 });
 
+/**
+ * The post in the reader's language, when the office stored one.
+ *
+ * Only ever a swap, never a merge: `translated_to` names the single language
+ * the stored translation is in, so a reader in the other one gets the original.
+ * Everything a resident wrote arrives here with `translated_to` null and is
+ * served exactly as they typed it, which is the whole distinction migration
+ * 0038 exists to draw.
+ */
+const inReaderLanguage = (row: IssueRow, lang?: Locale) => {
+  if (!lang || row.translated_to !== lang || !row.translated_body) {
+    return { title: row.title, body: row.body, translated: false };
+  }
+  return {
+    title: row.translated_title ?? row.title,
+    body: row.translated_body,
+    translated: true,
+  };
+};
+
 const toIssue = (
   row: IssueRow,
   votedIds: Set<string>,
   supporters: Map<string, Supporter[]>,
+  lang?: Locale,
 ): Issue => ({
   id: row.id,
-  title: row.title,
-  body: row.body,
+  ...inReaderLanguage(row, lang),
   category: row.category,
   status: row.status,
   voteCount: row.vote_count,
@@ -122,9 +146,20 @@ const missingBodyPreview = (message: string | undefined) =>
 
 /** The card clamps to three lines, so the feed never needs more than a preview. */
 const feedBodyField = () => (hasBodyPreview ? "body:body_preview" : "body");
+const feedTranslatedField = () =>
+  hasBodyPreview ? "translated_body:translated_body_preview" : "translated_body";
 
-const issueSelect = (bodyField: string) =>
-  `id, title, ${bodyField}, category, status, vote_count, comment_count, created_at, image_path, lat, lon, edited_at, edited_by, author:profiles!issues_author_id_fkey(${profileFields()})`;
+const issueSelect = (bodyField: string, translatedBodyField: string) =>
+  `id, title, ${bodyField}, category, status, vote_count, comment_count, created_at, image_path, lat, lon, edited_at, edited_by, translated_title, ${translatedBodyField}, translated_to, author:profiles!issues_author_id_fkey(${profileFields()})`;
+
+/**
+ * Same arrangement as `body_preview`, for the columns migration 0038 adds.
+ * Until it is applied they do not exist, and asking for them would fail the
+ * whole query and empty the feed rather than merely lose a translation.
+ */
+let hasTranslation = true;
+const missingTranslation = (message: string | undefined) =>
+  Boolean(message && message.includes("translated_"));
 
 /**
  * How many reports a feed page carries. Fifty was the old hard ceiling — not a
@@ -219,13 +254,21 @@ export async function listIssues(
     limit = FEED_PAGE,
     search = "",
     categories = [],
-  }: { limit?: number; search?: string; categories?: Category[] } = {},
+    lang,
+  }: { limit?: number; search?: string; categories?: Category[]; lang?: Locale } = {},
 ): Promise<{ issues: Issue[]; hasMore: boolean }> {
   const supabase = await getSupabase();
   const term = forFilter(search);
 
   const run = async () => {
-    let query = supabase.from("issues").select(issueSelect(feedBodyField())).limit(limit + 1);
+    let query = supabase
+      .from("issues")
+      .select(
+        hasTranslation
+          ? issueSelect(feedBodyField(), feedTranslatedField())
+          : `id, title, ${feedBodyField()}, category, status, vote_count, comment_count, created_at, image_path, lat, lon, edited_at, edited_by, author:profiles!issues_author_id_fkey(${profileFields()})`,
+      )
+      .limit(limit + 1);
     if (term) query = query.or(`title.ilike.%${term}%,body.ilike.%${term}%`);
     if (categories.length === 1) query = query.eq("category", categories[0]);
     else if (categories.length > 1) query = query.in("category", categories);
@@ -235,6 +278,10 @@ export async function listIssues(
   };
 
   let { data, error } = await run();
+  if (error && missingTranslation(error.message)) {
+    hasTranslation = false;
+    ({ data, error } = await run());
+  }
   if (error && missingBodyPreview(error.message)) {
     hasBodyPreview = false;
     ({ data, error } = await run());
@@ -254,7 +301,7 @@ export async function listIssues(
     votedIssueIds(supabase, ids),
     supportersByIssue(supabase, ids),
   ]);
-  return { issues: rows.map((row) => toIssue(row, voted, supporters)), hasMore };
+  return { issues: rows.map((row) => toIssue(row, voted, supporters, lang)), hasMore };
 }
 
 /**
@@ -289,13 +336,26 @@ export async function categoryCounts(): Promise<{ category: Category; count: num
     .sort((a, b) => b.count - a.count || a.category.localeCompare(b.category));
 }
 
-export async function getIssue(id: string): Promise<Issue | null> {
+export async function getIssue(id: string, lang?: Locale): Promise<Issue | null> {
   const supabase = await getSupabase();
 
   // The whole body here: this is the page the report is actually read on.
-  const run = () => supabase.from("issues").select(issueSelect("body")).eq("id", id).maybeSingle();
+  const run = () =>
+    supabase
+      .from("issues")
+      .select(
+        hasTranslation
+          ? issueSelect("body", "translated_body")
+          : `id, title, body, category, status, vote_count, comment_count, created_at, image_path, lat, lon, edited_at, edited_by, author:profiles!issues_author_id_fkey(${profileFields()})`,
+      )
+      .eq("id", id)
+      .maybeSingle();
 
   let { data, error } = await run();
+  if (error && missingTranslation(error.message)) {
+    hasTranslation = false;
+    ({ data, error } = await run());
+  }
   if (error && missingLateProfileColumn(error.message)) {
     hasLateProfileColumns = false;
     ({ data, error } = await run());
@@ -307,7 +367,7 @@ export async function getIssue(id: string): Promise<Issue | null> {
     votedIssueIds(supabase, [row.id]),
     supportersByIssue(supabase, [row.id]),
   ]);
-  return toIssue(row, voted, supporters);
+  return toIssue(row, voted, supporters, lang);
 }
 
 /** How many replies a thread shows before offering the rest. */
