@@ -20,15 +20,23 @@ export function PollMap({
   lang,
   labels,
   height = "h-[360px] md:h-[480px]",
+  showDetails = true,
 }: {
   responses: PollMapResponse[];
   lang: Locale;
   /** Tailwind height classes. The feed asks for a shorter map than the topic. */
   height?: string;
+  /**
+   * The cards under the map, one per pin.
+   *
+   * Off in the feed. A topic card is a summary somebody scrolls past, and
+   * unrolling every contribution with its photograph and its date underneath
+   * turns one entry in a list into a page.
+   */
+  showDetails?: boolean;
   labels: {
     mapLabel: string;
     contribution: string;
-    empty: string;
     noDetails: string;
   };
 }) {
@@ -95,9 +103,10 @@ export function PollMap({
         className={`${height} w-full overflow-hidden rounded-[14px] border border-[#e9e0d6]`}
       />
 
-      {responses.length === 0 ? (
-        <p className={`mt-3 text-[14px] ${MUTED}`}>{labels.empty}</p>
-      ) : (
+      {/* No "nothing here yet" line: the caller prints a count of the pins, and
+          "no points have been added" directly above "0 citizen points" says the
+          same thing twice in two registers. */}
+      {showDetails && responses.length > 0 && (
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
           {responses.map((response, index) => (
             <article key={response.id} className="overflow-hidden rounded-[12px] border border-[#e9e0d6] bg-white">

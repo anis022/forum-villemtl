@@ -118,7 +118,7 @@ export function IssueCard({
           bottom padding and the footer's own rule added a third gap on top of
           those two — about fifty pixels of nothing between a ballot and the
           buttons that act on it. */}
-      <div className={`px-3.5 pb-3.5 sm:px-5 sm:pb-5 ${issue.imageUrl ? "pt-3.5 sm:pt-5" : ""}`}>
+      <div className={`px-3.5 pb-4 sm:px-5 ${issue.imageUrl ? "pt-3.5" : ""}`}>
         {/* Who is already behind this, before asking the reader to join them. */}
         {issue.supporters.length > 0 && (
           <div className="mb-3.5 flex items-center gap-2">

@@ -39,82 +39,50 @@ export function NewPollForm({ lang, isAdmin }: { lang: Locale; isAdmin: boolean 
     <form action={formAction} noValidate className={`${CARD} p-5 sm:p-6`}>
       <input type="hidden" name="locale" value={lang} />
 
-      <fieldset className="mb-7">
-        <legend className="text-[18px] font-bold leading-[26px]">{t.poll.modeTitle}</legend>
-        <p className={`mt-1 text-[14px] leading-[21px] ${MUTED}`}>{t.poll.modeHint}</p>
+      {/* Two choices, so a toggle beside the label rather than two bordered
+          cards with an icon and a sentence of explanation each. The names say
+          what they are — a list of answers, or a point on a map — and a person
+          about to write a poll does not need either one described to them.
 
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          {([
-            {
-              value: "choice" as const,
-              title: t.poll.choiceModeTitle,
-              body: t.poll.choiceModeBody,
-              icon: (
-                <path d="M6 7h12M6 12h12M6 17h8" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
-              ),
-            },
-            {
-              value: "map" as const,
-              title: t.poll.mapModeTitle,
-              body: t.poll.mapModeBody,
-              icon: (
-                <path d="M12 21s6-5.4 6-11a6 6 0 1 0-12 0c0 5.6 6 11 6 11zm0-8.5A2.5 2.5 0 1 0 12 7a2.5 2.5 0 0 0 0 5.5z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
-              ),
-            },
-          ]
-            // A map ballot collects photographs and pins from the public, which
-            // is the one that costs storage and moderation, so it stays with the
-            // office. The server refuses it either way; hiding it here means a
-            // member is not offered something they will be told off for.
-            .filter((mode) => mode.value === "choice" || isAdmin)
-          ).map((mode) => (
-            <label
-              key={mode.value}
-              className={`relative cursor-pointer rounded-[14px] border-2 p-4 transition-all ${
-                kind === mode.value
-                  ? "border-[#2a2a86] bg-[#e8e8f6] shadow-[0_2px_10px_rgba(42,42,134,0.08)]"
-                  : "border-[#e9e0d6] bg-white hover:border-[#bda4c8]"
-              }`}
-            >
-              <input
-                type="radio"
-                name="kind"
-                value={mode.value}
-                checked={kind === mode.value}
-                onChange={() => setKind(mode.value)}
-                disabled={pending}
-                className="sr-only"
-              />
-              <span className="flex items-start gap-3">
-                <span
-                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[11px] ${
-                    kind === mode.value ? "bg-[#2a2a86] text-white" : "bg-[#faf1e8] text-[#6e6a72]"
-                  }`}
-                >
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    {mode.icon}
-                  </svg>
-                </span>
-                <span className="min-w-0">
-                  <span className="block font-bold text-[#1a1a1a]">{mode.title}</span>
-                  <span className={`mt-1 block text-[13px] leading-[19px] ${MUTED}`}>{mode.body}</span>
-                </span>
-              </span>
-              <span
-                className={`absolute top-3 right-3 flex h-5 w-5 items-center justify-center rounded-full border ${
-                  kind === mode.value ? "border-[#2a2a86] bg-[#2a2a86] text-white" : "border-[#cfc4ba] bg-white"
+          Hidden outright when the office is not looking, since a member has
+          only one kind available and a toggle with one position is furniture. */}
+      <fieldset className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2">
+        <legend className="sr-only">{t.poll.modeTitle}</legend>
+        <span className="text-[15px] font-bold leading-[22px]">{t.poll.modeTitle}</span>
+
+        {isAdmin ? (
+          <div className="inline-flex rounded-[10px] border border-[#e9e0d6] bg-[#faf1e8] p-0.5">
+            {([
+              { value: "choice" as const, label: t.poll.choiceModeTitle },
+              { value: "map" as const, label: t.poll.mapModeTitle },
+            ]).map((mode) => (
+              <label
+                key={mode.value}
+                className={`inline-flex min-h-[38px] cursor-pointer items-center rounded-[8px] px-3.5 text-[14px] font-bold transition-colors ${
+                  kind === mode.value
+                    ? "bg-white text-[#1a1a1a] shadow-[0_1px_2px_rgba(26,26,26,0.08)]"
+                    : "text-[#6e6a72] hover:text-[#1a1a1a]"
                 }`}
-                aria-hidden="true"
               >
-                {kind === mode.value && (
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                    <path d="m2.5 6 2.1 2.1L9.7 3" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                )}
-              </span>
-            </label>
-          ))}
-        </div>
+                <input
+                  type="radio"
+                  name="kind"
+                  value={mode.value}
+                  checked={kind === mode.value}
+                  onChange={() => setKind(mode.value)}
+                  disabled={pending}
+                  className="sr-only"
+                />
+                {mode.label}
+              </label>
+            ))}
+          </div>
+        ) : (
+          <>
+            <input type="hidden" name="kind" value="choice" />
+            <span className={`text-[14px] ${MUTED}`}>{t.poll.choiceModeTitle}</span>
+          </>
+        )}
       </fieldset>
 
       <div className="mb-5">
@@ -179,7 +147,6 @@ export function NewPollForm({ lang, isAdmin }: { lang: Locale; isAdmin: boolean 
       {kind === "choice" ? (
       <fieldset>
         <legend className="text-[18px] font-bold leading-[26px]">{t.poll.choicesTitle}</legend>
-        <p className={`mt-1 text-[14px] leading-[21px] ${MUTED}`}>{t.poll.choicesHint}</p>
 
         <div className="mt-4 space-y-3">
           {choices.map((choice, index) => (
@@ -304,9 +271,7 @@ export function NewPollForm({ lang, isAdmin }: { lang: Locale; isAdmin: boolean 
         </fieldset>
       )}
 
-      <p className={`my-6 text-[14px] leading-[21px] ${MUTED}`}>
-        {t.poll.collectionNotice}
-      </p>
+      <div className="my-6" />
 
       {state.error && (
         <p role="alert" className={`mb-5 ${ALERT}`}>

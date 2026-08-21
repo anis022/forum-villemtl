@@ -53,15 +53,15 @@ export function PollBallot({
 
   if (ballot.kind === "map") {
     return (
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-3">
         <PollMap
           responses={ballot.mapResponses ?? []}
           lang={lang}
           height={compact ? "h-[240px] sm:h-[300px]" : "h-[360px] md:h-[480px]"}
+          showDetails={!compact}
           labels={{
             mapLabel: t.poll.mapContributionsTitle,
             contribution: t.poll.contributionLabel,
-            empty: t.poll.mapEmpty,
             noDetails: t.poll.noPinDetails,
           }}
         />
@@ -144,7 +144,7 @@ export function PollBallot({
         );
       })}
 
-      <p className={`text-[13px] leading-[18px] ${MUTED}`}>
+      <p className={`mt-1.5 text-[13px] leading-[18px] ${MUTED}`}>
         {t.poll.votes(ballot.totalVoteCount)}
         {!canVote && ` · ${t.poll.membersOnly}`}
       </p>

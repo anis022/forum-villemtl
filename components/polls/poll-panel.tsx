@@ -48,7 +48,6 @@ export function PollPanel({
           labels={{
             mapLabel: t.poll.mapContributionsTitle,
             contribution: t.poll.contributionLabel,
-            empty: t.poll.mapEmpty,
             noDetails: t.poll.noPinDetails,
           }}
         />
