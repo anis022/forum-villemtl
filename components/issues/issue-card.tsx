@@ -92,11 +92,6 @@ export function IssueCard({
           </p>
         </Link>
 
-        {ballot && (
-          <div className="mt-3.5">
-            <PollBallot ballot={ballot} canVote={canVote} lang={lang} compact />
-          </div>
-        )}
       </div>
 
       {/* Full bleed and large, the way every feed people already read presents
@@ -118,7 +113,13 @@ export function IssueCard({
           bottom padding and the footer's own rule added a third gap on top of
           those two — about fifty pixels of nothing between a ballot and the
           buttons that act on it. */}
-      <div className={`px-3.5 pb-4 sm:px-5 ${issue.imageUrl ? "pt-3.5" : ""}`}>
+      <div className={`px-3.5 pb-4 sm:px-5 ${issue.imageUrl || ballot ? "pt-3.5" : ""}`}>
+        {ballot && (
+          <div className="mb-3">
+            <PollBallot ballot={ballot} canVote={canVote} lang={lang} compact />
+          </div>
+        )}
+
         {/* Who is already behind this, before asking the reader to join them. */}
         {issue.supporters.length > 0 && (
           <div className="mb-3.5 flex items-center gap-2">

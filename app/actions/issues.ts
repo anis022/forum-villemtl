@@ -461,6 +461,30 @@ export async function updateIssue(
   if (isBlocked(error)) return { error: "messageRefused", values };
   if (error) return { error: "publishFailed", values };
 
+  // A ballot rides along in the same submission, because a topic that asks a
+  // question and the choices under it are one thing to the person editing them.
+  // Two buttons meant two saves, two chances to leave half the edit behind, and
+  // no way to express "rename this choice and fix the typo in the title" as the
+  // single act it is.
+  const pollId = String(formData.get("pollId") ?? "");
+  if (pollId) {
+    const ids = formData.getAll("optionId").map((value) => String(value));
+    const labels = formData.getAll("options").map((value) => String(value).trim());
+
+    if (labels.length < 2 || labels.length > 10) return { error: "pollOptionsCount", values };
+    if (labels.some((label) => label.length === 0)) return { error: "pollOptionEmpty", values };
+    if (labels.some((label) => label.length > 120)) return { error: "pollOptionTooLong", values };
+    if (new Set(labels.map((label) => label.toLocaleLowerCase())).size !== labels.length) {
+      return { error: "pollOptionDuplicate", values };
+    }
+
+    const { error: ballotError } = await supabase.rpc("save_poll_options", {
+      p_poll_id: pollId,
+      p_options: labels.map((label, i) => ({ id: ids[i] || null, label })),
+    });
+    if (ballotError) return { error: "publishFailed", values };
+  }
+
   revalidatePath(`/${locale}`);
   revalidatePath(`/${locale}/sujets/${issueId}`);
   return { error: null };

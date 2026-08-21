@@ -47,7 +47,7 @@ export function MapResponseForm({
           defaultLat={state.values?.lat}
           defaultLon={state.values?.lon}
           labels={{
-            hint: t.poll.addPinBody,
+            hint: "",
             chosen: t.issue.locationChosen,
             locate: t.issue.locationUseMine,
             locating: t.issue.locationLocating,
@@ -113,7 +113,6 @@ export function MapResponseForm({
             </label>
             {fileName && <span className={`max-w-full break-all text-[13px] ${MUTED}`}>{fileName}</span>}
           </div>
-          <p className={`mt-1 text-[13px] ${MUTED}`}>{t.poll.pinPhotoHint}</p>
           {preview && (
             /* eslint-disable-next-line @next/next/no-img-element -- local blob preview */
             <img
@@ -125,7 +124,6 @@ export function MapResponseForm({
         </div>
       )}
 
-      <p className={`mb-5 text-[13px] leading-[20px] ${MUTED}`}>{t.poll.mapPublicNotice}</p>
 
       {state.error && (
         <p role="alert" className={`mb-5 ${ALERT}`}>

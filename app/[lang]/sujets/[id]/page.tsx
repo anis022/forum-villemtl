@@ -34,13 +34,13 @@ export default async function IssuePage({
   searchParams,
 }: {
   params: Promise<{ lang: string; id: string }>;
-  searchParams: Promise<{ r?: string }>;
+  searchParams: Promise<{ r?: string; edit?: string }>;
 }) {
   const { lang, id } = await params;
   if (!isLocale(lang)) notFound();
 
   const t = getDictionary(lang);
-  const { r } = await searchParams;
+  const { r, edit } = await searchParams;
   const [viewer, issue, ballot] = await Promise.all([
     getSessionContext(),
     getIssue(id),
@@ -58,6 +58,7 @@ export default async function IssuePage({
   const { comments, hasMore: moreReplies, threaded } = await listComments(id, shownReplies);
   const isOfficial = canParticipate && user?.role === "official";
   const isAuthor = canParticipate && Boolean(user) && user!.id === issue.author.id;
+  const editing = edit === "1" && (isAuthor || isOfficial);
   const withdrawLabels = {
     withdraw: t.issue.withdraw,
     withdrawing: t.issue.withdrawing,
@@ -137,6 +138,9 @@ export default async function IssuePage({
               body={issue.body}
               category={issue.category}
               canEdit={isAuthor || isOfficial}
+              isOfficialView={isOfficial}
+              editing={editing}
+              ballot={ballot}
               lang={lang}
             >
               {ballot && (
@@ -144,7 +148,6 @@ export default async function IssuePage({
                   <PollPanel
                     ballot={ballot}
                     canVote={canParticipate}
-                    canEdit={isAuthor || isOfficial}
                     lang={lang}
                   />
                 </div>
@@ -190,6 +193,11 @@ export default async function IssuePage({
 
             {isOfficial ? (
               <StatusControls issueId={issue.id} status={issue.status} lang={lang}>
+                {(isAuthor || isOfficial) && !editing && (
+                  <Link href="?edit=1" className={BTN_SECONDARY}>
+                    {t.issue.editPost}
+                  </Link>
+                )}
                 <IssueActions
                   issueId={issue.id}
                   lang={lang}

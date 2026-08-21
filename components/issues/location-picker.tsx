@@ -195,9 +195,9 @@ export function LocationPicker({
               {labels.clear}
             </button>
           </>
-        ) : (
+        ) : labels.hint ? (
           <span className="text-[13px] text-[#6e6a72]">{labels.hint}</span>
-        )}
+        ) : null}
       </div>
 
       {notice && (
