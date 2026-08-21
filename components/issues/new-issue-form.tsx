@@ -17,12 +17,13 @@ import {
 } from "@/components/ui/styles";
 import { CharacterCounter } from "@/components/ui/character-counter";
 import { LocationPicker } from "./location-picker";
+import { resilient } from "@/utils/resilient-action";
 
 const initial: ActionState = { error: null };
 
 export function NewIssueForm({ lang }: { lang: Locale; isAdmin?: boolean }) {
   const t = getDictionary(lang);
-  const [state, formAction, pending] = useActionState(createIssue, initial);
+  const [state, formAction, pending] = useActionState(resilient(createIssue), initial);
   const [preview, setPreview] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [titleLength, setTitleLength] = useState(0);

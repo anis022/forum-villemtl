@@ -7,6 +7,7 @@ import { sharePercent, type Ballot } from "@/utils/polls";
 import { getDictionary, type Locale } from "@/utils/i18n";
 import { PollMap } from "./poll-map";
 import { MUTED } from "@/components/ui/styles";
+import { resilient } from "@/utils/resilient-action";
 
 const initial: PollActionState = { error: null };
 
@@ -45,7 +46,7 @@ export function PollBallot({
   const t = getDictionary(lang);
   const router = useRouter();
   const action = votePoll.bind(null, ballot.id, ballot.issueId);
-  const [state, formAction, pending] = useActionState(action, initial);
+  const [state, formAction, pending] = useActionState(resilient(action), initial);
 
   // Results are shown once this reader has answered, and to anyone who cannot.
   // Before that the bars are hidden: a percentage beside every choice while

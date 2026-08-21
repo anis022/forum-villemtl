@@ -10,6 +10,12 @@ export const isLocale = (value: string): value is Locale =>
 
 /** Error codes returned by server actions, translated at render time. */
 export type ErrorCode =
+  /**
+   * The submission never reached the server -- the device dropped off the
+   * network mid-action, which on a phone in a basement or on the metro is an
+   * ordinary Tuesday rather than an exceptional event.
+   */
+  | "networkFailed"
   | "notSignedIn"
   | "memberRequired"
   | "titleTooShort"
@@ -389,6 +395,12 @@ const fr = {
     whatTheCronRead: "Ce que le relevé a lu",
     onlyOffice: "Cette page est réservée au cabinet de l'arrondissement.",
   },
+  errorPage: {
+    title: "Cette page n'a pas pu s'afficher",
+    body: "Quelque chose s'est mal passé de notre côté. Réessayez, ou revenez au forum.",
+    retry: "Réessayer",
+    home: "Retour au forum",
+  },
   pages: {
     projectsTitle: "État d'avancement des projets",
     projectsIntro:
@@ -760,6 +772,7 @@ const fr = {
     bodyTooShort: "La description doit contenir au moins 20 caractères.",
     bodyTooLong: "La description ne peut pas dépasser 5000 caractères.",
     badCategory: "Veuillez choisir une catégorie valide.",
+    networkFailed: "L'envoi n'a pas abouti. Vérifiez votre connexion et réessayez, votre texte est encore là.",
     publishFailed: "La publication a échoué. Veuillez réessayer.",
     commentTooShort: "Votre commentaire est trop court.",
     commentTooLong: "Votre commentaire ne peut pas dépasser 5000 caractères.",
@@ -1120,6 +1133,12 @@ const en: Dictionary = {
     whatTheCronRead: "What the reading found",
     onlyOffice: "This page is for the borough office.",
   },
+  errorPage: {
+    title: "This page could not be shown",
+    body: "Something went wrong on our side. Try again, or go back to the forum.",
+    retry: "Try again",
+    home: "Back to the forum",
+  },
   pages: {
     projectsTitle: "Project progress",
     projectsIntro: "Follow the progress of construction and projects under way in the borough.",
@@ -1475,6 +1494,7 @@ const en: Dictionary = {
     bodyTooShort: "The description must be at least 20 characters.",
     bodyTooLong: "The description cannot exceed 5000 characters.",
     badCategory: "Please choose a valid category.",
+    networkFailed: "That did not go through. Check your connection and try again -- your text is still here.",
     publishFailed: "Publishing failed. Please try again.",
     commentTooShort: "Your comment is too short.",
     commentTooLong: "Your comment cannot exceed 5000 characters.",

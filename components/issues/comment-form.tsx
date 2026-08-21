@@ -5,6 +5,7 @@ import { addComment, type ActionState } from "@/app/actions/issues";
 import { getDictionary, type Locale } from "@/utils/i18n";
 import { ALERT, BTN_GHOST, BTN_PRIMARY, FIELD, LABEL, MUTED } from "@/components/ui/styles";
 import { CharacterCounter } from "@/components/ui/character-counter";
+import { resilient } from "@/utils/resilient-action";
 
 const initial: ActionState = { error: null };
 
@@ -31,7 +32,7 @@ export function CommentForm({
   const t = getDictionary(lang);
   const formRef = useRef<HTMLFormElement>(null);
   const action = addComment.bind(null, issueId, parentId);
-  const [state, formAction, pending] = useActionState(action, initial);
+  const [state, formAction, pending] = useActionState(resilient(action), initial);
   const isReply = Boolean(parentId);
   const sent = useRef(false);
   const [bodyLength, setBodyLength] = useState(0);

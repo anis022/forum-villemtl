@@ -6,6 +6,7 @@ import { getDictionary, type Locale } from "@/utils/i18n";
 import { CATEGORY_KEYS } from "@/utils/issues";
 import type { PollKind } from "@/utils/polls";
 import { CharacterCounter } from "@/components/ui/character-counter";
+import { resilient } from "@/utils/resilient-action";
 import {
   ALERT,
   BTN_PRIMARY,
@@ -21,7 +22,7 @@ type Choice = { key: number; value: string };
 
 export function NewPollForm({ lang, isAdmin }: { lang: Locale; isAdmin: boolean }) {
   const t = getDictionary(lang);
-  const [state, formAction, pending] = useActionState(createPoll, initial);
+  const [state, formAction, pending] = useActionState(resilient(createPoll), initial);
   const [question, setQuestion] = useState("");
   const [description, setDescription] = useState("");
   const [kind, setKind] = useState<PollKind>("choice");

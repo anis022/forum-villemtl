@@ -6,6 +6,7 @@ import { getDictionary, type Locale } from "@/utils/i18n";
 import { LocationPicker } from "@/components/issues/location-picker";
 import { CharacterCounter } from "@/components/ui/character-counter";
 import { ALERT, BTN_PRIMARY, FIELD, LABEL, MUTED } from "@/components/ui/styles";
+import { resilient } from "@/utils/resilient-action";
 
 const initial: PollActionState = { error: null };
 
@@ -29,7 +30,7 @@ export function MapResponseForm({
 }) {
   const t = getDictionary(lang);
   const action = submitMapPollResponse.bind(null, pollId, issueId);
-  const [state, formAction, pending] = useActionState(action, initial);
+  const [state, formAction, pending] = useActionState(resilient(action), initial);
   const [description, setDescription] = useState("");
   const [preview, setPreview] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
