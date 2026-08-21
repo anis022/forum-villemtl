@@ -111,21 +111,38 @@ export function NewPollForm({ lang, isAdmin }: { lang: Locale; isAdmin: boolean 
           control invented for this one form. Absent for a member, who has one
           kind available. */}
       {isAdmin && (
-        <div className="mb-6">
-          <label htmlFor="poll-kind" className={LABEL}>
-            {t.poll.modeTitle}
-          </label>
-          <select
-            id="poll-kind"
-            name="kind"
-            value={kind}
-            onChange={(event) => setKind(event.currentTarget.value as PollKind)}
-            disabled={pending}
-            className={FIELD}
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+          <span className={`${LABEL} mb-0`}>{t.poll.modeTitle}</span>
+          <div
+            className="inline-flex rounded-[10px] border border-[#e9e0d6] bg-[#faf1e8] p-0.5"
+            role="radiogroup"
+            aria-label={t.poll.modeTitle}
           >
-            <option value="choice">{t.poll.choiceModeTitle}</option>
-            <option value="map">{t.poll.mapModeTitle}</option>
-          </select>
+            {([
+              { value: "choice" as const, label: t.poll.choiceModeTitle },
+              { value: "map" as const, label: t.poll.mapModeTitle },
+            ]).map((mode) => (
+              <label
+                key={mode.value}
+                className={`inline-flex min-h-[38px] cursor-pointer items-center rounded-[8px] px-3.5 text-[14px] font-bold transition-colors ${
+                  kind === mode.value
+                    ? "bg-white text-[#1a1a1a] shadow-[0_1px_2px_rgba(26,26,26,0.08)]"
+                    : "text-[#6e6a72] hover:text-[#1a1a1a]"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="kind"
+                  value={mode.value}
+                  checked={kind === mode.value}
+                  onChange={() => setKind(mode.value)}
+                  disabled={pending}
+                  className="sr-only"
+                />
+                {mode.label}
+              </label>
+            ))}
+          </div>
         </div>
       )}
       {!isAdmin && <input type="hidden" name="kind" value="choice" />}
@@ -205,7 +222,10 @@ export function NewPollForm({ lang, isAdmin }: { lang: Locale; isAdmin: boolean 
             {t.poll.mapSettingsTitle}
           </legend>
 
-          <div className="mt-4 space-y-3">
+          {/* Three small decisions, so one line rather than three stacked
+              panels. They wrap together on a narrow screen instead of each
+              claiming a row of its own. */}
+          <div className="mt-4 flex flex-wrap items-center gap-x-7 gap-y-4">
             <SettingToggle
               id="allow-pin-description"
               name="allowPinDescription"
@@ -222,41 +242,43 @@ export function NewPollForm({ lang, isAdmin }: { lang: Locale; isAdmin: boolean 
               disabled={pending}
               title={t.poll.allowPinImageTitle}
             />
-          </div>
 
-          {/* A number, with the two buttons that change it. It was four preset
-              buttons reading 1, 3, 5 and 10, which is a menu where a count
-              belongs and cannot express 2. */}
-          <div className="mt-5">
-            <label htmlFor="max-pins" className={LABEL}>
-              {t.poll.maxPinsTitle}
-            </label>
-            <div className="inline-flex items-center gap-1 rounded-[12px] border border-[#e9e0d6] bg-white p-1">
-              <Step
-                label="−"
-                disabled={pending || maxPinsPerMember <= 1}
-                onClick={() => setMaxPinsPerMember((n) => Math.max(1, n - 1))}
-              />
-              <input
-                id="max-pins"
-                name="maxPinsPerMember"
-                type="number"
-                min={1}
-                max={10}
-                value={maxPinsPerMember}
-                disabled={pending}
-                onChange={(event) => {
-                  const next = Number(event.currentTarget.value);
-                  setMaxPinsPerMember(Number.isFinite(next) ? Math.min(10, Math.max(1, next)) : 1);
-                }}
-                className="w-14 border-0 bg-transparent text-center text-[16px] font-bold tabular-nums outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-              />
-              <Step
-                label="+"
-                disabled={pending || maxPinsPerMember >= 10}
-                onClick={() => setMaxPinsPerMember((n) => Math.min(10, n + 1))}
-              />
-            </div>
+            <span className="flex items-center gap-3">
+              <label htmlFor="max-pins" className="text-[15px] font-bold text-[#1a1a1a]">
+                {t.poll.maxPinsTitle}
+              </label>
+              {/* A number, with the two buttons that change it. It was four
+                  preset buttons reading 1, 3, 5 and 10: a menu where a count
+                  belongs, and one that cannot express 2. */}
+              <span className="inline-flex items-center rounded-[12px] border border-[#e9e0d6] bg-white p-1">
+                <Step
+                  label="−"
+                  disabled={pending || maxPinsPerMember <= 1}
+                  onClick={() => setMaxPinsPerMember((n) => Math.max(1, n - 1))}
+                />
+                <input
+                  id="max-pins"
+                  name="maxPinsPerMember"
+                  type="number"
+                  min={1}
+                  max={10}
+                  value={maxPinsPerMember}
+                  disabled={pending}
+                  onChange={(event) => {
+                    const next = Number(event.currentTarget.value);
+                    setMaxPinsPerMember(
+                      Number.isFinite(next) ? Math.min(10, Math.max(1, next)) : 1,
+                    );
+                  }}
+                  className="w-12 border-0 bg-transparent text-center text-[16px] font-bold tabular-nums outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                />
+                <Step
+                  label="+"
+                  disabled={pending || maxPinsPerMember >= 10}
+                  onClick={() => setMaxPinsPerMember((n) => Math.min(10, n + 1))}
+                />
+              </span>
+            </span>
           </div>
         </fieldset>
       )}
@@ -294,9 +316,9 @@ function SettingToggle({
   return (
     <label
       htmlFor={id}
-      className="flex cursor-pointer items-center gap-4 rounded-[12px] border border-[#e9e0d6] bg-white p-3.5 transition-colors hover:border-[#2a2a86]"
+      className="inline-flex cursor-pointer items-center gap-2.5"
     >
-      <span className="min-w-0 flex-1 text-[15px] font-bold text-[#1a1a1a]">{title}</span>
+      <span className="text-[15px] font-bold text-[#1a1a1a]">{title}</span>
       <input
         id={id}
         name={name}
