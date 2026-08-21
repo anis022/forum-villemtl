@@ -18,7 +18,7 @@ import {
   formatDate,
   formatDateShort,
 } from "@/components/issues/issue-meta";
-import { getSessionUser } from "@/utils/supabase/auth";
+import { getSessionContext } from "@/utils/supabase/auth";
 import { REPLIES_PAGE, getIssue, listComments } from "@/utils/supabase/issues";
 import { editedByOther } from "@/utils/issues";
 import { IssueActions } from "@/components/issues/issue-actions";
@@ -38,8 +38,9 @@ export default async function IssuePage({
 
   const t = getDictionary(lang);
   const { r } = await searchParams;
-  const [user, issue] = await Promise.all([getSessionUser(), getIssue(id)]);
+  const [viewer, issue] = await Promise.all([getSessionContext(), getIssue(id)]);
   if (!issue) notFound();
+  const { user, canParticipate } = viewer;
 
   // Clamped for the same reason as the feed: this number comes from the address
   // bar, and an unbounded one is a request to render every reply ever written.
@@ -48,8 +49,8 @@ export default async function IssuePage({
     REPLIES_PAGE * 10,
   );
   const { comments, hasMore: moreReplies, threaded } = await listComments(id, shownReplies);
-  const isOfficial = user?.role === "official";
-  const isAuthor = Boolean(user) && user!.id === issue.author.id;
+  const isOfficial = canParticipate && user?.role === "official";
+  const isAuthor = canParticipate && Boolean(user) && user!.id === issue.author.id;
 
   return (
     <div className={PAGE_SHELL}>
@@ -140,7 +141,7 @@ export default async function IssuePage({
                 issueId={issue.id}
                 voteCount={issue.voteCount}
                 hasVoted={issue.hasVoted}
-                canVote={Boolean(user)}
+                canVote={canParticipate}
                 lang={lang}
               />
               <span className={`text-[14px] ${MUTED}`}>
@@ -194,7 +195,7 @@ export default async function IssuePage({
                 key={comment.id}
                 comment={comment}
                 issueId={issue.id}
-                viewerId={user?.id ?? null}
+                viewerId={canParticipate ? (user?.id ?? null) : null}
                 isOfficial={isOfficial}
                 threaded={threaded}
                 lang={lang}
@@ -215,7 +216,7 @@ export default async function IssuePage({
           </div>
 
           <div className={`${CARD} mt-8 p-6`}>
-            {user ? (
+            {canParticipate ? (
               <CommentForm issueId={issue.id} isOfficial={isOfficial} lang={lang} />
             ) : (
               <p className={MUTED}>{t.issue.signInToComment}</p>

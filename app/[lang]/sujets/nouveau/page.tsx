@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { NewIssueForm } from "@/components/issues/new-issue-form";
-import { getSessionUser } from "@/utils/supabase/auth";
+import { getSessionContext } from "@/utils/supabase/auth";
 import { getDictionary, isLocale } from "@/utils/i18n";
 import {
   HERO_BAND,
@@ -23,10 +23,10 @@ export default async function NewIssuePage({
   if (!isLocale(lang)) notFound();
 
   const t = getDictionary(lang);
-  const user = await getSessionUser();
+  const { user, canParticipate } = await getSessionContext();
   // Guarded here as well as in the action: an anonymous visitor should never
   // see the composer at all.
-  if (!user) redirect(`/${lang}`);
+  if (!canParticipate) redirect(`/${lang}`);
 
   return (
     <div className={PAGE_SHELL}>

@@ -57,10 +57,11 @@ export function VoteButton({
     <button
       type="button"
       onClick={click}
+      disabled={!canVote}
       aria-pressed={state.voted}
       aria-label={state.voted ? t.vote.remove : t.vote.add}
       title={canVote ? undefined : t.vote.signInFirst}
-      className={`group inline-flex shrink-0 items-center gap-2 rounded-[10px] border px-3.5 py-2 text-[14px] font-bold leading-[20px] transition-all active:scale-[0.97] ${
+      className={`group inline-flex shrink-0 items-center gap-2 rounded-[10px] border px-3.5 py-2 text-[14px] font-bold leading-[20px] transition-all active:scale-[0.97] disabled:cursor-not-allowed disabled:active:scale-100 ${
         state.voted
           ? "border-[#d6337a] bg-[#fdeaf2] text-[#ab1f5c]"
           : "border-[#e9e0d6] bg-white text-[#6e6a72] hover:border-[#d6337a] hover:bg-[#fdeaf2] hover:text-[#ab1f5c]"

@@ -156,19 +156,21 @@ export function LocationPicker({
       <input type="hidden" name="lat" value={point?.lat ?? ""} />
       <input type="hidden" name="lon" value={point?.lon ?? ""} />
 
-      <div
-        ref={containerRef}
-        className="h-[280px] w-full overflow-hidden rounded-[12px] border border-[#e9e0d6] md:h-[340px]"
-      />
+      <div className="relative">
+        <div
+          ref={containerRef}
+          className="h-[280px] w-full overflow-hidden rounded-[12px] border border-[#e9e0d6] md:h-[340px]"
+        />
 
-      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
+        {/* Kept inside the map like its zoom control: the action belongs to
+            choosing a point, and no longer pushes the map's status line down. */}
         <button
           type="button"
           onClick={useMyPosition}
           disabled={disabled || locating}
-          className="inline-flex items-center gap-1.5 rounded-[10px] border border-[#e9e0d6] bg-white px-3.5 py-1.5 text-[13px] font-bold text-[#fa3250] transition-colors hover:border-[#fa3250] hover:bg-[#fde8eb] disabled:opacity-60"
+          className="absolute left-3 top-3 z-[1000] inline-flex min-h-[42px] items-center gap-2 rounded-[10px] border border-[#e9e0d6] bg-white/95 px-3.5 py-2 text-[13px] font-bold text-[#fa3250] shadow-[0_2px_10px_rgba(26,26,26,0.18)] backdrop-blur-sm transition-colors hover:border-[#fa3250] hover:bg-[#fde8eb] disabled:opacity-60"
         >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <circle cx="12" cy="12" r="3.2" stroke="currentColor" strokeWidth="1.7" />
             <path
               d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3"
@@ -179,7 +181,9 @@ export function LocationPicker({
           </svg>
           {locating ? labels.locating : labels.locate}
         </button>
+      </div>
 
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
         {point ? (
           <>
             <span className="text-[13px] font-bold text-[#fa3250]">{labels.chosen}</span>

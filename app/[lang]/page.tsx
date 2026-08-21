@@ -9,7 +9,7 @@ import { IssueList } from "@/components/issues/issue-list";
 import { IssueMap } from "@/components/issues/issue-map";
 import { MapMobileHeader } from "@/components/issues/map-mobile-header";
 import { ForumSidebar } from "@/components/forum-sidebar";
-import { getSessionUser } from "@/utils/supabase/auth";
+import { getSessionContext } from "@/utils/supabase/auth";
 import { listActiveMembers } from "@/utils/supabase/community";
 import { categoryCounts, FEED_PAGE, listIssues } from "@/utils/supabase/issues";
 import { listTrendingContent } from "@/utils/supabase/trending";
@@ -69,8 +69,8 @@ export default async function Home({
   const sidebarPromise = mapView
     ? Promise.resolve(null)
     : Promise.all([listActiveMembers(3), listTrendingContent(3)]);
-  const [user, feed, counts, sidebar] = await Promise.all([
-    getSessionUser(),
+  const [viewer, feed, counts, sidebar] = await Promise.all([
+    getSessionContext(),
     listIssues(sort, {
       limit: shown,
       search: query,
@@ -79,6 +79,7 @@ export default async function Home({
     categoryCounts(),
     sidebarPromise,
   ]);
+  const { user, canParticipate } = viewer;
   const { issues, hasMore } = feed;
 
   /**
@@ -203,7 +204,7 @@ export default async function Home({
             control, so the column of actions reads as one edge. */}
         <section
           className={`${CARD} mb-7 items-center ${
-            user
+            canParticipate
               ? "grid grid-cols-[minmax(0,1fr)_auto] gap-3 p-4 sm:gap-5 sm:p-5 md:p-6"
               : "flex flex-wrap justify-between gap-x-6 gap-y-4 p-5 md:p-6"
           }`}
@@ -211,7 +212,7 @@ export default async function Home({
           <div className="min-w-0 max-w-[60ch]">
             <h2
               className={`font-semibold ${
-                user
+                canParticipate
                   ? "text-[16px] leading-[22px] sm:text-[18px] sm:leading-[26px] md:text-[20px] md:leading-[28px]"
                   : "text-[18px] leading-[26px] md:text-[20px] md:leading-[28px]"
               }`}
@@ -220,7 +221,7 @@ export default async function Home({
             </h2>
           </div>
 
-          {user ? (
+          {canParticipate ? (
             <Link
               href={`/${lang}/sujets/nouveau`}
               className={`${BTN_PRIMARY} shrink-0 !px-3.5 !py-2 !text-[13px] sm:!px-5 sm:!py-[10px] sm:!text-[15px]`}
@@ -289,7 +290,7 @@ export default async function Home({
                 className="result-item"
                 style={{ animationDelay: `${Math.min(index, 8) * 35}ms` }}
               >
-                <IssueCard issue={issue} canVote={Boolean(user)} lang={lang} />
+                <IssueCard issue={issue} canVote={canParticipate} lang={lang} />
               </div>
             ))
           )}

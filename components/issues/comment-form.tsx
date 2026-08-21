@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { addComment, type ActionState } from "@/app/actions/issues";
 import { getDictionary, type Locale } from "@/utils/i18n";
 import { ALERT, BTN_GHOST, BTN_PRIMARY, FIELD, LABEL, MUTED } from "@/components/ui/styles";
+import { CharacterCounter } from "@/components/ui/character-counter";
 
 const initial: ActionState = { error: null };
 
@@ -33,6 +34,7 @@ export function CommentForm({
   const [state, formAction, pending] = useActionState(action, initial);
   const isReply = Boolean(parentId);
   const sent = useRef(false);
+  const [bodyLength, setBodyLength] = useState(0);
 
   // React already resets the form after a successful action; the ref is only
   // needed to clear a stale echoed value once a retry succeeds.
@@ -55,7 +57,7 @@ export function CommentForm({
   }, [pending, state, onSent]);
 
   return (
-    <form ref={formRef} action={formAction} noValidate>
+    <form ref={formRef} action={formAction} noValidate onReset={() => setBodyLength(0)}>
       <input type="hidden" name="locale" value={lang} />
 
       <label htmlFor={`comment-body-${parentId ?? "root"}`} className={LABEL}>
@@ -68,19 +70,24 @@ export function CommentForm({
 
       {isOfficial && !isReply && <p className={`mb-2 text-[14px] ${MUTED}`}>{t.issue.officialHint}</p>}
 
-      <textarea
-        id={`comment-body-${parentId ?? "root"}`}
-        name="body"
-        // A reply is an aside in a conversation, not a submission; three rows
-        // ask for a sentence where five ask for an essay.
-        rows={isReply ? 3 : 4}
-        maxLength={5000}
-        disabled={pending}
-        autoFocus={isReply}
-        defaultValue={state.values?.body ?? ""}
-        placeholder={isReply ? t.issue.replyPlaceholder : t.issue.commentPlaceholder}
-        className={`${FIELD} resize-y`}
-      />
+      <div className="relative">
+        <textarea
+          id={`comment-body-${parentId ?? "root"}`}
+          name="body"
+          // A reply is an aside in a conversation, not a submission; three rows
+          // ask for a sentence where five ask for an essay.
+          rows={isReply ? 3 : 4}
+          minLength={2}
+          maxLength={5000}
+          disabled={pending}
+          autoFocus={isReply}
+          defaultValue={state.values?.body ?? ""}
+          onChange={(event) => setBodyLength(event.currentTarget.value.length)}
+          placeholder={isReply ? t.issue.replyPlaceholder : t.issue.commentPlaceholder}
+          className={`${FIELD} resize-y pr-20 pb-9`}
+        />
+        <CharacterCounter count={bodyLength} max={5000} />
+      </div>
 
       {state.error && (
         <p role="alert" className={`mt-3 ${ALERT}`}>

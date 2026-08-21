@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import type { ErrorCode } from "@/utils/i18n";
 import { isBoroughSlug } from "@/utils/boroughs";
+import { imageFileToWebp } from "@/utils/server-image";
 
 export type ProfileResult = { ok: true } | { ok: false; error: ErrorCode };
 
@@ -42,7 +43,7 @@ export async function updateBorough(slug: string): Promise<ProfileResult> {
 /**
  * Replace the signed-in user's avatar.
  *
- * The file is stored under `<user-id>/avatar.<ext>`, which is what the storage
+ * The converted file is stored under `<user-id>/avatar.webp`, which is what the storage
  * policy checks ownership against — the path itself is the authorisation. The
  * URL carries a cache-busting suffix because the object name is stable across
  * uploads, so browsers would otherwise keep showing the previous photo.
@@ -58,14 +59,21 @@ export async function updateAvatar(formData: FormData): Promise<ProfileResult> {
   if (!(file instanceof File) || file.size === 0) {
     return { ok: false, error: "uploadFailed" };
   }
-  const ext = TYPES[file.type];
-  if (!ext) return { ok: false, error: "imageType" };
+  if (!TYPES[file.type]) return { ok: false, error: "imageType" };
   if (file.size > MAX_BYTES) return { ok: false, error: "imageTooBig" };
 
-  const path = `${user.id}/avatar.${ext}`;
+  let webp: Buffer;
+  try {
+    webp = await imageFileToWebp(file, { maxDimension: 1024, quality: 80 });
+  } catch (conversionError) {
+    console.error("[profile] avatar conversion:", conversionError);
+    return { ok: false, error: "imageType" };
+  }
+
+  const path = `${user.id}/avatar.webp`;
   const { error: uploadError } = await supabase.storage
     .from("avatars")
-    .upload(path, file, { upsert: true, contentType: file.type });
+    .upload(path, webp, { upsert: true, contentType: "image/webp" });
   if (uploadError) return { ok: false, error: "uploadFailed" };
 
   const {
@@ -77,6 +85,12 @@ export async function updateAvatar(formData: FormData): Promise<ProfileResult> {
     .update({ avatar_url: `${publicUrl}?v=${Date.now()}` })
     .eq("id", user.id);
   if (saveError) return { ok: false, error: "uploadFailed" };
+
+  // Earlier versions stored the original extension. Once the WebP is live,
+  // remove those now-unreferenced copies so optimization also reduces storage.
+  await supabase.storage
+    .from("avatars")
+    .remove([`${user.id}/avatar.jpg`, `${user.id}/avatar.png`]);
 
   // The avatar appears on every list, not just the profile page.
   revalidatePath("/", "layout");

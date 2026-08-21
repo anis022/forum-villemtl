@@ -344,7 +344,7 @@ function Source({
  * moves. Narrow screens have no right, so the panel sits under the exchange and
  * above the box, which is where somebody who has just read an answer is looking.
  */
-export function CouncilChat({ lang }: { lang: Locale }) {
+export function CouncilChat({ lang, canAsk }: { lang: Locale; canAsk: boolean }) {
   const t = getDictionary(lang).council;
   const toolLines: Record<string, string> = t.tools;
 
@@ -416,7 +416,7 @@ export function CouncilChat({ lang }: { lang: Locale }) {
   const ask = useCallback(
     async (question: string) => {
       const text = question.trim();
-      if (!text || busy) return;
+      if (!canAsk || !text || busy) return;
 
       const answerId = nextId.current + 1;
       const asked: Turn = {
@@ -506,7 +506,7 @@ export function CouncilChat({ lang }: { lang: Locale }) {
         setBusy(false);
       }
     },
-    [busy, grow, lang, patch, t, toolLines, turns],
+    [busy, canAsk, grow, lang, patch, t, toolLines, turns],
   );
 
   const panel = turns.find((turn) => turn.id === shown) ?? null;
@@ -546,7 +546,9 @@ export function CouncilChat({ lang }: { lang: Locale }) {
                 key={example}
                 type="button"
                 onClick={() => ask(example)}
-                className="min-h-[52px] rounded-[12px] border border-[#e4ddd6] bg-[#fffdfb] px-4 py-3 text-left text-[14px] font-medium leading-[20px] text-[#4f4a50] transition-colors hover:border-[#fa3250] hover:bg-[#fff6f7] hover:text-[#1a1a1a]"
+                disabled={!canAsk}
+                title={canAsk ? undefined : t.membersOnly}
+                className="min-h-[52px] rounded-[12px] border border-[#e4ddd6] bg-[#fffdfb] px-4 py-3 text-left text-[14px] font-medium leading-[20px] text-[#4f4a50] transition-colors hover:border-[#fa3250] hover:bg-[#fff6f7] hover:text-[#1a1a1a] disabled:cursor-not-allowed disabled:hover:border-[#e4ddd6] disabled:hover:bg-[#fffdfb] disabled:hover:text-[#4f4a50]"
               >
                 {example}
               </button>
@@ -687,6 +689,14 @@ export function CouncilChat({ lang }: { lang: Locale }) {
             ask(draft);
           }}
         >
+          {!canAsk && (
+            <p
+              id="council-chat-members-only"
+              className="mx-auto mb-2 max-w-[860px] text-[13px] font-semibold leading-[19px] text-[#6e6a72]"
+            >
+              {t.membersOnly}
+            </p>
+          )}
           <div className="mx-auto flex max-w-[860px] items-end gap-2 rounded-[15px] border border-[#d8d0c8] bg-white p-2 shadow-[0_3px_12px_rgba(31,22,16,0.06)] focus-within:border-[#fa3250]">
             <label className="sr-only" htmlFor="council-chat-question">
               {t.placeholder}
@@ -696,7 +706,9 @@ export function CouncilChat({ lang }: { lang: Locale }) {
               ref={box}
               rows={1}
               value={draft}
-              placeholder={t.placeholder}
+              placeholder={canAsk ? t.placeholder : t.membersOnlyPlaceholder}
+              disabled={!canAsk}
+              aria-describedby={!canAsk ? "council-chat-members-only" : undefined}
               onChange={(event) => {
                 setDraft(event.target.value);
                 grow();
@@ -706,11 +718,11 @@ export function CouncilChat({ lang }: { lang: Locale }) {
                 event.preventDefault();
                 ask(draft);
               }}
-              className="max-h-[160px] min-h-[42px] min-w-0 flex-1 resize-none bg-transparent px-2 py-2.5 text-[15px] leading-[22px] text-[#1a1a1a] outline-none placeholder:text-[#9b959b]"
+              className="max-h-[160px] min-h-[42px] min-w-0 flex-1 resize-none bg-transparent px-2 py-2.5 text-[15px] leading-[22px] text-[#1a1a1a] outline-none placeholder:text-[#9b959b] disabled:cursor-not-allowed disabled:text-[#8a858c]"
             />
             <button
               type="submit"
-              disabled={busy || !draft.trim()}
+              disabled={!canAsk || busy || !draft.trim()}
               aria-label={busy ? t.sending : t.send}
               title={busy ? t.sending : t.send}
               className="grid h-[42px] w-[42px] shrink-0 place-items-center rounded-[11px] bg-[#fa3250] text-white transition-colors hover:bg-[#d81f3c] disabled:cursor-not-allowed disabled:bg-[#eee8e3] disabled:text-[#aaa3a0]"

@@ -1,4 +1,5 @@
 import { APICallError, isStepCount, streamText } from "ai";
+import { cookies } from "next/headers";
 import { z } from "zod";
 import {
   councilTools,
@@ -9,6 +10,7 @@ import {
 } from "@/utils/council-agent";
 import { askerKey, cachedAnswer, mayAskTheModel, rememberAnswer } from "@/utils/council-cache";
 import { getDictionary } from "@/utils/i18n";
+import { createClient } from "@/utils/supabase/server";
 
 const Body = z.object({
   lang: z.enum(["fr", "en"]).default("fr"),
@@ -90,11 +92,25 @@ const encoder = new TextEncoder();
  * page a question and gets nothing back. That includes the state it is in with
  * no API key configured at all.
  *
- * Open to anyone, signed in or not. The archive is public, the recordings are
- * public, and the point of asking rather than searching is that it works for
- * someone who does not know the vocabulary the clerk used.
+ * The workspace remains public, but sending a question is participation and is
+ * reserved to a currently eligible member. This route checks that rule itself;
+ * disabling the public form is only the readable face of the same boundary.
  */
 export async function POST(request: Request) {
+  const supabase = createClient(await cookies());
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return Response.json({ error: "not_signed_in" }, { status: 401 });
+
+  const { data: canParticipate, error: membershipError } = await supabase.rpc(
+    "viewer_is_member",
+  );
+  if (membershipError || canParticipate !== true) {
+    return Response.json({ error: "member_required" }, { status: 403 });
+  }
+
   const parsed = Body.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
     return Response.json({ error: getDictionary("fr").council.errorGeneric }, { status: 400 });

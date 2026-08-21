@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/utils/supabase/server";
 import { getSessionUser } from "@/utils/supabase/auth";
+import { imageFileToWebp } from "@/utils/server-image";
 
 /**
  * Proposing a change to a project, and deciding one.
@@ -27,7 +28,14 @@ import { getSessionUser } from "@/utils/supabase/auth";
  * publish to residents on its own.
  */
 
-export type ProjectActionState = { error: string | null; ok?: string };
+export type ProjectActionState = {
+  error: string | null;
+  ok?: string;
+  /** Lets the visual editor continue on the proposal it just created. */
+  revisionId?: string;
+  /** The public destination after approval. */
+  slug?: string;
+};
 
 /**
  * The shape the form sends, checked before it reaches the database.
@@ -145,10 +153,11 @@ export async function saveProject(
   if (!publish) {
     revalidatePath("/fr/projets/revisions");
     revalidatePath("/en/projets/revisions");
-    return { error: null, ok: "Brouillon enregistré." };
+    return { error: null, ok: "Brouillon enregistré.", revisionId: id, slug };
   }
 
-  return approveProject(id, null);
+  const approved = await approveProject(id, null);
+  return approved.error ? approved : { ...approved, revisionId: id, slug };
 }
 
 /**
@@ -225,12 +234,19 @@ export async function uploadProjectPhoto(
   }
 
   const supabase = createClient(await cookies());
-  const ext = file.type.split("/")[1].replace("jpeg", "jpg");
-  const path = `${slug}/${crypto.randomUUID()}.${ext}`;
+  const path = `${slug}/${crypto.randomUUID()}.webp`;
+
+  let webp: Buffer;
+  try {
+    webp = await imageFileToWebp(file);
+  } catch (conversionError) {
+    console.error("[projects] image conversion:", conversionError);
+    return { url: null, error: "Le fichier ne contient pas une image valide." };
+  }
 
   const { error } = await supabase.storage
     .from("project-photos")
-    .upload(path, file, { contentType: file.type });
+    .upload(path, webp, { contentType: "image/webp" });
   if (error) return { url: null, error: `Téléversement refusé : ${error.message}` };
 
   const {

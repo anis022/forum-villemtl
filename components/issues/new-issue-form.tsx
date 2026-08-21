@@ -1,10 +1,11 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { createIssue, type ActionState } from "@/app/actions/issues";
 import { CATEGORY_KEYS } from "@/utils/issues";
 import { getDictionary, type Locale } from "@/utils/i18n";
 import { ALERT, BTN_PRIMARY, CARD, FIELD, LABEL, LINK, MUTED } from "@/components/ui/styles";
+import { CharacterCounter } from "@/components/ui/character-counter";
 import { LocationPicker } from "./location-picker";
 
 const initial: ActionState = { error: null };
@@ -13,6 +14,16 @@ export function NewIssueForm({ lang }: { lang: Locale }) {
   const t = getDictionary(lang);
   const [state, formAction, pending] = useActionState(createIssue, initial);
   const [preview, setPreview] = useState<string | null>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [titleLength, setTitleLength] = useState(0);
+  const [bodyLength, setBodyLength] = useState(0);
+
+  useEffect(
+    () => () => {
+      if (preview) URL.revokeObjectURL(preview);
+    },
+    [preview],
+  );
 
   return (
     <form action={formAction} noValidate className={`${CARD} p-6`}>
@@ -23,17 +34,25 @@ export function NewIssueForm({ lang }: { lang: Locale }) {
         <label htmlFor="issue-title" className={LABEL}>
           {t.issue.fieldTitle}
         </label>
-        <input
-          id="issue-title"
-          name="title"
-          type="text"
-          maxLength={150}
-          disabled={pending}
-          defaultValue={state.values?.title ?? ""}
-          placeholder={t.issue.fieldTitlePlaceholder}
-          className={FIELD}
-        />
-        <p className={`mt-1 text-[14px] ${MUTED}`}>{t.issue.fieldTitleHint}</p>
+        <div className="relative">
+          <input
+            id="issue-title"
+            name="title"
+            type="text"
+            minLength={5}
+            maxLength={150}
+            disabled={pending}
+            defaultValue={state.values?.title ?? ""}
+            onChange={(event) => setTitleLength(event.currentTarget.value.length)}
+            aria-describedby="issue-title-length-hint"
+            placeholder={t.issue.fieldTitlePlaceholder}
+            className={`${FIELD} pr-20`}
+          />
+          <CharacterCounter count={titleLength} max={150} />
+        </div>
+        <span id="issue-title-length-hint" className="sr-only">
+          {t.issue.fieldTitleHint}
+        </span>
       </div>
 
       <div className="mb-5">
@@ -59,17 +78,25 @@ export function NewIssueForm({ lang }: { lang: Locale }) {
         <label htmlFor="issue-body" className={LABEL}>
           {t.issue.fieldBody}
         </label>
-        <textarea
-          id="issue-body"
-          name="body"
-          rows={7}
-          maxLength={5000}
-          disabled={pending}
-          defaultValue={state.values?.body ?? ""}
-          placeholder={t.issue.fieldBodyPlaceholder}
-          className={`${FIELD} resize-y`}
-        />
-        <p className={`mt-1 text-[14px] ${MUTED}`}>{t.issue.fieldBodyHint}</p>
+        <div className="relative">
+          <textarea
+            id="issue-body"
+            name="body"
+            rows={7}
+            minLength={20}
+            maxLength={5000}
+            disabled={pending}
+            defaultValue={state.values?.body ?? ""}
+            onChange={(event) => setBodyLength(event.currentTarget.value.length)}
+            aria-describedby="issue-body-length-hint"
+            placeholder={t.issue.fieldBodyPlaceholder}
+            className={`${FIELD} resize-y pr-20 pb-9`}
+          />
+          <CharacterCounter count={bodyLength} max={5000} />
+        </div>
+        <span id="issue-body-length-hint" className="sr-only">
+          {t.issue.fieldBodyHint}
+        </span>
       </div>
 
       <div className="mb-5">
@@ -95,18 +122,39 @@ export function NewIssueForm({ lang }: { lang: Locale }) {
           {t.issue.fieldPhoto}{" "}
           <span className="font-normal">{t.issue.fieldPhotoOptional}</span>
         </label>
-        <input
-          id="issue-image"
-          name="image"
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          disabled={pending}
-          onChange={(event) => {
-            const file = event.target.files?.[0];
-            setPreview(file ? URL.createObjectURL(file) : null);
-          }}
-          className="block w-full text-[15px] file:mr-4 file:rounded-[10px] file:border file:border-[#e9e0d6] file:bg-white file:px-4 file:py-2 file:text-[15px] file:font-bold file:text-[#fa3250] hover:file:bg-[#faf1e8]"
-        />
+        <div className="flex flex-wrap items-center gap-3">
+          <input
+            id="issue-image"
+            name="image"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            disabled={pending}
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              setFileName(file?.name ?? null);
+              setPreview(file ? URL.createObjectURL(file) : null);
+            }}
+            className="peer sr-only"
+          />
+          <label
+            htmlFor="issue-image"
+            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-[10px] border border-[#e9e0d6] bg-white px-5 py-[10px] text-[15px] font-bold leading-[22px] text-[#fa3250] transition-all hover:border-[#fa3250] hover:bg-[#fde8eb] peer-focus-visible:ring-[3px] peer-focus-visible:ring-[#2a2a86] peer-focus-visible:ring-offset-2 peer-disabled:cursor-not-allowed peer-disabled:opacity-60"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M12 15V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14.5V20h14v-5.5"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            {t.issue.fieldPhotoChoose}
+          </label>
+          {fileName && (
+            <span className={`max-w-full break-all text-[13px] ${MUTED}`}>{fileName}</span>
+          )}
+        </div>
         <p className={`mt-1 text-[14px] ${MUTED}`}>{t.issue.fieldPhotoHint}</p>
 
         {preview && (

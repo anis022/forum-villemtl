@@ -7,6 +7,7 @@ import { createClient } from "@/utils/supabase/server";
 import { CATEGORY_KEYS, type Category } from "@/utils/issues";
 import { isBlocked, type Score } from "@/utils/moderation";
 import { DEFAULT_LOCALE, isLocale, type ErrorCode, type Locale } from "@/utils/i18n";
+import { imageFileToWebp } from "@/utils/server-image";
 
 /**
  * Actions return an error *code*, not a sentence: the caller renders it in
@@ -46,7 +47,10 @@ async function requireUser() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  return { supabase, user };
+  if (!user) return { supabase, user: null, canParticipate: false };
+
+  const { data, error } = await supabase.rpc("viewer_is_member");
+  return { supabase, user, canParticipate: !error && data === true };
 }
 
 const localeFrom = (formData: FormData): Locale => {
@@ -80,8 +84,9 @@ export async function createIssue(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const { supabase, user } = await requireUser();
+  const { supabase, user, canParticipate } = await requireUser();
   if (!user) return { error: "notSignedIn" };
+  if (!canParticipate) return { error: "memberRequired" };
 
   const locale = localeFrom(formData);
   const title = String(formData.get("title") ?? "").trim();
@@ -129,13 +134,20 @@ export async function createIssue(
     if (!ALLOWED_IMAGE_TYPES.includes(image.type)) return { error: "imageType", values };
     if (image.size > MAX_IMAGE_BYTES) return { error: "imageTooBig", values };
 
-    const extension = image.type.split("/")[1].replace("jpeg", "jpg");
     // The uid folder prefix is what the storage policy checks.
-    const path = `${user.id}/${crypto.randomUUID()}.${extension}`;
+    const path = `${user.id}/${crypto.randomUUID()}.webp`;
+
+    let webp: Buffer;
+    try {
+      webp = await imageFileToWebp(image);
+    } catch (conversionError) {
+      console.error("[issues] image conversion:", conversionError);
+      return { error: "imageType", values };
+    }
 
     const { error: uploadError } = await supabase.storage
       .from("issue-images")
-      .upload(path, image, { contentType: image.type });
+      .upload(path, webp, { contentType: "image/webp" });
 
     if (uploadError) return { error: "uploadFailed", values };
     imagePath = path;
@@ -164,8 +176,17 @@ export async function createIssue(
  * opaque policy error.
  */
 async function removalRights(issueId: string) {
-  const { supabase, user } = await requireUser();
-  if (!user) return { supabase, user: null, allowed: false, isOfficial: false, authorId: null };
+  const { supabase, user, canParticipate } = await requireUser();
+  if (!user) {
+    return {
+      supabase,
+      user: null,
+      canParticipate: false,
+      allowed: false,
+      isOfficial: false,
+      authorId: null,
+    };
+  }
 
   const [{ data: issue }, { data: profile }] = await Promise.all([
     supabase.from("issues").select("author_id").eq("id", issueId).maybeSingle(),
@@ -177,16 +198,18 @@ async function removalRights(issueId: string) {
   return {
     supabase,
     user,
+    canParticipate,
     isOfficial,
     authorId,
-    allowed: Boolean(authorId) && (authorId === user.id || isOfficial),
+    allowed: canParticipate && Boolean(authorId) && (authorId === user.id || isOfficial),
   };
 }
 
 /** Withdraw a report. Comments and votes cascade with it. */
 export async function deleteIssue(issueId: string, formData: FormData): Promise<ActionState> {
-  const { supabase, user, allowed } = await removalRights(issueId);
+  const { supabase, user, canParticipate, allowed } = await removalRights(issueId);
   if (!user) return { error: "notSignedIn" };
+  if (!canParticipate) return { error: "memberRequired" };
   if (!allowed) return { error: "notAuthorized" };
 
   const locale = localeFrom(formData);
@@ -209,8 +232,9 @@ export async function addComment(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const { supabase, user } = await requireUser();
+  const { supabase, user, canParticipate } = await requireUser();
   if (!user) return { error: "notSignedIn" };
+  if (!canParticipate) return { error: "memberRequired" };
 
   const locale = localeFrom(formData);
   const body = String(formData.get("body") ?? "").trim();
@@ -258,8 +282,17 @@ export async function addComment(
  * opaque policy error.
  */
 async function commentRights(commentId: string) {
-  const { supabase, user } = await requireUser();
-  if (!user) return { supabase, user: null, allowed: false, isOfficial: false, issueId: null };
+  const { supabase, user, canParticipate } = await requireUser();
+  if (!user) {
+    return {
+      supabase,
+      user: null,
+      canParticipate: false,
+      allowed: false,
+      isOfficial: false,
+      issueId: null,
+    };
+  }
 
   const [{ data: comment }, { data: profile }] = await Promise.all([
     supabase.from("comments").select("author_id, issue_id").eq("id", commentId).maybeSingle(),
@@ -271,9 +304,10 @@ async function commentRights(commentId: string) {
   return {
     supabase,
     user,
+    canParticipate,
     isOfficial,
     issueId: (comment?.issue_id as string | undefined) ?? null,
-    allowed: Boolean(authorId) && (authorId === user.id || isOfficial),
+    allowed: canParticipate && Boolean(authorId) && (authorId === user.id || isOfficial),
   };
 }
 
@@ -282,8 +316,9 @@ export async function deleteComment(
   commentId: string,
   formData: FormData,
 ): Promise<ActionState> {
-  const { supabase, user, allowed, issueId } = await commentRights(commentId);
+  const { supabase, user, canParticipate, allowed, issueId } = await commentRights(commentId);
   if (!user) return { error: "notSignedIn" };
+  if (!canParticipate) return { error: "memberRequired" };
   if (!allowed) return { error: "notAuthorized" };
 
   const locale = localeFrom(formData);
@@ -304,8 +339,9 @@ export async function setIssueStatus(
   status: string,
   locale: Locale = DEFAULT_LOCALE,
 ): Promise<ActionState> {
-  const { supabase, user } = await requireUser();
+  const { supabase, user, canParticipate } = await requireUser();
   if (!user) return { error: "notSignedIn" };
+  if (!canParticipate) return { error: "memberRequired" };
 
   const { error } = await supabase.rpc("set_issue_status", {
     p_issue_id: issueId,
@@ -334,8 +370,9 @@ export async function clearFlag(
   flagId: string,
   locale: Locale = DEFAULT_LOCALE,
 ): Promise<ActionState> {
-  const { supabase, user } = await requireUser();
+  const { supabase, user, canParticipate } = await requireUser();
   if (!user) return { error: "notSignedIn" };
+  if (!canParticipate) return { error: "memberRequired" };
 
   const { data, error } = await supabase
     .from("moderation_flags")
@@ -354,8 +391,9 @@ export async function toggleVote(
   issueId: string,
   locale: Locale = DEFAULT_LOCALE,
 ): Promise<ActionState> {
-  const { supabase, user } = await requireUser();
+  const { supabase, user, canParticipate } = await requireUser();
   if (!user) return { error: "notSignedIn" };
+  if (!canParticipate) return { error: "memberRequired" };
 
   const { data: existing } = await supabase
     .from("votes")

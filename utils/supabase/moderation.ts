@@ -95,3 +95,54 @@ export async function countOpenFlags(): Promise<number> {
 
   return error ? 0 : (count ?? 0);
 }
+
+export type StaffAccessEntry = {
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  elected: boolean;
+  active: boolean;
+  hasAccount: boolean;
+  confirmed: boolean;
+  isSelf: boolean;
+};
+
+type StaffAccessRow = {
+  email: string;
+  first_name: string | null;
+  last_name: string | null;
+  elected: boolean;
+  active: boolean;
+  has_account: boolean;
+  confirmed: boolean;
+  is_self: boolean;
+};
+
+/**
+ * The private administrator authorization list.
+ *
+ * The table itself has RLS with no policies. `list_staff_access` is the narrow
+ * security-definer window onto it and checks the caller's official role before
+ * returning even one address, so accidentally calling this on a public page
+ * still returns nothing useful.
+ */
+export async function listStaffAccess(): Promise<StaffAccessEntry[]> {
+  const supabase = createClient(await cookies());
+  const { data, error } = await supabase.rpc("list_staff_access");
+
+  if (error || !data) {
+    if (error) console.error("[moderation] staff access:", error.message);
+    return [];
+  }
+
+  return (data as StaffAccessRow[]).map((row) => ({
+    email: row.email,
+    firstName: row.first_name,
+    lastName: row.last_name,
+    elected: row.elected,
+    active: row.active,
+    hasAccount: row.has_account,
+    confirmed: row.confirmed,
+    isSelf: row.is_self,
+  }));
+}

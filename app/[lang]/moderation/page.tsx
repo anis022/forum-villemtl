@@ -2,8 +2,9 @@ import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { FlagCard } from "@/components/issues/flag-card";
+import { StaffAccessManager } from "@/components/moderation/staff-access-manager";
 import { getSessionUser } from "@/utils/supabase/auth";
-import { listOpenFlags } from "@/utils/supabase/moderation";
+import { listOpenFlags, listStaffAccess } from "@/utils/supabase/moderation";
 import { getDictionary, isLocale } from "@/utils/i18n";
 import {
   CARD,
@@ -14,6 +15,7 @@ import {
   PAGE_MAIN,
   PAGE_SHELL,
   PAGE_TITLE,
+  SECTION_TITLE,
 } from "@/components/ui/styles";
 
 /**
@@ -41,7 +43,9 @@ export default async function ModerationPage({
   const user = await getSessionUser();
   const isOfficial = user?.role === "official";
 
-  const flags = isOfficial ? await listOpenFlags() : [];
+  const [flags, staffAccess] = isOfficial
+    ? await Promise.all([listOpenFlags(), listStaffAccess()])
+    : [[], []];
 
   return (
     <div className={PAGE_SHELL}>
@@ -63,38 +67,59 @@ export default async function ModerationPage({
           <div className={`${CARD} p-6 text-center sm:p-10`}>
             <p className={MUTED}>{t.moderation.forbidden}</p>
           </div>
-        ) : flags.length === 0 ? (
-          <div className={`${CARD} p-6 text-center sm:p-10`}>
-            <p className="text-[18px] font-bold leading-[26px]">{t.moderation.empty}</p>
-            <p className={`mt-2 ${MUTED}`}>{t.moderation.emptyBody}</p>
-          </div>
         ) : (
           <>
-            <p className={`text-[14px] font-bold ${MUTED}`}>
-              {t.moderation.waiting(flags.length)}
-            </p>
+            <StaffAccessManager entries={staffAccess} lang={lang} />
 
-            <div className="mt-4 max-w-[860px] space-y-3">
-              {flags.map((flag) => (
-                <FlagCard
-                  key={flag.id}
-                  flag={flag}
-                  lang={lang}
-                  labels={{
-                    reportKind: t.moderation.reportKind,
-                    replyKind: t.moderation.replyKind,
-                    terms: t.moderation.terms,
-                    open: t.moderation.open,
-                    dismiss: t.moderation.dismiss,
-                    dismissing: t.moderation.dismissing,
-                  }}
-                />
-              ))}
-            </div>
+            <section className="mt-12 border-t border-[#e9e0d6] pt-10" aria-labelledby="flags-title">
+              <div className="max-w-[760px]">
+                <h2 id="flags-title" className={SECTION_TITLE}>
+                  {t.moderation.messagesTitle}
+                </h2>
+                <p className={`mt-2 text-[15px] leading-[23px] ${MUTED}`}>
+                  {t.moderation.messagesIntro}
+                </p>
+              </div>
 
-            <p className={`mt-6 max-w-[640px] text-[13px] leading-[20px] ${MUTED}`}>
-              {t.moderation.dismissHint}
-            </p>
+              {flags.length === 0 ? (
+                <div className={`${CARD} mt-5 p-6 text-center sm:p-10`}>
+                  <p className="text-[18px] font-bold leading-[26px]">
+                    {t.moderation.empty}
+                  </p>
+                  <p className={`mt-2 ${MUTED}`}>{t.moderation.emptyBody}</p>
+                </div>
+              ) : (
+                <>
+                  <p className={`mt-5 text-[14px] font-bold ${MUTED}`}>
+                    {t.moderation.waiting(flags.length)}
+                  </p>
+
+                  <div className="mt-4 max-w-[860px] space-y-3">
+                    {flags.map((flag) => (
+                      <FlagCard
+                        key={flag.id}
+                        flag={flag}
+                        lang={lang}
+                        labels={{
+                          reportKind: t.moderation.reportKind,
+                          replyKind: t.moderation.replyKind,
+                          terms: t.moderation.terms,
+                          open: t.moderation.open,
+                          dismiss: t.moderation.dismiss,
+                          dismissing: t.moderation.dismissing,
+                        }}
+                      />
+                    ))}
+                  </div>
+
+                  <p
+                    className={`mt-6 max-w-[640px] text-[13px] leading-[20px] ${MUTED}`}
+                  >
+                    {t.moderation.dismissHint}
+                  </p>
+                </>
+              )}
+            </section>
           </>
         )}
       </main>

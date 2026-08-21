@@ -78,6 +78,49 @@ export async function projectBySlug(slug: string): Promise<Project | null> {
   return data ? toProject(data as ProjectRow) : null;
 }
 
+export type EditableProject = { id: string; project: Project };
+
+/**
+ * The live row behind a public project, including the id a revision targets.
+ *
+ * This is intentionally separate from `projectBySlug`: a resident never needs
+ * the database id, while an official editing the page must target the trusted
+ * row the server just read rather than an id supplied by the browser.
+ */
+export async function projectForEditingBySlug(slug: string): Promise<EditableProject | null> {
+  const supabase = await sb();
+  const { data, error } = await supabase
+    .from("projects")
+    .select("id, slug, content, status, published, updated_at")
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[projects] forEditing:", error.message);
+    return null;
+  }
+  if (!data) return null;
+  const row = data as ProjectRow;
+  return { id: row.id, project: toProject(row) };
+}
+
+/** A pending cron/staff proposal wins over starting a competing edit. */
+export async function pendingRevisionForProject(projectId: string): Promise<Revision | null> {
+  const supabase = await sb();
+  const { data, error } = await supabase
+    .from("project_revisions_view")
+    .select("*")
+    .eq("project_id", projectId)
+    .eq("status", "pending")
+    .maybeSingle();
+
+  if (error) {
+    console.error("[projects] pendingForProject:", error.message);
+    return null;
+  }
+  return data ? toRevision(data as RevisionRow) : null;
+}
+
 /** Slug and id of everything in the table, for the editor's project picker. */
 export async function listProjectsForEditing(): Promise<
   { id: string; slug: string; title: string; published: boolean }[]

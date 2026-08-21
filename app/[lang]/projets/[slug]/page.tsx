@@ -9,7 +9,14 @@ import { getSessionUser } from "@/utils/supabase/auth";
 import { say } from "@/utils/projects";
 import { projectBySlug } from "@/utils/supabase/projects";
 import { getDictionary, isLocale } from "@/utils/i18n";
-import { CARD, MUTED, PAGE_MAIN, PAGE_SHELL, READABLE } from "@/components/ui/styles";
+import {
+  BTN_SECONDARY,
+  CARD,
+  MUTED,
+  PAGE_MAIN,
+  PAGE_SHELL,
+  READABLE,
+} from "@/components/ui/styles";
 
 /*
  * No `generateStaticParams` any more.
@@ -66,6 +73,14 @@ export default async function ProjectPage({
               {say(project.summary, lang)}
             </p>
           </div>
+          {user?.role === "official" && (
+            <Link
+              href={`/${lang}/projets/${project.slug}/modifier`}
+              className={BTN_SECONDARY}
+            >
+              {t.projectAdmin.editProject}
+            </Link>
+          )}
         </header>
 
         <section className="mt-8">

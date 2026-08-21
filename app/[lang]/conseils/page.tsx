@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
 import { CouncilChat } from "@/components/council/council-chat";
-import { getSessionUser } from "@/utils/supabase/auth";
+import { getSessionContext } from "@/utils/supabase/auth";
 import { getDictionary, isLocale } from "@/utils/i18n";
 
 /**
@@ -17,9 +17,9 @@ import { getDictionary, isLocale } from "@/utils/i18n";
  * the whole section is one question box now, and the answer carries the passage
  * that backs it and the second of the recording where it was said.
  *
- * Open to everyone. The recordings are public and the minutes are public, and
- * the reason to ask rather than search is precisely that it works for someone
- * who does not know the words the clerk used.
+ * Open to everyone to read. Sending a new question is participation, so the
+ * composer is enabled only for a current member and the route re-checks the
+ * same rule before doing any work.
  */
 export default async function CouncilPage({
   params,
@@ -30,7 +30,7 @@ export default async function CouncilPage({
   if (!isLocale(lang)) notFound();
 
   const t = getDictionary(lang);
-  const user = await getSessionUser();
+  const { user, canParticipate } = await getSessionContext();
 
   return (
     <div className="flex h-dvh min-h-0 flex-col overflow-hidden bg-[#f7f3ee] text-[#1a1a1a]">
@@ -40,7 +40,7 @@ export default async function CouncilPage({
         <div className="council-workspace mx-auto flex min-h-0 w-full max-w-[1500px] flex-1 flex-col overflow-hidden rounded-[18px] border border-[#ded7d0] bg-white shadow-[0_8px_26px_rgba(31,22,16,0.08)]">
           <h1 className="sr-only">{t.council.title}</h1>
 
-          <CouncilChat lang={lang} />
+          <CouncilChat lang={lang} canAsk={canParticipate} />
 
           <p className="shrink-0 border-t border-[#e9e2dc] bg-[#fffdfb] px-4 py-2.5 text-[11px] leading-[17px] text-[#8a858c] sm:px-6 lg:px-7">
             {t.council.disclaimer}
