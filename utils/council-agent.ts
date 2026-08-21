@@ -11,9 +11,23 @@ import {
   searchRemarks,
   searchResolutions,
 } from "@/utils/supabase/council";
-import { excerptAround, keywordsFrom, resolutionTitle, searchTerms, unshout } from "@/utils/council";
+import {
+  distinctMeetings,
+  distinctPeople,
+  excerptAround,
+  keywordsFrom,
+  resolutionTitle,
+  searchTerms,
+  unshout,
+} from "@/utils/council";
 import { expandQuery } from "@/utils/council-terms";
-import type { MeetingSummary, QuestionHit, RemarkHit, ResolutionHit } from "@/utils/council";
+import type {
+  CouncilAnswer,
+  MeetingSummary,
+  QuestionHit,
+  RemarkHit,
+  ResolutionHit,
+} from "@/utils/council";
 
 /**
  * The council archive, handed to a model as six tools.
@@ -168,6 +182,25 @@ function clip(text: string, max = MAX_QUOTE): string {
   return `${(space > max * 0.6 ? cut.slice(0, space) : cut).trim()} …`;
 }
 
+/**
+ * The sentence the answer has to open on, as a fact rather than as an order.
+ *
+ * Phrased as something true about the archive, so the model paraphrases it into
+ * its own prose instead of quoting it. Naming the trap in the zero case is
+ * deliberate: told only "start with the nine", a model still reaches for the
+ * absence first, because an absence feels like the honest thing to lead with.
+ * It is not — the reader asked what the archive holds, and it holds nine.
+ */
+function leadFor(answer: CouncilAnswer): string {
+  if (answer.counted.length > 0) {
+    return `${answer.people} personne(s) ont fait inscrire ce sujet au procès-verbal. Commence par ce chiffre, nomme-les avec leurs dates, puis donne les entendus dans une phrase à part.`;
+  }
+  if (answer.heard.length > 0) {
+    return `Personne n'a fait inscrire ce sujet au procès-verbal, mais il revient ${answer.heard.length} fois dans les enregistrements. Ouvre sur ces ${answer.heard.length} fois. N'ouvre pas sur l'absence : « Aucune personne… » en tête de réponse est interdit ici, l'absence vient après, dans la phrase suivante.`;
+  }
+  return "Rien dans les archives là-dessus. Dis-le franchement, en une phrase.";
+}
+
 function trimSummary(m: MeetingSummary) {
   return {
     identifiant: m.youtubeId,
@@ -309,11 +342,12 @@ export function councilTools() {
         "Cherche dans les questions posées par le public pendant les périodes de questions, orales " +
         "et écrites. Trois champs, et ils ne disent pas la même chose. « comptes » : le greffe a " +
         "inscrit ces mots comme sujet de cette personne, c'est le seul champ qui donne un nombre. " +
-        "« entendus » : les mots figurent dans l'enregistrement autour du tour de parole de cette " +
-        "personne, ce qui prouve que le sujet a été abordé dans la salle mais pas qui l'a abordé, " +
-        "car l'extrait contient aussi la réponse de l'administration. « rapprochees » : un simple " +
-        "voisinage de sens. Ni « entendus » ni « rapprochees » ne se comptent, et aucun des deux " +
-        "ne s'attribue à quelqu'un.",
+        "« entendus » : les mots ont bel et bien été prononcés dans la salle à ce moment de la " +
+        "séance, sans qu'on sache par qui, car la fenêtre contient aussi la réponse de " +
+        "l'administration. C'est un vrai résultat, à donner avec son nombre (total_entendus, " +
+        "personnes_entendues, seances_entendues) ; ce qu'on ne peut pas faire, c'est l'attribuer " +
+        "à quelqu'un ou l'additionner aux comptes. « rapprochees » : un simple voisinage de sens, " +
+        "à ne jamais chiffrer.",
       inputSchema: z.object({
         sujet: z
           .string()
@@ -327,10 +361,29 @@ export function councilTools() {
         const answer = await answerAboutQuestions(sujet, mode);
 
         return {
+          // Computed here, not left to the model.
+          //
+          // The ordering rule in the prompt — lead with what was found, never
+          // with what was not — held for two calls in three and then produced
+          // "Aucune personne n'a inscrit le déneigement…" again, which is the
+          // exact sentence it exists to prevent. A rule a model follows most of
+          // the time is not a rule; it is a tendency. The server knows which of
+          // the three cases this is before the model sees a single row, so it
+          // says so, and the model is left with the writing rather than the
+          // arithmetic. Same division of labour as the citations: the server
+          // decides what is true, the model decides how it reads.
+          commencer_par: leadFor(answer),
           recherche: answer.expanded,
           total_comptes: answer.counted.length,
           personnes_distinctes: answer.people,
           seances_distinctes: answer.meetings,
+          // The heard tier gets its own totals, and it needs them: `entendus`
+          // below is capped at MAX_ROWS, so a model counting the rows it can
+          // see reports ten when the answer is forty. It reported "neuf
+          // personnes" correctly only because nine is under the cap.
+          total_entendus: answer.heard.length,
+          personnes_entendues: distinctPeople(answer.heard),
+          seances_entendues: distinctMeetings(answer.heard),
           comptes: answer.counted.slice(0, MAX_ROWS).map((hit) => ({
             source: citeQuestion(hit),
             personne: hit.name,
@@ -618,8 +671,19 @@ CE QUE TU PEUX AFFIRMER
 Uniquement ce que les outils t'ont renvoyé. Si les outils ne renvoient rien, dis-le franchement : les archives ne contiennent rien là-dessus. Ne devine pas, ne complète pas avec ce que tu sais du monde.
 N'invente jamais un numéro de résolution, un nom de personne ni une date. Si tu n'as pas la valeur sous les yeux, ne l'écris pas.
 Quand tu rapportes des propos, nomme la personne qui les a tenus et la date de la séance. Une seule exception, et elle est absolue : le champ « enregistrement_autour » n'est attribué à personne. Il couvre le moment où le nom a été appelé jusqu'au nom suivant, donc il contient aussi bien la question que la réponse de l'administration. N'écris jamais « X a dit », « selon X » ni « X a demandé » à partir de ce champ. Écris « il en a été question à ce moment de la séance », ou cite le sujet inscrit au procès-verbal, qui lui est bien de cette personne.
-Quand on te demande combien, donne le chiffre exact et dis ce que tu as compté : des personnes, des interventions, des séances ou des résolutions. Le champ « comptes » est le seul que tu as le droit de compter : c'est le greffe qui a inscrit ces mots comme sujet de cette personne, et un lecteur peut le vérifier dans le procès-verbal. Le champ « entendus » dit que les mots ont été prononcés dans la salle à ce moment, sans dire par qui : mentionne-le comme tel si c'est utile, jamais dans un nombre. Le champ « rapprochees » vient d'un rapprochement de sens : mentionne-le si c'est éclairant, sans jamais l'additionner au compte.
-Si le chiffre de « comptes » est petit et celui de « entendus » plus grand, ne les additionne pas et ne présente pas le second comme une correction du premier. Dis le nombre inscrit au procès-verbal, puis dis que le sujet revient ailleurs dans les enregistrements.
+DONNE TOUJOURS CE QUE TU AS
+N'ouvre jamais sur ce que tu n'as pas trouvé. Commence par le fait le plus solide que les outils t'ont donné, puis dis ce qui manque. « Aucune personne n'a inscrit… » en tête de réponse est un refus déguisé : le lecteur repart sans le renseignement que tu avais sous les yeux.
+Deux nombres différents existent, ils ne mesurent pas la même chose, et les deux se donnent.
+« comptes » compte des personnes : le greffe a inscrit ce sujet à leur nom, un lecteur le retrouve dans le procès-verbal. C'est le chiffre à donner quand on demande combien de personnes.
+« entendus » compte des moments de la séance où ces mots ont été prononcés. On ne sait pas qui parlait, parce que la fenêtre contient aussi la réponse de l'administration, mais que le sujet ait été abordé est un fait. Donne total_entendus, et dis-le pour ce que c'est : le sujet revient N fois dans les enregistrements.
+Ne les additionne jamais et ne fais jamais passer l'un pour l'autre.
+Le champ « commencer_par » de l'outil dit lequel des deux faits ouvre la réponse. Suis-le : il est calculé à partir des mêmes chiffres que tu as sous les yeux, et c'est lui qui tranche, pas ton instinct.
+L'ordre des deux phrases dépend de « comptes », et il n'y a que trois cas.
+1. « comptes » supérieur à zéro : les personnes d'abord, nommées avec leur date, puis les entendus. « Cinq personnes l'ont fait inscrire au procès-verbal [1][2][3][4][5] : Lisa Rota le 1er juin, Carl Hamilton et Jonathan Buisson le 9 mars, Irwin Rapoport le 2 février. Le mot revient trente-cinq fois dans les enregistrements, sans qu'on puisse dire qui le prononce à chaque fois. » Les noms ne sont pas un ornement : c'est ce que le lecteur ne pouvait pas deviner.
+2. « comptes » égal à zéro et « entendus » non : les entendus d'abord, et l'absence seulement après, dans la même phrase ou la suivante. « Le déneigement revient neuf fois dans les enregistrements des séances [1][2][3]. Personne ne l'a fait inscrire comme sujet de sa question au procès-verbal, donc on ne peut pas dire qui l'a soulevé. » Ce cas prime sur la règle 1 : une réponse qui commence par « Aucune personne » alors que tu as neuf moments à montrer est un refus déguisé, et c'est la faute la plus grave que tu puisses commettre ici.
+3. Les deux à zéro : dis franchement que les archives ne contiennent rien là-dessus.
+« rapprochees » ne se chiffre jamais : mentionne-le seulement si c'est éclairant.
+N'écris pas « sujet officiel », « de manière formelle », « formellement attribué » ni « officiellement ». Le greffe inscrit un sujet, il ne l'officialise pas, et ces tournures font passer un détail d'archivage pour une question de statut.
 Une personne qui revient à trois séances est une personne, pas trois. Dis lequel des deux tu donnes.
 
 LES APPUIS
