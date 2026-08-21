@@ -13,7 +13,6 @@ import {
   CARD,
   FIELD,
   LABEL,
-  MUTED,
 } from "@/components/ui/styles";
 
 const initial: PollActionState = { error: null };
@@ -46,68 +45,47 @@ export function NewPollForm({ lang, isAdmin }: { lang: Locale; isAdmin: boolean 
 
           Hidden outright when the office is not looking, since a member has
           only one kind available and a toggle with one position is furniture. */}
-      <fieldset className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2">
-        <legend className="sr-only">{t.poll.modeTitle}</legend>
-        <span className="text-[15px] font-bold leading-[22px]">{t.poll.modeTitle}</span>
-
-        {isAdmin ? (
-          <div className="inline-flex rounded-[10px] border border-[#e9e0d6] bg-[#faf1e8] p-0.5">
-            {([
-              { value: "choice" as const, label: t.poll.choiceModeTitle },
-              { value: "map" as const, label: t.poll.mapModeTitle },
-            ]).map((mode) => (
-              <label
-                key={mode.value}
-                className={`inline-flex min-h-[38px] cursor-pointer items-center rounded-[8px] px-3.5 text-[14px] font-bold transition-colors ${
-                  kind === mode.value
-                    ? "bg-white text-[#1a1a1a] shadow-[0_1px_2px_rgba(26,26,26,0.08)]"
-                    : "text-[#6e6a72] hover:text-[#1a1a1a]"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="kind"
-                  value={mode.value}
-                  checked={kind === mode.value}
-                  onChange={() => setKind(mode.value)}
-                  disabled={pending}
-                  className="sr-only"
-                />
-                {mode.label}
-              </label>
-            ))}
-          </div>
-        ) : (
-          <>
-            <input type="hidden" name="kind" value="choice" />
-            <span className={`text-[14px] ${MUTED}`}>{t.poll.choiceModeTitle}</span>
-          </>
-        )}
-      </fieldset>
+      {/* Category, question, context — the order and the shapes of
+          `new-issue-form.tsx`, because this writes a topic and there is no
+          reason for the two composers to disagree about how a topic is
+          written. The question is a single line there and a single line here;
+          it was a three-row textarea, which is a large empty box asking for a
+          sentence. */}
+      <div className="mb-5">
+        <label htmlFor="poll-category" className={LABEL}>
+          {t.issue.fieldCategory}
+        </label>
+        <select id="poll-category" name="category" className={FIELD} disabled={pending}>
+          {CATEGORY_KEYS.map((key) => (
+            <option key={key} value={key}>
+              {t.categories[key]}
+            </option>
+          ))}
+        </select>
+      </div>
 
       <div className="mb-5">
         <label htmlFor="poll-question" className={LABEL}>
           {t.poll.questionLabel}
         </label>
         <div className="relative">
-          <textarea
+          <input
             id="poll-question"
             name="question"
-            rows={3}
+            type="text"
             minLength={5}
             maxLength={150}
-            required
             disabled={pending}
             value={question}
             onChange={(event) => setQuestion(event.currentTarget.value)}
             placeholder={t.poll.questionPlaceholder}
-            className={`${FIELD} resize-y pr-20 pb-9`}
+            className={`${FIELD} pr-20`}
           />
           <CharacterCounter count={question.length} max={150} />
         </div>
       </div>
 
-      <div className="mb-6">
+      <div className="mb-5">
         <label htmlFor="poll-description" className={LABEL}>
           {t.poll.descriptionLabel}
         </label>
@@ -129,20 +107,28 @@ export function NewPollForm({ lang, isAdmin }: { lang: Locale; isAdmin: boolean 
         </div>
       </div>
 
-      {/* The feed filters on this, and a topic that skipped it would be
-          unreachable from every chip on the home page. */}
-      <div className="mb-6">
-        <label htmlFor="poll-category" className={LABEL}>
-          {t.issue.fieldCategory}
-        </label>
-        <select id="poll-category" name="category" className={FIELD} disabled={pending}>
-          {CATEGORY_KEYS.map((key) => (
-            <option key={key} value={key}>
-              {t.categories[key]}
-            </option>
-          ))}
-        </select>
-      </div>
+      {/* An ordinary labelled field, like the two above it, rather than a
+          control invented for this one form. Absent for a member, who has one
+          kind available. */}
+      {isAdmin && (
+        <div className="mb-6">
+          <label htmlFor="poll-kind" className={LABEL}>
+            {t.poll.modeTitle}
+          </label>
+          <select
+            id="poll-kind"
+            name="kind"
+            value={kind}
+            onChange={(event) => setKind(event.currentTarget.value as PollKind)}
+            disabled={pending}
+            className={FIELD}
+          >
+            <option value="choice">{t.poll.choiceModeTitle}</option>
+            <option value="map">{t.poll.mapModeTitle}</option>
+          </select>
+        </div>
+      )}
+      {!isAdmin && <input type="hidden" name="kind" value="choice" />}
 
       {kind === "choice" ? (
       <fieldset>
@@ -214,11 +200,10 @@ export function NewPollForm({ lang, isAdmin }: { lang: Locale; isAdmin: boolean 
         )}
       </fieldset>
       ) : (
-        <fieldset className="rounded-[14px] border border-[#d4d4ee] bg-[#f4f4fb] p-4 sm:p-5">
-          <legend className="px-1 text-[18px] font-bold leading-[26px] text-[#2a2a86]">
+        <fieldset>
+          <legend className="text-[18px] font-bold leading-[26px]">
             {t.poll.mapSettingsTitle}
           </legend>
-          <p className={`mt-1 text-[14px] leading-[21px] ${MUTED}`}>{t.poll.mapSettingsHint}</p>
 
           <div className="mt-4 space-y-3">
             <SettingToggle
@@ -228,7 +213,6 @@ export function NewPollForm({ lang, isAdmin }: { lang: Locale; isAdmin: boolean 
               onChange={setAllowPinDescription}
               disabled={pending}
               title={t.poll.allowPinDescriptionTitle}
-              body={t.poll.allowPinDescriptionBody}
             />
             <SettingToggle
               id="allow-pin-image"
@@ -237,35 +221,41 @@ export function NewPollForm({ lang, isAdmin }: { lang: Locale; isAdmin: boolean 
               onChange={setAllowPinImage}
               disabled={pending}
               title={t.poll.allowPinImageTitle}
-              body={t.poll.allowPinImageBody}
             />
           </div>
 
-          <div className="mt-5 border-t border-[#e5d7eb] pt-5">
-            <p className="font-bold text-[#1a1a1a]">{t.poll.maxPinsTitle}</p>
-            <p className={`mt-1 text-[13px] leading-[19px] ${MUTED}`}>{t.poll.maxPinsBody}</p>
-            <div className="mt-3 grid grid-cols-4 gap-2">
-              {[1, 3, 5, 10].map((limit) => (
-                <label
-                  key={limit}
-                  className={`cursor-pointer rounded-[10px] border px-2 py-2.5 text-center text-[14px] font-bold transition-colors ${
-                    maxPinsPerMember === limit
-                      ? "border-[#2a2a86] bg-[#2a2a86] text-white"
-                      : "border-[#d4d4ee] bg-white text-[#2a2a86] hover:border-[#2a2a86]"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="maxPinsPerMember"
-                    value={limit}
-                    checked={maxPinsPerMember === limit}
-                    onChange={() => setMaxPinsPerMember(limit)}
-                    disabled={pending}
-                    className="sr-only"
-                  />
-                  {t.poll.maxPinsChoice(limit)}
-                </label>
-              ))}
+          {/* A number, with the two buttons that change it. It was four preset
+              buttons reading 1, 3, 5 and 10, which is a menu where a count
+              belongs and cannot express 2. */}
+          <div className="mt-5">
+            <label htmlFor="max-pins" className={LABEL}>
+              {t.poll.maxPinsTitle}
+            </label>
+            <div className="inline-flex items-center gap-1 rounded-[12px] border border-[#e9e0d6] bg-white p-1">
+              <Step
+                label="−"
+                disabled={pending || maxPinsPerMember <= 1}
+                onClick={() => setMaxPinsPerMember((n) => Math.max(1, n - 1))}
+              />
+              <input
+                id="max-pins"
+                name="maxPinsPerMember"
+                type="number"
+                min={1}
+                max={10}
+                value={maxPinsPerMember}
+                disabled={pending}
+                onChange={(event) => {
+                  const next = Number(event.currentTarget.value);
+                  setMaxPinsPerMember(Number.isFinite(next) ? Math.min(10, Math.max(1, next)) : 1);
+                }}
+                className="w-14 border-0 bg-transparent text-center text-[16px] font-bold tabular-nums outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              />
+              <Step
+                label="+"
+                disabled={pending || maxPinsPerMember >= 10}
+                onClick={() => setMaxPinsPerMember((n) => Math.min(10, n + 1))}
+              />
             </div>
           </div>
         </fieldset>
@@ -293,7 +283,6 @@ function SettingToggle({
   onChange,
   disabled,
   title,
-  body,
 }: {
   id: string;
   name: string;
@@ -301,17 +290,13 @@ function SettingToggle({
   onChange: (checked: boolean) => void;
   disabled: boolean;
   title: string;
-  body: string;
 }) {
   return (
     <label
       htmlFor={id}
-      className="flex cursor-pointer items-center gap-4 rounded-[12px] border border-[#e5d7eb] bg-white p-3.5 transition-colors hover:border-[#b795c5]"
+      className="flex cursor-pointer items-center gap-4 rounded-[12px] border border-[#e9e0d6] bg-white p-3.5 transition-colors hover:border-[#2a2a86]"
     >
-      <span className="min-w-0 flex-1">
-        <span className="block text-[15px] font-bold text-[#1a1a1a]">{title}</span>
-        <span className={`mt-0.5 block text-[13px] leading-[19px] ${MUTED}`}>{body}</span>
-      </span>
+      <span className="min-w-0 flex-1 text-[15px] font-bold text-[#1a1a1a]">{title}</span>
       <input
         id={id}
         name={name}
@@ -327,5 +312,28 @@ function SettingToggle({
         />
       </span>
     </label>
+  );
+}
+
+/** One end of the counter. Square, quiet, and disabled at the limit. */
+function Step({
+  label,
+  disabled,
+  onClick,
+}: {
+  label: string;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      className="inline-flex h-9 w-9 items-center justify-center rounded-[9px] text-[18px] font-bold leading-none text-[#6e6a72] transition-colors hover:bg-[#faf1e8] hover:text-[#1a1a1a] disabled:opacity-35"
+    >
+      {label}
+    </button>
   );
 }
