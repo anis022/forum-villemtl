@@ -168,7 +168,7 @@ export function LocationPicker({
           type="button"
           onClick={useMyPosition}
           disabled={disabled || locating}
-          className="absolute left-3 top-3 z-[1000] inline-flex min-h-[42px] items-center gap-2 rounded-[10px] border border-[#e9e0d6] bg-white/95 px-3.5 py-2 text-[13px] font-bold text-[#fa3250] shadow-[0_2px_10px_rgba(26,26,26,0.18)] backdrop-blur-sm transition-colors hover:border-[#fa3250] hover:bg-[#fde8eb] disabled:opacity-60"
+          className="absolute left-3 top-3 z-[1000] inline-flex min-h-[42px] items-center gap-2 rounded-[10px] border border-[#e9e0d6] bg-white/95 px-3.5 py-2 text-[13px] font-bold text-[#a3162c] shadow-[0_2px_10px_rgba(26,26,26,0.18)] backdrop-blur-sm transition-colors hover:border-[#a3162c] hover:bg-[#f6e7ea] disabled:opacity-60"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <circle cx="12" cy="12" r="3.2" stroke="currentColor" strokeWidth="1.7" />
@@ -186,11 +186,11 @@ export function LocationPicker({
       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
         {point ? (
           <>
-            <span className="text-[13px] font-bold text-[#fa3250]">{labels.chosen}</span>
+            <span className="text-[13px] font-bold text-[#a3162c]">{labels.chosen}</span>
             <button
               type="button"
               onClick={clear}
-              className="text-[13px] font-bold text-[#6e6a72] underline hover:text-[#ab1f5c]"
+              className="text-[13px] font-bold text-[#6e6a72] underline hover:text-[#8a1024]"
             >
               {labels.clear}
             </button>
@@ -201,7 +201,7 @@ export function LocationPicker({
       </div>
 
       {notice && (
-        <p role="alert" className="mt-2 text-[13px] font-bold text-[#b3122c]">
+        <p role="alert" className="mt-2 text-[13px] font-bold text-[#a3162c]">
           {notice}
         </p>
       )}

@@ -422,7 +422,7 @@ export function AuthModal({
                 {resent && (
                   <p
                     role="status"
-                    className="mb-5 rounded-[12px] border border-[#f8c4cd] bg-[#fde8eb] px-4 py-3 text-[15px] text-[#d81f3c]"
+                    className="mb-5 rounded-[12px] border border-[#f8c4cd] bg-[#f6e7ea] px-4 py-3 text-[15px] text-[#c01f38]"
                   >
                     {t.auth.resendDone}
                   </p>

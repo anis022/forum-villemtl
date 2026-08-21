@@ -84,7 +84,7 @@ export function IssueCard({
         </header>
 
         <Link href={href} className="group mt-3 block">
-          <h3 className="text-[19px] font-bold leading-[27px] break-words group-hover:text-[#fa3250]">
+          <h3 className="text-[19px] font-bold leading-[27px] break-words group-hover:text-[#a3162c]">
             <Translated field="title">{issue.title}</Translated>
           </h3>
           <p className={`mt-1.5 line-clamp-3 text-[15px] leading-[23px] ${MUTED}`}>

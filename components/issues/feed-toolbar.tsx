@@ -160,8 +160,8 @@ export function FeedToolbar({
           className={
             "map-filter-trigger inline-flex h-10 items-center gap-2 rounded-full border px-3.5 text-[13px] font-semibold transition-colors " +
             (open
-              ? "border-[#fa3250] bg-[#fa3250] text-white"
-              : "border-[#e9e0d6] bg-white text-[#2a2a86] hover:border-[#fa3250] hover:text-[#fa3250]")
+              ? "border-[#a3162c] bg-[#a3162c] text-white"
+              : "border-[#e9e0d6] bg-white text-[#2a2a86] hover:border-[#a3162c] hover:text-[#a3162c]")
           }
         >
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -169,7 +169,7 @@ export function FeedToolbar({
           </svg>
           {labels.filters}
           {activeCount > 0 && (
-            <span className={"grid h-5 min-w-5 place-items-center rounded-full px-1 text-[11px] tabular-nums " + (open ? "bg-white text-[#fa3250]" : "bg-[#fa3250] text-white")}>
+            <span className={"grid h-5 min-w-5 place-items-center rounded-full px-1 text-[11px] tabular-nums " + (open ? "bg-white text-[#a3162c]" : "bg-[#a3162c] text-white")}>
               {activeCount}
             </span>
           )}
@@ -240,14 +240,14 @@ export function FeedToolbar({
                   setDraftSort("top");
                   setDraftCategories([]);
                 }}
-                className="map-filter-option min-h-9 px-1 text-[13px] font-semibold text-[#2a2a86] underline-offset-4 hover:text-[#fa3250] hover:underline disabled:cursor-default disabled:text-[#aaa4a8] disabled:no-underline"
+                className="map-filter-option min-h-9 px-1 text-[13px] font-semibold text-[#2a2a86] underline-offset-4 hover:text-[#a3162c] hover:underline disabled:cursor-default disabled:text-[#aaa4a8] disabled:no-underline"
               >
                 {labels.resetFilters}
               </button>
               <button
                 type="button"
                 onClick={applyFilters}
-                className="map-filter-option min-h-9 rounded-[10px] border border-[#fa3250] bg-[#fa3250] px-5 text-[13px] font-semibold text-white transition-colors hover:border-[#d81f3c] hover:bg-[#d81f3c]"
+                className="map-filter-option min-h-9 rounded-[10px] border border-[#a3162c] bg-[#a3162c] px-5 text-[13px] font-semibold text-white transition-colors hover:border-[#c01f38] hover:bg-[#c01f38]"
               >
                 {labels.applyFilters}
               </button>
@@ -276,7 +276,7 @@ function FilterOption({
       className={
         "map-filter-option min-h-9 rounded-[9px] px-3 text-center text-[13px] font-semibold transition-colors " +
         (active
-          ? "border border-[#fa3250] bg-white text-[#fa3250] shadow-[0_1px_2px_rgba(250,50,80,0.08)]"
+          ? "border border-[#a3162c] bg-white text-[#a3162c] shadow-[0_1px_2px_rgba(250,50,80,0.08)]"
           : "border border-transparent text-[#6e686e] hover:text-[#2a2a86]")
       }
     >
@@ -294,7 +294,7 @@ function categoryClass(active: boolean) {
 
 function Check({ active }: { active: boolean }) {
   return (
-    <span className={"grid h-[17px] w-[17px] shrink-0 place-items-center rounded-[3px] border " + (active ? "border-[#fa3250] bg-[#fa3250] text-white" : "border-[#bdb5ae] bg-white")}>
+    <span className={"grid h-[17px] w-[17px] shrink-0 place-items-center rounded-[3px] border " + (active ? "border-[#a3162c] bg-[#a3162c] text-white" : "border-[#bdb5ae] bg-white")}>
       {active && (
         <svg width="10" height="10" viewBox="0 0 12 12" fill="none" aria-hidden="true">
           <path d="m2.5 6.2 2.1 2.1 4.8-4.8" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />

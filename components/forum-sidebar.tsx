@@ -75,7 +75,7 @@ export function ForumSidebar({
               <li key={category.key}>
                 <Link
                   href={`/${lang}?cat=${category.key}`}
-                  className="flex min-h-10 items-center gap-3 px-0.5 py-2 text-[14px] text-[#2a2a86] hover:text-[#fa3250]"
+                  className="flex min-h-10 items-center gap-3 px-0.5 py-2 text-[14px] text-[#2a2a86] hover:text-[#a3162c]"
                 >
                   <span className="min-w-0 flex-1">{category.label}</span>
                   <span className="shrink-0 text-[12px] text-[#777178] tabular-nums">

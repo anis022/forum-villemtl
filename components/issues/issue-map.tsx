@@ -271,7 +271,7 @@ export function IssueMap({
         marker.bindPopup(
           `<strong style="font-size:14px">${escapeHtml(issue.title)}</strong>` +
             `<br><span style="color:#6e6a72">${escapeHtml(labels.statuses[issue.status])} &middot; ${issue.voteCount}</span>` +
-            `<br><a href="/${lang}/sujets/${issue.id}" style="color:#fa3250;font-weight:700">${escapeHtml(labels.open)}</a>`,
+            `<br><a href="/${lang}/sujets/${issue.id}" style="color:#a3162c;font-weight:700">${escapeHtml(labels.open)}</a>`,
           { maxWidth: Math.min(300, (containerRef.current?.clientWidth ?? 300) - 32) },
         );
         marker.on("mouseover", () => setHovered(issue.id));
@@ -471,8 +471,8 @@ export function IssueMap({
             onClick={() => setFiltersOpen((value) => !value)}
             className={`map-filter-trigger pointer-events-auto inline-flex h-9 items-center gap-2 rounded-full border px-3 text-[13px] font-bold shadow-[0_2px_8px_rgba(26,26,26,0.12)] transition-colors sm:px-3.5 lg:h-12 lg:gap-2.5 lg:px-5 lg:text-[15px] ${
               filtersOpen
-                ? "border-[#fa3250] bg-[#fa3250] text-white"
-                : "border-[#ded6cd] bg-white text-[#2a2a86] hover:border-[#fa3250] hover:text-[#fa3250]"
+                ? "border-[#a3162c] bg-[#a3162c] text-white"
+                : "border-[#ded6cd] bg-white text-[#2a2a86] hover:border-[#a3162c] hover:text-[#a3162c]"
             }`}
           >
             <svg className="lg:h-[18px] lg:w-[18px]" width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -482,7 +482,7 @@ export function IssueMap({
             {activeFilterCount > 0 && (
               <span
                 className={`grid h-5 min-w-5 place-items-center rounded-full px-1 text-[11px] tabular-nums lg:h-6 lg:min-w-6 lg:text-[12px] ${
-                  filtersOpen ? "bg-white text-[#fa3250]" : "bg-[#fa3250] text-white"
+                  filtersOpen ? "bg-white text-[#a3162c]" : "bg-[#a3162c] text-white"
                 }`}
               >
                 {activeFilterCount}
@@ -731,7 +731,7 @@ function FilterCheck({ active, square = false }: { active: boolean; square?: boo
     <span
       aria-hidden="true"
       className={`grid h-[17px] w-[17px] shrink-0 place-items-center border ${square ? "rounded-[3px]" : "rounded-full"} ${
-        active ? "border-[#fa3250] bg-[#fa3250] text-white" : "border-[#cfc6bd]"
+        active ? "border-[#a3162c] bg-[#a3162c] text-white" : "border-[#cfc6bd]"
       }`}
     >
       {active && (
@@ -759,7 +759,7 @@ function StatusSegment({
       aria-pressed={active}
       className={`map-filter-option inline-flex min-h-10 min-w-0 items-center justify-center rounded-[9px] border px-2.5 text-[12px] font-semibold leading-[18px] transition-colors ${
         active
-          ? "border-[#fa3250] bg-white text-[#fa3250] shadow-[0_1px_2px_rgba(250,50,80,0.08)]"
+          ? "border-[#a3162c] bg-white text-[#a3162c] shadow-[0_1px_2px_rgba(250,50,80,0.08)]"
           : "border-transparent text-[#6e686e] hover:text-[#2a2a86]"
       }`}
     >

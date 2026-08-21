@@ -172,7 +172,7 @@ export function CommentThread({
              summary has drawn is how a column gets down to three words wide. */
           <details className="group mt-3">
             <summary
-              className={`${BARE_CONTROL} inline-flex cursor-pointer list-none items-center gap-1.5 py-2 pr-2 text-[14px] font-bold leading-[20px] text-[#fa3250] transition-colors hover:text-[#d81f3c] [&::-webkit-details-marker]:hidden`}
+              className={`${BARE_CONTROL} inline-flex cursor-pointer list-none items-center gap-1.5 py-2 pr-2 text-[14px] font-bold leading-[20px] text-[#a3162c] transition-colors hover:text-[#c01f38] [&::-webkit-details-marker]:hidden`}
             >
               <svg
                 aria-hidden="true"

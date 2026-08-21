@@ -178,7 +178,7 @@ export function ProjectEditor({
 
       <Link
         href={`/${lang}/projets`}
-        className="mt-5 inline-block text-[14px] font-bold text-[#fa3250] hover:underline"
+        className="mt-5 inline-block text-[14px] font-bold text-[#a3162c] hover:underline"
       >
         {t.back}
       </Link>
@@ -627,7 +627,7 @@ export function ProjectEditor({
                         ),
                       })
                     }
-                    className="text-[15px] font-bold text-[#fa3250]"
+                    className="text-[15px] font-bold text-[#a3162c]"
                   />
                   <Field
                     name={a.sourceUrl}
@@ -739,7 +739,7 @@ function Field({
   const shared =
     "block w-full min-w-0 -mx-1.5 rounded-[6px] border-0 bg-transparent px-1.5 py-0.5 outline-none " +
     "transition-colors placeholder:font-normal placeholder:text-[#bdb7bd] " +
-    "hover:bg-[#f7f0e8] focus:bg-white focus:ring-2 focus:ring-[#fa3250]/35 " +
+    "hover:bg-[#f7f0e8] focus:bg-white focus:ring-2 focus:ring-[#a3162c]/35 " +
     className;
 
   if (as === "textarea") {
@@ -978,7 +978,7 @@ const ADD_LINK =
   "-ml-1.5 mt-1.5 inline-flex items-center gap-1 rounded-[8px] px-1.5 py-0.5 text-[12px] font-semibold text-[#8a858c] transition-colors hover:bg-[#f2ece4] hover:text-[#5d56b4]";
 
 const META =
-  "w-full rounded-[10px] border border-[#ddd5cd] bg-white px-3 py-2.5 text-[14px] leading-[20px] outline-none focus:border-[#fa3250] focus:ring-2 focus:ring-[#fa3250]/10";
+  "w-full rounded-[10px] border border-[#ddd5cd] bg-white px-3 py-2.5 text-[14px] leading-[20px] outline-none focus:border-[#a3162c] focus:ring-2 focus:ring-[#a3162c]/10";
 
 type Admin = ReturnType<typeof getDictionary>["projectAdmin"];
 
@@ -998,7 +998,7 @@ function Remove({ label, onClick }: { label: string; onClick: () => void }) {
       onClick={onClick}
       aria-label={label}
       title={label}
-      className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] text-[#a9a3aa] transition-colors hover:bg-[#fde8eb] hover:text-[#fa3250] focus-visible:bg-[#fde8eb] focus-visible:text-[#fa3250]"
+      className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] text-[#a9a3aa] transition-colors hover:bg-[#f6e7ea] hover:text-[#a3162c] focus-visible:bg-[#f6e7ea] focus-visible:text-[#a3162c]"
     >
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path
@@ -1170,7 +1170,7 @@ function Bar({
             {option.toUpperCase()}
             <span
               className={`h-1.5 w-1.5 rounded-full ${
-                ready[option] ? "bg-[#2f8b57]" : "bg-[#fa3250]"
+                ready[option] ? "bg-[#2f8b57]" : "bg-[#a3162c]"
               }`}
               aria-hidden="true"
             />

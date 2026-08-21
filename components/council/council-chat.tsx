@@ -64,7 +64,7 @@ function DocIcon() {
 }
 
 const SOURCE_LINK =
-  "-mx-2 inline-flex min-h-[40px] items-center gap-1.5 rounded-[8px] px-2 text-[14px] font-bold text-[#fa3250] hover:underline";
+  "-mx-2 inline-flex min-h-[40px] items-center gap-1.5 rounded-[8px] px-2 text-[14px] font-bold text-[#a3162c] hover:underline";
 
 /**
  * The model writes these. Everything else in the answer is prose.
@@ -105,7 +105,7 @@ const BOLD = /\*\*(.+?)\*\*/g;
 const BULLET = /^[ \t]*[-*+][ \t]+/gm;
 
 const MARK =
-  "ml-0.5 inline-flex min-w-[18px] items-center justify-center rounded-[5px] bg-[#fde8eb] px-1 align-[3px] text-[11px] font-bold leading-[16px] text-[#fa3250] no-underline hover:bg-[#fa3250] hover:text-white";
+  "ml-0.5 inline-flex min-w-[18px] items-center justify-center rounded-[5px] bg-[#f6e7ea] px-1 align-[3px] text-[11px] font-bold leading-[16px] text-[#a3162c] no-underline hover:bg-[#a3162c] hover:text-white";
 
 /**
  * How many markers may sit together before the rest are folded away.
@@ -254,7 +254,7 @@ function Source({
     >
       <span
         aria-hidden="true"
-        className="mt-0.5 flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-[6px] bg-[#fde8eb] text-[12px] font-bold leading-none text-[#fa3250] tabular-nums"
+        className="mt-0.5 flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-[6px] bg-[#f6e7ea] text-[12px] font-bold leading-none text-[#a3162c] tabular-nums"
       >
         {c.i}
       </span>
@@ -548,7 +548,7 @@ export function CouncilChat({ lang, canAsk }: { lang: Locale; canAsk: boolean })
                 onClick={() => ask(example)}
                 disabled={!canAsk}
                 title={canAsk ? undefined : t.membersOnly}
-                className="min-h-[52px] rounded-[12px] border border-[#e4ddd6] bg-[#fffdfb] px-4 py-3 text-left text-[14px] font-medium leading-[20px] text-[#4f4a50] transition-colors hover:border-[#fa3250] hover:bg-[#fff6f7] hover:text-[#1a1a1a] disabled:cursor-not-allowed disabled:hover:border-[#e4ddd6] disabled:hover:bg-[#fffdfb] disabled:hover:text-[#4f4a50]"
+                className="min-h-[52px] rounded-[12px] border border-[#e4ddd6] bg-[#fffdfb] px-4 py-3 text-left text-[14px] font-medium leading-[20px] text-[#4f4a50] transition-colors hover:border-[#a3162c] hover:bg-[#fff6f7] hover:text-[#1a1a1a] disabled:cursor-not-allowed disabled:hover:border-[#e4ddd6] disabled:hover:bg-[#fffdfb] disabled:hover:text-[#4f4a50]"
               >
                 {example}
               </button>
@@ -616,7 +616,7 @@ export function CouncilChat({ lang, canAsk }: { lang: Locale; canAsk: boolean })
                   <button
                     type="button"
                     onClick={() => pick(turn.id, turn.citations[0].i)}
-                    className="mt-2 rounded-[8px] text-[14px] font-semibold text-[#fa3250] hover:underline"
+                    className="mt-2 rounded-[8px] text-[14px] font-semibold text-[#a3162c] hover:underline"
                   >
                     {t.sourceCount(turn.citations.length)}
                   </button>
@@ -673,7 +673,7 @@ export function CouncilChat({ lang, canAsk }: { lang: Locale; canAsk: boolean })
             >
               <summary className="flex min-h-[52px] cursor-pointer list-none items-center justify-between gap-3 px-4 [&::-webkit-details-marker]:hidden">
                 <h2 className="text-[13px] font-semibold text-[#373238]">{sourceTitle}</h2>
-                <span className="shrink-0 text-[13px] font-semibold text-[#fa3250]">
+                <span className="shrink-0 text-[13px] font-semibold text-[#a3162c]">
                   {open ? t.hideSources : t.sourceCount(panel.citations.length)}
                 </span>
               </summary>
@@ -697,7 +697,7 @@ export function CouncilChat({ lang, canAsk }: { lang: Locale; canAsk: boolean })
               {t.membersOnly}
             </p>
           )}
-          <div className="mx-auto flex max-w-[860px] items-end gap-2 rounded-[15px] border border-[#d8d0c8] bg-white p-2 shadow-[0_3px_12px_rgba(31,22,16,0.06)] focus-within:border-[#fa3250]">
+          <div className="mx-auto flex max-w-[860px] items-end gap-2 rounded-[15px] border border-[#d8d0c8] bg-white p-2 shadow-[0_3px_12px_rgba(31,22,16,0.06)] focus-within:border-[#a3162c]">
             <label className="sr-only" htmlFor="council-chat-question">
               {t.placeholder}
             </label>
@@ -725,7 +725,7 @@ export function CouncilChat({ lang, canAsk }: { lang: Locale; canAsk: boolean })
               disabled={!canAsk || busy || !draft.trim()}
               aria-label={busy ? t.sending : t.send}
               title={busy ? t.sending : t.send}
-              className="grid h-[42px] w-[42px] shrink-0 place-items-center rounded-[11px] bg-[#fa3250] text-white transition-colors hover:bg-[#d81f3c] disabled:cursor-not-allowed disabled:bg-[#eee8e3] disabled:text-[#aaa3a0]"
+              className="grid h-[42px] w-[42px] shrink-0 place-items-center rounded-[11px] bg-[#a3162c] text-white transition-colors hover:bg-[#c01f38] disabled:cursor-not-allowed disabled:bg-[#eee8e3] disabled:text-[#aaa3a0]"
             >
               {busy ? (
                 <svg className="h-[18px] w-[18px] animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">

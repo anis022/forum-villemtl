@@ -14,10 +14,13 @@ export function StatusControls({
   issueId,
   status,
   lang,
+  children,
 }: {
   issueId: string;
   status: Status;
   lang: Locale;
+  /** Extra office actions, shown in the same row as the status buttons. */
+  children?: React.ReactNode;
 }) {
   const t = getDictionary(lang);
   const [pending, startTransition] = useTransition();
@@ -31,8 +34,8 @@ export function StatusControls({
   };
 
   return (
-    <div className="mt-6 rounded-[14px] border border-[#fa3250] bg-[#fde8eb] p-5">
-      <p className="font-bold text-[#fa3250]">{t.issue.officialSpace}</p>
+    <div className="mt-5 rounded-[14px] border border-[#a3162c] bg-[#f6e7ea] p-5">
+      <p className="font-bold text-[#a3162c]">{t.issue.officialSpace}</p>
       <p className={`mt-1 text-[15px] ${MUTED}`}>
         {t.issue.officialSpaceHint}
       </p>
@@ -58,6 +61,7 @@ export function StatusControls({
             {pending ? "…" : t.issue.reopen}
           </button>
         )}
+        {children}
       </div>
 
       {error && (

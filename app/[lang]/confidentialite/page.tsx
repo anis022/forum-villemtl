@@ -129,7 +129,7 @@ function Rendered({ block }: { block: Block }) {
       <ul className="space-y-2">
         {block.items.map((item, i) => (
           <li key={i} className="grid grid-cols-[0.9rem_minmax(0,1fr)] gap-x-2 text-[16px] leading-[25px]">
-            <span aria-hidden="true" className="text-[#fa3250]">
+            <span aria-hidden="true" className="text-[#a3162c]">
               •
             </span>
             <span>{item}</span>

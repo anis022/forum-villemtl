@@ -44,7 +44,7 @@ export default async function NewPollPage({
         <div className={PAGE_HERO_INNER}>
           <Link
             href={`/${lang}/sujets/nouveau`}
-            className="text-[14px] font-bold text-[#fa3250] hover:underline"
+            className="text-[14px] font-bold text-[#a3162c] hover:underline"
           >
             {t.poll.backToForum}
           </Link>

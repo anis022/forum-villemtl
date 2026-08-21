@@ -141,8 +141,8 @@ export function MainMenu({
                   aria-current={current ? "page" : undefined}
                   className={`${BARE_CONTROL} inline-flex h-10 items-center whitespace-nowrap px-2.5 font-nav text-[16px] font-bold leading-[24px] transition-colors ${
                     current
-                      ? "text-[#2a2a86] underline decoration-[#fa3250] decoration-2 underline-offset-[6px]"
-                      : "text-[#2a2a86] hover:text-[#fa3250]"
+                      ? "text-[#2a2a86] underline decoration-[#a3162c] decoration-2 underline-offset-[6px]"
+                      : "text-[#2a2a86] hover:text-[#a3162c]"
                   }`}
                 >
                   {item.short}
@@ -160,7 +160,7 @@ export function MainMenu({
         aria-controls="main-menu-panel"
         aria-label={labels.menu}
         className={`flex h-10 shrink-0 items-center gap-2 ${BARE_CONTROL} px-2 font-nav text-[16px] font-bold leading-[24px] transition-colors sm:px-3 lg:hidden ${
-          open ? "text-[#fa3250]" : "text-[#2a2a86] hover:text-[#fa3250]"
+          open ? "text-[#a3162c]" : "text-[#2a2a86] hover:text-[#a3162c]"
         }`}
       >
         <svg
@@ -196,7 +196,7 @@ export function MainMenu({
               <Link
                 href={item.href}
                 aria-current={pathname === item.href ? "page" : undefined}
-                className="text-[14px] font-bold leading-[20px] text-[#fa3250] hover:underline"
+                className="text-[14px] font-bold leading-[20px] text-[#a3162c] hover:underline"
               >
                 {item.label}
               </Link>

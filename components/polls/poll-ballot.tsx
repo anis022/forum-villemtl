@@ -78,8 +78,8 @@ export function PollBallot({
               compact ? "min-h-[42px] py-2" : "min-h-[48px] py-2.5"
             } ${
               mine
-                ? "border-[#fa3250] bg-[#fde8eb]"
-                : `border-[#e9e0d6] bg-white ${canVote ? "hover:border-[#fa3250] hover:bg-[#faf1e8]" : ""}`
+                ? "border-[#a3162c] bg-[#f6e7ea]"
+                : `border-[#e9e0d6] bg-white ${canVote ? "hover:border-[#a3162c] hover:bg-[#faf1e8]" : ""}`
             } ${canVote ? "cursor-pointer" : "cursor-default"}`}
           >
             {/* The bar sits behind the words rather than beside them, so a long
@@ -97,7 +97,7 @@ export function PollBallot({
             <span
               aria-hidden="true"
               className={`relative flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border-2 ${
-                mine ? "border-[#fa3250] bg-[#fa3250]" : "border-[#cfc6bd] bg-white"
+                mine ? "border-[#a3162c] bg-[#a3162c]" : "border-[#cfc6bd] bg-white"
               }`}
             >
               {mine && (
@@ -137,7 +137,7 @@ export function PollBallot({
       </p>
 
       {state.error && (
-        <p className="text-[13px] font-semibold text-[#c3123a]">{t.errors[state.error]}</p>
+        <p className="text-[13px] font-semibold text-[#a3162c]">{t.errors[state.error]}</p>
       )}
     </form>
   );

@@ -112,7 +112,7 @@ export function OfficialBadge({ lang, elected }: { lang: Locale; elected: boolea
   return (
     <span title={label} aria-label={label} className="inline-flex shrink-0 align-middle">
       <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
-        <circle cx="8" cy="8" r="8" fill={elected ? "#fa3250" : "#2a2a86"} />
+        <circle cx="8" cy="8" r="8" fill={elected ? "#a3162c" : "#2a2a86"} />
         <path
           d="M4.6 8.3l2.2 2.2 4.6-4.7"
           stroke="#fff"

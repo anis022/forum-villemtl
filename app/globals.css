@@ -23,8 +23,8 @@
   /* Ensemble Montréal, sampled off ensemblemtl.org rather than off the logo:
      the wordmark is blue and aubergine, but their site is cream, red and
      indigo. Mirrors `components/ui/styles.ts`, which is the source of truth. */
-  --brand-red: #fa3250;
-  --brand-red-dark: #d81f3c;
+  --brand-red: #a3162c;
+  --brand-red-dark: #c01f38;
   --brand-indigo: #2a2a86;
   --brand-aubergine: #32004a;
   --brand-cream: #fef7f0;
@@ -130,7 +130,7 @@ summary:focus-visible,
   outline: none;
   box-shadow:
     0 0 0 2px #ffffff,
-    0 0 0 3px #fa3250;
+    0 0 0 3px #a3162c;
 }
 
 .map-filter-trigger:focus-visible,

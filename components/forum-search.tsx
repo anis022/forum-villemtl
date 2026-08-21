@@ -146,7 +146,7 @@ export function ForumSearch({
               <circle cx="10" cy="10" r="7" stroke="#e9e0d6" strokeWidth="2" fill="none" />
               <path
                 d="M10 3a7 7 0 0 1 7 7"
-                stroke="#fa3250"
+                stroke="#a3162c"
                 strokeWidth="2"
                 strokeLinecap="round"
                 fill="none"

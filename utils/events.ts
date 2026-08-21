@@ -59,7 +59,7 @@ export function isMappable(e: BoroughEvent): boolean {
  * page never explains is worse than no colour at all. What the map has to say
  * now is "an event is here", and one accent says it.
  */
-export const ACCENT = "#fa3250";
+export const ACCENT = "#a3162c";
 
 /** The warm accent, for something happening today rather than later. */
 export const ACCENT_TODAY = "#d6337a";

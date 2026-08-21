@@ -81,7 +81,7 @@ export function AvatarUpload({
             /* The badge is drawn at 32px so it stays a badge on a 64px avatar,
                and its hit area is grown to 40px with a transparent ::after
                rather than by enlarging the circle. */
-            className="absolute -bottom-0.5 -right-0.5 inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-[#fa3250] text-white shadow-[0_1px_4px_rgba(26,26,26,0.25)] transition-transform after:absolute after:-inset-1 after:content-[''] hover:scale-105 active:scale-95 disabled:opacity-60"
+            className="absolute -bottom-0.5 -right-0.5 inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-white bg-[#a3162c] text-white shadow-[0_1px_4px_rgba(26,26,26,0.25)] transition-transform after:absolute after:-inset-1 after:content-[''] hover:scale-105 active:scale-95 disabled:opacity-60"
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path
@@ -110,7 +110,7 @@ export function AvatarUpload({
               onClick={onRemove}
               /* Padded out to a 40px row: as bare 12px text this is the hardest
                  thing on the page to hit with a thumb. */
-              className="inline-flex min-h-[40px] items-center text-[#6e6a72] underline transition-colors hover:text-[#ab1f5c]"
+              className="inline-flex min-h-[40px] items-center text-[#6e6a72] underline transition-colors hover:text-[#8a1024]"
             >
               {labels.remove}
             </button>
@@ -125,7 +125,7 @@ export function AvatarUpload({
           {error && (
             <p
               role="alert"
-              className="rounded-[10px] bg-[#fdeaf2] px-3 py-1.5 text-[#b3122c]"
+              className="rounded-[10px] bg-[#fdeaf2] px-3 py-1.5 text-[#a3162c]"
             >
               {labels.errors[error]}
             </p>

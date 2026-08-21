@@ -35,12 +35,22 @@ export function IssueActions({
   lang,
   canWithdraw,
   actingAsOfficial,
+  bare = false,
   labels,
 }: {
   issueId: string;
   lang: Locale;
   canWithdraw: boolean;
   actingAsOfficial: boolean;
+  /**
+   * Rendered inside somebody else's panel rather than in a box of its own.
+   *
+   * Taking a topic down is one of the things the office does, so under an
+   * official it belongs in the office's own row. Given its own bordered strip
+   * directly underneath, it drew a second panel that said the same thing in a
+   * different frame and left a rule across the page for no reason.
+   */
+  bare?: boolean;
   labels: ActionLabels;
 }) {
   const [confirming, setConfirming] = useState(false);
@@ -56,8 +66,8 @@ export function IssueActions({
     });
   };
 
-  return (
-    <div className="mt-5 rounded-[14px] border border-[#e9e0d6] bg-[#fef7f0] p-4">
+  const body = (
+    <>
       {actingAsOfficial && (
         <p className="mb-3 flex items-start gap-2 text-[13px] leading-[19px] text-[#b8660a]">
           <svg
@@ -89,7 +99,7 @@ export function IssueActions({
               type="button"
               onClick={withdraw}
               disabled={pending}
-              className="rounded-[10px] border border-[#ab1f5c] bg-[#ab1f5c] px-4 py-2 text-[14px] font-bold text-white transition-colors hover:bg-[#b3122c] disabled:opacity-60"
+              className="rounded-[10px] border border-[#8a1024] bg-[#8a1024] px-4 py-2 text-[14px] font-bold text-white transition-colors hover:bg-[#a3162c] disabled:opacity-60"
             >
               {pending ? labels.withdrawing : labels.confirmYes}
             </button>
@@ -108,7 +118,7 @@ export function IssueActions({
           <button
             type="button"
             onClick={() => setConfirming(true)}
-            className="inline-flex items-center gap-2 rounded-[10px] border border-[#e9e0d6] bg-white px-4 py-2 text-[14px] font-bold text-[#6e6a72] transition-colors hover:border-[#ab1f5c] hover:text-[#ab1f5c]"
+            className="inline-flex items-center gap-2 rounded-[10px] border border-[#e9e0d6] bg-white px-4 py-2 text-[14px] font-bold text-[#6e6a72] transition-colors hover:border-[#8a1024] hover:text-[#8a1024]"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path
@@ -123,6 +133,12 @@ export function IssueActions({
           </button>
         </div>
       )}
-    </div>
+    </>
+  );
+
+  if (bare) return body;
+
+  return (
+    <div className="mt-5 rounded-[14px] border border-[#e9e0d6] bg-[#fef7f0] p-4">{body}</div>
   );
 }

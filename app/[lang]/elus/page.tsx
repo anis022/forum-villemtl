@@ -68,7 +68,7 @@ export default async function OfficialsPage({ params }: { params: Promise<{ lang
                   {/* The role in the accent, the district under it in plain
                       text: "conseiller de Snowdon" is two facts, and a resident
                       is scanning for the second one. */}
-                  <p className="mt-1 text-[14px] font-bold leading-[20px] text-[#fa3250]">
+                  <p className="mt-1 text-[14px] font-bold leading-[20px] text-[#a3162c]">
                     {t.officials.roles[person.role]}
                   </p>
                   {/* Only when there is one. A borough mayor has no district,

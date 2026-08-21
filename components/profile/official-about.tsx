@@ -51,7 +51,7 @@ export function OfficialAbout({ person, lang }: { person: Official; lang: Locale
               {say(mandate.title, lang)}
             </p>
             {mandate.portfolio && (
-              <p className="mt-1 text-[14px] leading-[20px] text-[#fa3250]">
+              <p className="mt-1 text-[14px] leading-[20px] text-[#a3162c]">
                 {say(mandate.portfolio, lang)}
               </p>
             )}

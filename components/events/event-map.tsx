@@ -324,7 +324,7 @@ export function EventMap({
           `<strong style="font-size:14px">${escapeHtml(event.title)}</strong>` +
             `<br><span style="color:#6e6a72">${escapeHtml(formatDateRange(event.startsOn, event.endsOn, locale))}</span>` +
             (place ? `<br><span style="color:#6e6a72">${escapeHtml(place)}</span>` : "") +
-            `<br><a href="${escapeHtml(event.sourceUrl)}" data-track-event="${escapeHtml(event.id)}" target="_blank" rel="noreferrer" style="color:#fa3250;font-weight:700">${escapeHtml(labels.details)}</a>`,
+            `<br><a href="${escapeHtml(event.sourceUrl)}" data-track-event="${escapeHtml(event.id)}" target="_blank" rel="noreferrer" style="color:#a3162c;font-weight:700">${escapeHtml(labels.details)}</a>`,
           { maxWidth: popupMaxWidth },
         );
         marker.on("mouseover", () => setHovered(event.id));
@@ -496,8 +496,8 @@ export function EventMap({
             onClick={() => setFiltersOpen((value) => !value)}
             className={`map-filter-trigger pointer-events-auto inline-flex h-9 items-center gap-2 rounded-full border px-3 text-[13px] font-semibold shadow-[0_2px_8px_rgba(26,26,26,0.12)] transition-colors sm:px-3.5 lg:h-12 lg:gap-2.5 lg:px-5 lg:text-[15px] ${
               filtersOpen
-                ? "border-[#fa3250] bg-[#fa3250] text-white"
-                : "border-[#ded6cd] bg-white text-[#2a2a86] hover:border-[#fa3250] hover:text-[#fa3250]"
+                ? "border-[#a3162c] bg-[#a3162c] text-white"
+                : "border-[#ded6cd] bg-white text-[#2a2a86] hover:border-[#a3162c] hover:text-[#a3162c]"
             }`}
           >
             <FilterIcon />
@@ -505,7 +505,7 @@ export function EventMap({
             {activeFilterCount > 0 && (
               <span
                 className={`grid h-5 min-w-5 place-items-center rounded-full px-1 text-[11px] tabular-nums lg:h-6 lg:min-w-6 lg:text-[12px] ${
-                  filtersOpen ? "bg-white text-[#fa3250]" : "bg-[#fa3250] text-white"
+                  filtersOpen ? "bg-white text-[#a3162c]" : "bg-[#a3162c] text-white"
                 }`}
               >
                 {activeFilterCount}
@@ -582,7 +582,7 @@ export function EventMap({
                     <button
                       type="button"
                       onClick={() => setOrigin(null)}
-                      className="text-[12px] font-semibold text-[#5d56b4] underline-offset-4 hover:text-[#fa3250] hover:underline"
+                      className="text-[12px] font-semibold text-[#5d56b4] underline-offset-4 hover:text-[#a3162c] hover:underline"
                     >
                       {labels.nearbyClear}
                     </button>
@@ -618,7 +618,7 @@ export function EventMap({
                 <button
                   type="button"
                   onClick={clearAll}
-                  className="min-h-9 rounded-[10px] border border-[#fa3250] bg-[#fa3250] px-5 text-[13px] font-semibold text-white transition-colors hover:border-[#d81f3c] hover:bg-[#d81f3c]"
+                  className="min-h-9 rounded-[10px] border border-[#a3162c] bg-[#a3162c] px-5 text-[13px] font-semibold text-white transition-colors hover:border-[#c01f38] hover:bg-[#c01f38]"
                 >
                   {labels.showAll}
                 </button>
@@ -833,7 +833,7 @@ function FilterOption({
       aria-pressed={active}
       className={`map-filter-option min-h-9 rounded-[9px] border px-3 text-center text-[13px] font-semibold transition-colors ${
         active
-          ? "border-[#fa3250] bg-white text-[#fa3250] shadow-[0_1px_2px_rgba(250,50,80,0.08)]"
+          ? "border-[#a3162c] bg-white text-[#a3162c] shadow-[0_1px_2px_rgba(250,50,80,0.08)]"
           : "border-transparent text-[#6e686e] hover:text-[#2a2a86]"
       }`}
     >

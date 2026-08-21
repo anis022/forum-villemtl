@@ -107,7 +107,7 @@ export function AccountControls({
                 type="button"
                 onClick={close}
                 disabled={!armed || pending}
-                className="inline-flex items-center justify-center rounded-[10px] border border-[#ab1f5c] bg-[#ab1f5c] px-5 py-[10px] text-[15px] font-bold leading-[22px] text-white transition-all hover:bg-[#b3122c] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex items-center justify-center rounded-[10px] border border-[#8a1024] bg-[#8a1024] px-5 py-[10px] text-[15px] font-bold leading-[22px] text-white transition-all hover:bg-[#a3162c] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {pending ? labels.closing : labels.confirmYes}
               </button>
@@ -128,7 +128,7 @@ export function AccountControls({
           <button
             type="button"
             onClick={() => setConfirming(true)}
-            className="mt-3 inline-flex items-center justify-center rounded-[10px] border border-[#e9e0d6] bg-white px-5 py-[10px] text-[15px] font-bold leading-[22px] text-[#6e6a72] transition-all hover:border-[#ab1f5c] hover:text-[#ab1f5c] active:scale-[0.98]"
+            className="mt-3 inline-flex items-center justify-center rounded-[10px] border border-[#e9e0d6] bg-white px-5 py-[10px] text-[15px] font-bold leading-[22px] text-[#6e6a72] transition-all hover:border-[#8a1024] hover:text-[#8a1024] active:scale-[0.98]"
           >
             {labels.close}
           </button>

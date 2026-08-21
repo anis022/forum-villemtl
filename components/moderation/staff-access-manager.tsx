@@ -202,7 +202,7 @@ export function StaffAccessManager({
                     }}
                     className={
                       confirmingThis
-                        ? "inline-flex items-center justify-center rounded-[10px] border border-[#b3122c] bg-[#b3122c] px-5 py-[10px] text-[15px] font-bold leading-[22px] text-white transition-colors hover:bg-[#8e0f24] disabled:opacity-60"
+                        ? "inline-flex items-center justify-center rounded-[10px] border border-[#a3162c] bg-[#a3162c] px-5 py-[10px] text-[15px] font-bold leading-[22px] text-white transition-colors hover:bg-[#8e0f24] disabled:opacity-60"
                         : BTN_SECONDARY
                     }
                   >

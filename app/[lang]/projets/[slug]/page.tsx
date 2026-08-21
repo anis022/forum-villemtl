@@ -53,7 +53,7 @@ export default async function ProjectPage({
       <main className={PAGE_MAIN}>
         <Link
           href={`/${lang}/projets`}
-          className="text-[14px] font-bold text-[#fa3250] hover:underline"
+          className="text-[14px] font-bold text-[#a3162c] hover:underline"
         >
           {t.projects.back}
         </Link>
@@ -161,7 +161,7 @@ export default async function ProjectPage({
                   href={source.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block break-words px-4 py-3.5 text-[15px] font-bold text-[#fa3250] hover:bg-[#faf1e8] hover:text-[#d81f3c]"
+                  className="block break-words px-4 py-3.5 text-[15px] font-bold text-[#a3162c] hover:bg-[#faf1e8] hover:text-[#c01f38]"
                 >
                   {say(source.label, lang)}
                 </a>

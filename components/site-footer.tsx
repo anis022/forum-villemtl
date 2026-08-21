@@ -60,7 +60,7 @@ export function SiteFooter({ lang }: { lang: Locale }) {
   /* Kept on the same compact heading scale as the rest of the interface. */
   const heading = "text-[18px] font-bold leading-[26px] text-[#1a1a1a]";
   const row =
-    "group inline-flex min-h-[40px] items-center gap-1.5 text-[15px] font-bold leading-[22px] text-[#fa3250] transition-colors hover:text-[#d81f3c]";
+    "group inline-flex min-h-[40px] items-center gap-1.5 text-[15px] font-bold leading-[22px] text-[#a3162c] transition-colors hover:text-[#c01f38]";
 
   return (
     <footer className="border-t border-[#e9e0d6] bg-[#fef7f0] text-[#1a1a1a]">
@@ -134,7 +134,7 @@ export function SiteFooter({ lang }: { lang: Locale }) {
                     href={href}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex h-10 w-10 items-center justify-center rounded-full text-[#32004a] transition-colors hover:bg-white hover:text-[#fa3250]"
+                    className="flex h-10 w-10 items-center justify-center rounded-full text-[#32004a] transition-colors hover:bg-white hover:text-[#a3162c]"
                   >
                     <Icon />
                     <span className="sr-only">

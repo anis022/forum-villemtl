@@ -143,7 +143,7 @@ function OptionEditor({
                 row.voteCount > 0 ? t.poll.removeKeepsNoVotes(row.voteCount) : t.poll.removeChoice
               }
               disabled={rows.length <= 2}
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] text-[#a9a3aa] transition-colors hover:bg-[#fde8eb] hover:text-[#fa3250] disabled:opacity-40"
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] text-[#a9a3aa] transition-colors hover:bg-[#f6e7ea] hover:text-[#a3162c] disabled:opacity-40"
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
@@ -168,7 +168,7 @@ function OptionEditor({
       <p className={`text-[13px] leading-[19px] ${MUTED}`}>{t.poll.editWarning}</p>
 
       {state.error && (
-        <p className="text-[13px] font-semibold text-[#c3123a]">{t.errors[state.error]}</p>
+        <p className="text-[13px] font-semibold text-[#a3162c]">{t.errors[state.error]}</p>
       )}
 
       <div className="flex flex-wrap gap-2">

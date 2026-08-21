@@ -171,7 +171,7 @@ export function NewIssueForm({ lang }: { lang: Locale; isAdmin?: boolean }) {
           />
           <label
             htmlFor="issue-image"
-            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-[10px] border border-[#e9e0d6] bg-white px-5 py-[10px] text-[15px] font-bold leading-[22px] text-[#fa3250] transition-all hover:border-[#fa3250] hover:bg-[#fde8eb] peer-focus-visible:ring-[3px] peer-focus-visible:ring-[#2a2a86] peer-focus-visible:ring-offset-2 peer-disabled:cursor-not-allowed peer-disabled:opacity-60"
+            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-[10px] border border-[#e9e0d6] bg-white px-5 py-[10px] text-[15px] font-bold leading-[22px] text-[#a3162c] transition-all hover:border-[#a3162c] hover:bg-[#f6e7ea] peer-focus-visible:ring-[3px] peer-focus-visible:ring-[#2a2a86] peer-focus-visible:ring-offset-2 peer-disabled:cursor-not-allowed peer-disabled:opacity-60"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path

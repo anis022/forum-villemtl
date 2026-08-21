@@ -34,7 +34,7 @@ export default async function NewIssuePage({
 
       <div className={HERO_BAND}>
         <div className={PAGE_HERO_INNER}>
-          <Link href={`/${lang}`} className="text-[14px] font-bold text-[#fa3250] hover:underline">
+          <Link href={`/${lang}`} className="text-[14px] font-bold text-[#a3162c] hover:underline">
             {t.issue.back}
           </Link>
           <h1 className={`${PAGE_TITLE} mt-3`}>

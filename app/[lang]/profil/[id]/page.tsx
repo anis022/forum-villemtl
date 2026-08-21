@@ -35,11 +35,11 @@ const KINDS = {
   },
   comment: {
     path: "M21 11.5a8.4 8.4 0 0 1-9 8.4 9 9 0 0 1-3.3-.6L3 21l1.8-5.1A8.2 8.2 0 0 1 3.6 11.5 8.4 8.4 0 0 1 12 3.1a8.4 8.4 0 0 1 9 8.4z",
-    tint: "bg-[#fde8eb] text-[#fa3250]",
+    tint: "bg-[#f6e7ea] text-[#a3162c]",
   },
   vote: {
     path: "M12 4.5l7.2 7.6h-4.1V19H8.9v-6.9H4.8L12 4.5z",
-    tint: "bg-[#fdeaf2] text-[#ab1f5c]",
+    tint: "bg-[#fdeaf2] text-[#8a1024]",
   },
 } as const;
 
@@ -118,7 +118,7 @@ export default async function ProfilePage({
         {/* Identity card, overlapping a tinted banner — the shape people
             already read as "this is a person" rather than "this is a record". */}
         <section className={`${CARD} overflow-hidden`}>
-          <div className="h-24 bg-gradient-to-r from-[#fa3250] to-[#32004a] md:h-32" />
+          <div className="h-24 bg-gradient-to-r from-[#a3162c] to-[#32004a] md:h-32" />
 
           <div className="px-4 pb-5 sm:px-6">
             {/* Only the avatar breaks the banner line. Anything else placed
@@ -234,7 +234,7 @@ export default async function ProfilePage({
                       <span className={MUTED}>{t.profile.verbs[item.kind]}</span>{" "}
                       <Link
                         href={`/${lang}/sujets/${item.issueId}`}
-                        className="font-bold hover:text-[#fa3250] hover:underline"
+                        className="font-bold hover:text-[#a3162c] hover:underline"
                       >
                         {item.issueTitle}
                       </Link>

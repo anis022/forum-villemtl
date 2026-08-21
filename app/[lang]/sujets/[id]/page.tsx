@@ -24,6 +24,7 @@ import { PollPanel } from "@/components/polls/poll-panel";
 import { REPLIES_PAGE, getIssue, listComments } from "@/utils/supabase/issues";
 import { editedByOther } from "@/utils/issues";
 import { IssueActions } from "@/components/issues/issue-actions";
+import { IssuePost } from "@/components/issues/issue-post";
 import { getDictionary, isLocale } from "@/utils/i18n";
 import { BTN_SECONDARY, CARD, MUTED, PAGE_MAIN, PAGE_SHELL } from "@/components/ui/styles";
 import { Avatar } from "@/components/ui/avatar";
@@ -57,13 +58,22 @@ export default async function IssuePage({
   const { comments, hasMore: moreReplies, threaded } = await listComments(id, shownReplies);
   const isOfficial = canParticipate && user?.role === "official";
   const isAuthor = canParticipate && Boolean(user) && user!.id === issue.author.id;
+  const withdrawLabels = {
+    withdraw: t.issue.withdraw,
+    withdrawing: t.issue.withdrawing,
+    confirmTitle: t.issue.withdrawConfirmTitle,
+    confirmBody: t.issue.withdrawConfirmBody,
+    confirmYes: t.issue.withdrawConfirmYes,
+    cancel: t.issue.cancelEdit,
+    officialNote: t.issue.withdrawOfficialNote,
+  };
 
   return (
     <div className={PAGE_SHELL}>
       <SiteHeader user={user} lang={lang} />
 
       <main className={PAGE_MAIN}>
-        <Link href={`/${lang}`} className="text-[14px] font-bold text-[#fa3250] hover:underline">
+        <Link href={`/${lang}`} className="text-[14px] font-bold text-[#a3162c] hover:underline">
           {t.issue.back}
         </Link>
 
@@ -121,24 +131,25 @@ export default async function IssuePage({
               </p>
             )}
 
-            <h1 className="mt-4 text-[24px] leading-[32px] break-words md:text-[30px] md:leading-[38px]">
-              <Translated field="title">{issue.title}</Translated>
-            </h1>
-
-            <p className="mt-3 max-w-[68ch] whitespace-pre-wrap break-words text-[17px] leading-[27px]">
-              <Translated field="body">{issue.body}</Translated>
-            </p>
-
-            {ballot && (
-              <div className="mt-5">
-                <PollPanel
-                  ballot={ballot}
-                  canVote={canParticipate}
-                  canEdit={isAuthor || isOfficial}
-                  lang={lang}
-                />
-              </div>
-            )}
+            <IssuePost
+              issueId={issue.id}
+              title={issue.title}
+              body={issue.body}
+              category={issue.category}
+              canEdit={isAuthor || isOfficial}
+              lang={lang}
+            >
+              {ballot && (
+                <div className="mt-4">
+                  <PollPanel
+                    ballot={ballot}
+                    canVote={canParticipate}
+                    canEdit={isAuthor || isOfficial}
+                    lang={lang}
+                  />
+                </div>
+              )}
+            </IssuePost>
           </div>
 
           {/* Full bleed: the photo is what the report is about, so it gets more
@@ -152,8 +163,8 @@ export default async function IssuePage({
             />
           )}
 
-          <div className="p-4 md:p-6">
-            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-2 border-t border-[#f2ece4] pt-4">
+          <div className="px-4 pb-4 md:px-6 md:pb-6">
+            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-2 border-t border-[#f2ece4] pt-3.5">
               <VoteButton
                 issueId={issue.id}
                 voteCount={issue.voteCount}
@@ -177,23 +188,26 @@ export default async function IssuePage({
               />
             </div>
 
-            {isOfficial && <StatusControls issueId={issue.id} status={issue.status} lang={lang} />}
-
-            <IssueActions
-              issueId={issue.id}
-              lang={lang}
-              canWithdraw={isAuthor || isOfficial}
-              actingAsOfficial={!isAuthor && isOfficial}
-              labels={{
-                withdraw: t.issue.withdraw,
-                withdrawing: t.issue.withdrawing,
-                confirmTitle: t.issue.withdrawConfirmTitle,
-                confirmBody: t.issue.withdrawConfirmBody,
-                confirmYes: t.issue.withdrawConfirmYes,
-                cancel: t.issue.cancelEdit,
-                officialNote: t.issue.withdrawOfficialNote,
-              }}
-            />
+            {isOfficial ? (
+              <StatusControls issueId={issue.id} status={issue.status} lang={lang}>
+                <IssueActions
+                  issueId={issue.id}
+                  lang={lang}
+                  canWithdraw
+                  actingAsOfficial={!isAuthor}
+                  bare
+                  labels={withdrawLabels}
+                />
+              </StatusControls>
+            ) : (
+              <IssueActions
+                issueId={issue.id}
+                lang={lang}
+                canWithdraw={isAuthor}
+                actingAsOfficial={false}
+                labels={withdrawLabels}
+              />
+            )}
           </div>
         </article>
         </TranslationProvider>

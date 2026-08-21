@@ -412,3 +412,56 @@ export async function toggleVote(
   revalidatePath(`/${locale}/sujets/${issueId}`);
   return { error: null };
 }
+
+/**
+ * Rewrite a topic's own words.
+ *
+ * There was no way to do this at all: RLS has allowed an author to update their
+ * row since 0011 and an official to update anybody's, and nothing in the
+ * interface ever offered it, so a typo in a title was permanent unless you
+ * deleted the topic and lost its replies.
+ *
+ * The limits are the ones `createIssue` applies, read from the same place, so a
+ * sentence that was publishable when written stays publishable when corrected.
+ * Who may do it is left to the policies rather than decided here: this checks
+ * membership because a lapsed member should not be editing, and the database
+ * checks authorship because that is the part that must hold whatever calls it.
+ */
+export async function updateIssue(
+  issueId: string,
+  _previous: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const supabase = createClient(await cookies());
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "notSignedIn" };
+
+  const { data: member } = await supabase.rpc("viewer_is_member");
+  if (member !== true) return { error: "memberRequired" };
+
+  const locale = localeFrom(formData);
+  const title = String(formData.get("title") ?? "").trim();
+  const body = String(formData.get("body") ?? "").trim();
+  const category = String(formData.get("category") ?? "").trim();
+  const values = { title, body, category };
+
+  if (title.length < 5) return { error: "titleTooShort", values };
+  if (title.length > 150) return { error: "titleTooLong", values };
+  if (body.length < 20) return { error: "bodyTooShort", values };
+  if (body.length > 5000) return { error: "bodyTooLong", values };
+  if (!CATEGORY_KEYS.includes(category as Category)) return { error: "badCategory", values };
+
+  const { error } = await supabase
+    .from("issues")
+    .update({ title, body, category, edited_at: new Date().toISOString(), edited_by: user.id })
+    .eq("id", issueId);
+
+  if (isBlocked(error)) return { error: "messageRefused", values };
+  if (error) return { error: "publishFailed", values };
+
+  revalidatePath(`/${locale}`);
+  revalidatePath(`/${locale}/sujets/${issueId}`);
+  return { error: null };
+}

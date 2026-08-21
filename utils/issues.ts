@@ -36,7 +36,7 @@ export const isSettled = (status: Status) => status === "resolved";
  * so the map and the thread agree about who has spoken.
  */
 export const STATUS_MAP_COLORS: Record<Status, string> = {
-  open: "#fa3250",
+  open: "#a3162c",
   answered: "#2a2a86",
   resolved: "#0b6042",
 };

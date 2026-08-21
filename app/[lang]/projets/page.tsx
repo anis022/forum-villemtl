@@ -106,7 +106,7 @@ export default async function ProjectsPage({ params }: { params: Promise<{ lang:
                             ? `${upcoming} ${t.projects.nextSteps.toLocaleLowerCase(lang)}`
                             : t.projects.status.done}
                         </span>
-                        <span className="inline-flex items-center gap-2 text-[14px] font-semibold text-[#fa3250]">
+                        <span className="inline-flex items-center gap-2 text-[14px] font-semibold text-[#a3162c]">
                           {t.projects.viewProject}
                           <svg className="h-4 w-4 transition-transform group-hover:translate-x-0.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                             <path d="M5 12h14m-5-5 5 5-5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />

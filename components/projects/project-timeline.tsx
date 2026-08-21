@@ -165,7 +165,7 @@ function MilestoneReferences({ milestone, lang }: { milestone: Milestone; lang: 
           href={milestone.source.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="font-semibold text-[#5d56b4] underline-offset-4 hover:text-[#fa3250] hover:underline"
+          className="font-semibold text-[#5d56b4] underline-offset-4 hover:text-[#a3162c] hover:underline"
         >
           {say(milestone.source.label, lang)}
         </a>

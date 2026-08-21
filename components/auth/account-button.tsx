@@ -127,7 +127,7 @@ export function AccountButton({
           aria-haspopup="true"
           aria-controls="account-menu"
           className={`flex h-10 shrink-0 items-center gap-2 ${BARE_CONTROL} px-1.5 font-nav text-[16px] font-bold leading-[24px] transition-colors sm:px-2 ${
-            open ? "text-[#fa3250]" : "text-[#2a2a86] hover:text-[#fa3250]"
+            open ? "text-[#a3162c]" : "text-[#2a2a86] hover:text-[#a3162c]"
           }`}
         >
           <Avatar person={{ ...user, avatarUrl: user.avatarUrl }} size="sm" />
@@ -159,7 +159,7 @@ export function AccountButton({
             <Link
               href={`/${lang}/profil/${user.id}`}
               onClick={() => setOpen(false)}
-              className="flex min-h-11 items-center gap-3 rounded-[10px] px-3 py-2.5 text-[15px] font-bold leading-[20px] text-[#2a2a86] transition-colors hover:bg-[#faf1e8] hover:text-[#fa3250]"
+              className="flex min-h-11 items-center gap-3 rounded-[10px] px-3 py-2.5 text-[15px] font-bold leading-[20px] text-[#2a2a86] transition-colors hover:bg-[#faf1e8] hover:text-[#a3162c]"
             >
               <PersonIcon />
               {t.header.account}
@@ -184,7 +184,7 @@ export function AccountButton({
         type="button"
         onClick={() => setOpen(true)}
         aria-label={t.header.account}
-        className={`flex h-10 shrink-0 items-center gap-2 ${BARE_CONTROL} px-2 font-nav text-[16px] font-bold leading-[24px] text-[#2a2a86] transition-colors hover:text-[#fa3250] sm:px-3`}
+        className={`flex h-10 shrink-0 items-center gap-2 ${BARE_CONTROL} px-2 font-nav text-[16px] font-bold leading-[24px] text-[#2a2a86] transition-colors hover:text-[#a3162c] sm:px-3`}
       >
         <PersonIcon />
         <span className="hidden md:inline">{t.header.account}</span>

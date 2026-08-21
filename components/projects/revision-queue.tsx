@@ -73,7 +73,7 @@ export function RevisionQueue({
               {" · "}
               {revision.projectId ? a.editing : a.creating}
               {" · "}
-              <span className={revision.complete ? "font-bold text-[#2a2a86]" : "font-bold text-[#fa3250]"}>
+              <span className={revision.complete ? "font-bold text-[#2a2a86]" : "font-bold text-[#a3162c]"}>
                 {revision.complete ? a.ready : a.incomplete}
               </span>
             </p>

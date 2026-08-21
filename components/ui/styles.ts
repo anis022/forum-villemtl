@@ -8,7 +8,7 @@
 //
 //   ink #1a1a1a · muted #6e6a72 · line #e9e0d6
 //   cream #fef7f0 (page) · butter #fffbe5 (bands) · wash #faf1e8 (hovers)
-//   accent #fa3250 · accent soft #fde8eb
+//   accent #a3162c · accent soft #f6e7ea
 //   indigo #2a2a86 · deep #32004a · pink #d6337a
 //
 // Before this the site was built on the borough teal with montreal.ca's
@@ -24,8 +24,8 @@ export const MUTED_HEX = "#6e6a72";
 export const LINE = "#e9e0d6";
 
 /** Every action on their site is this red. Buttons, links, selected chips. */
-export const ACCENT = "#fa3250";
-export const ACCENT_SOFT = "#fde8eb";
+export const ACCENT = "#a3162c";
+export const ACCENT_SOFT = "#f6e7ea";
 
 /** Their navigation colour. Carries "an official spoke" here. */
 export const INDIGO = "#2a2a86";
@@ -53,17 +53,17 @@ export const LABEL = "mb-2 block text-[15px] font-bold text-[#1a1a1a]";
 
 // No `outline-none`: the global :focus-visible ring is the keyboard indicator.
 export const FIELD =
-  "w-full rounded-[12px] border border-[#e9e0d6] bg-white px-4 py-[12px] text-[16px] leading-[24px] text-[#1a1a1a] placeholder:text-[#a09a94] transition-colors focus:border-[#fa3250] disabled:bg-[#faf1e8]";
+  "w-full rounded-[12px] border border-[#e9e0d6] bg-white px-4 py-[12px] text-[16px] leading-[24px] text-[#1a1a1a] placeholder:text-[#a09a94] transition-colors focus:border-[#a3162c] disabled:bg-[#faf1e8]";
 
 export const BTN_PRIMARY =
-  "inline-flex items-center justify-center gap-2 rounded-[10px] border border-[#fa3250] bg-[#fa3250] px-5 py-[10px] text-[15px] font-bold leading-[22px] text-white transition-all hover:bg-[#d81f3c] hover:border-[#d81f3c] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60";
+  "inline-flex items-center justify-center gap-2 rounded-[10px] border border-[#a3162c] bg-[#a3162c] px-5 py-[10px] text-[15px] font-bold leading-[22px] text-white transition-all hover:bg-[#c01f38] hover:border-[#c01f38] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60";
 
 /** Same control shape as the primary action, in the masthead aubergine. */
 export const BTN_AUBERGINE =
   "inline-flex items-center justify-center gap-2 rounded-[10px] border border-[#32004a] bg-[#32004a] px-5 py-[10px] text-[15px] font-bold leading-[22px] text-white transition-all hover:border-[#4d0a68] hover:bg-[#4d0a68] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60";
 
 export const BTN_SECONDARY =
-  "inline-flex items-center justify-center gap-2 rounded-[10px] border border-[#e9e0d6] bg-white px-5 py-[10px] text-[15px] font-bold leading-[22px] text-[#fa3250] transition-all hover:border-[#fa3250] hover:bg-[#fde8eb] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60";
+  "inline-flex items-center justify-center gap-2 rounded-[10px] border border-[#e9e0d6] bg-white px-5 py-[10px] text-[15px] font-bold leading-[22px] text-[#a3162c] transition-all hover:border-[#a3162c] hover:bg-[#f6e7ea] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60";
 
 /**
  * Radius for controls that have no shell of their own — header nav items, text
@@ -84,13 +84,13 @@ export const BTN_GHOST =
  * the token instead of being patched back on at each call site.
  */
 export const CHIP =
-  "inline-flex items-center rounded-full border border-[#e9e0d6] bg-white px-4 py-2.5 text-[14px] font-bold leading-[20px] text-[#fa3250] transition-colors hover:border-[#fa3250] hover:bg-[#fde8eb]";
+  "inline-flex items-center rounded-full border border-[#e9e0d6] bg-white px-4 py-2.5 text-[14px] font-bold leading-[20px] text-[#a3162c] transition-colors hover:border-[#a3162c] hover:bg-[#f6e7ea]";
 
 /** Selected state of a CHIP — filled, matching the primary button. */
 export const CHIP_ACTIVE =
-  "inline-flex items-center rounded-full border border-[#fa3250] bg-[#fa3250] px-4 py-2.5 text-[14px] font-bold leading-[20px] text-white transition-colors hover:bg-[#d81f3c] hover:border-[#d81f3c]";
+  "inline-flex items-center rounded-full border border-[#a3162c] bg-[#a3162c] px-4 py-2.5 text-[14px] font-bold leading-[20px] text-white transition-colors hover:bg-[#c01f38] hover:border-[#c01f38]";
 
-export const LINK = "font-bold text-[#fa3250] underline hover:text-[#d81f3c]";
+export const LINK = "font-bold text-[#a3162c] underline hover:text-[#c01f38]";
 
 /**
  * A link inside a list where every row already leads with one, and a rule under
@@ -101,7 +101,7 @@ export const LINK = "font-bold text-[#fa3250] underline hover:text-[#d81f3c]";
  * own subtitle by weight and colour, not by colour alone.
  */
 export const LINK_QUIET =
-  "font-bold text-[#fa3250] no-underline hover:text-[#d81f3c] hover:underline";
+  "font-bold text-[#a3162c] no-underline hover:text-[#c01f38] hover:underline";
 
 /**
  * Errors sit in the same red family as the accent, a shade deeper. On their
@@ -109,7 +109,7 @@ export const LINK_QUIET =
  * red on the page rather than a clearer signal.
  */
 export const ALERT =
-  "rounded-[12px] border border-[#f8c9d0] bg-[#fdeaed] px-4 py-3 text-[15px] text-[#b3122c]";
+  "rounded-[12px] border border-[#f8c9d0] bg-[#fdeaed] px-4 py-3 text-[15px] text-[#a3162c]";
 
 /**
  * The card. A hairline border plus a whisper of shadow, rather than the heavy
