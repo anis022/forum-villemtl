@@ -1,6 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
@@ -9,6 +10,7 @@ import { isBlocked, type Score } from "@/utils/moderation";
 import { NO_TRANSLATION, translateForOffice } from "@/utils/official-translation";
 import { DEFAULT_LOCALE, isLocale, type ErrorCode, type Locale } from "@/utils/i18n";
 import { imageFileToWebp } from "@/utils/server-image";
+import { notifyStaffOfNewTopic } from "@/utils/notify/staff";
 
 /**
  * Actions return an error *code*, not a sentence: the caller renders it in
@@ -166,6 +168,11 @@ export async function createIssue(
   if (error || !data) return { error: "publishFailed", values };
 
   await storeOfficialTranslation(supabase, user.id, data.id, title, body, locale);
+
+  // The office is told after the resident has been sent to their own post, not
+  // before. `after` still runs when the `redirect` below throws, so nothing is
+  // lost by putting the resident first.
+  after(() => notifyStaffOfNewTopic(data.id));
 
   revalidatePath(`/${locale}`);
   redirect(`/${locale}/sujets/${data.id}`);

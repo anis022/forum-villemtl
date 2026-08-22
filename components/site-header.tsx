@@ -4,8 +4,10 @@ import { AccountButton } from "@/components/auth/account-button";
 import { MainMenu } from "@/components/main-menu";
 import { LanguageToggle } from "@/components/language-toggle";
 import { HeaderSearchButton } from "@/components/header-search-button";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 import type { SessionUser } from "@/utils/supabase/auth";
 import { countOpenFlags } from "@/utils/supabase/moderation";
+import { countUnreadNotifications } from "@/utils/supabase/notifications";
 import { getDictionary, type Locale } from "@/utils/i18n";
 
 /**
@@ -40,8 +42,13 @@ export async function SiteHeader({
   const t = getDictionary(lang);
 
   // Counted only for the people the menu will show it to, so an ordinary
-  // visitor's masthead costs exactly what it did before.
-  const moderationCount = user?.role === "official" ? await countOpenFlags() : null;
+  // visitor's masthead costs exactly what it did before. The two queries go
+  // together rather than one after the other: both are for the same person, on
+  // the same request, and neither depends on the other.
+  const isOffice = user?.role === "official";
+  const [moderationCount, unreadCount] = isOffice
+    ? await Promise.all([countOpenFlags(), countUnreadNotifications()])
+    : [null, 0];
 
   return (
     <div className="sticky top-0 z-50">
@@ -107,7 +114,18 @@ export async function SiteHeader({
             moderationCount={moderationCount}
           />
 
+          {/* The bell sits between the sections and the account, which is where
+              a signed-in person looks for it, and it is the only thing in this
+              row that appears for one kind of account and not another. */}
           <div className="ml-auto flex shrink-0 items-center">
+            {isOffice && (
+              <NotificationBell
+                lang={lang}
+                count={unreadCount}
+                label={t.notifications.navLabel}
+                unreadLabel={t.notifications.unread(unreadCount)}
+              />
+            )}
             <AccountButton initialUser={user} lang={lang} />
           </div>
         </div>

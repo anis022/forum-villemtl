@@ -314,6 +314,29 @@ const fr = {
       n === 1 ? "1 message en attente" : `${n} messages en attente`,
   },
   /**
+   * The notification centre, which only the borough office ever sees. Written
+   * in both languages for the same reason the review queue is: several of the
+   * people on `public.staff` work in English, and a screen they check every
+   * morning is not the place to make them read a second language.
+   */
+  notifications: {
+    title: "Notifications",
+    intro:
+      "Ce que les résidentes et résidents publient sur le forum, du plus récent au plus ancien.",
+    navLabel: "Notifications",
+    open: "Ouvrir les notifications",
+    unread: (n: number) =>
+      n === 1 ? "1 notification non lue" : `${n} notifications non lues`,
+    markAllRead: "Tout marquer comme lu",
+    newBadge: "Nouveau",
+    newTopic: (name: string) => `${name} a publié un nouveau sujet`,
+    someone: "Une résidente ou un résident",
+    empty: "Rien de nouveau.",
+    emptyBody:
+      "Vous verrez ici chaque sujet publié par une résidente ou un résident de l'arrondissement.",
+    forbidden: "Cette page est réservée au cabinet de l'arrondissement.",
+  },
+  /**
    * The borough office's own screens for the projects page.
    *
    * Internal, and still translated: five of the nine people on `public.staff`
@@ -1057,6 +1080,21 @@ const en: Dictionary = {
     dismissHint:
       "The message stays published and leaves this list. To take it down, open it and delete it.",
     waiting: (n: number) => (n === 1 ? "1 message waiting" : `${n} messages waiting`),
+  },
+  notifications: {
+    title: "Notifications",
+    intro: "What residents publish on the forum, newest first.",
+    navLabel: "Notifications",
+    open: "Open notifications",
+    unread: (n: number) =>
+      n === 1 ? "1 unread notification" : `${n} unread notifications`,
+    markAllRead: "Mark all as read",
+    newBadge: "New",
+    newTopic: (name: string) => `${name} published a new topic`,
+    someone: "A resident",
+    empty: "Nothing new.",
+    emptyBody: "Every topic published by a resident of the borough shows up here.",
+    forbidden: "This page is for the borough office.",
   },
   projectAdmin: {
     queueTitle: "Projects waiting",

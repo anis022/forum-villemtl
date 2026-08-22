@@ -1,6 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
@@ -10,6 +11,7 @@ import { BOROUGH_BOUNDS } from "@/utils/map";
 import { CATEGORY_KEYS, type Category } from "@/utils/issues";
 import { imageFileToWebp } from "@/utils/server-image";
 import { translateForOffice } from "@/utils/official-translation";
+import { notifyStaffOfNewTopic } from "@/utils/notify/staff";
 
 export type PollActionState = {
   error: ErrorCode | null;
@@ -136,6 +138,10 @@ export async function createPoll(
   if (translation) {
     await supabase.from("issues").update(translation).eq("id", data);
   }
+
+  // A ballot a resident opened is a topic like any other, and the office hears
+  // about it the same way. Behind the response, as in `createIssue`.
+  after(() => notifyStaffOfNewTopic(data));
 
   revalidatePath(`/${locale}`);
   revalidatePath(`/${locale}/sujets/${data}`);
