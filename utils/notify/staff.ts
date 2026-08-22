@@ -48,12 +48,26 @@ const siteOrigin = () => {
 };
 
 /**
- * Resend's own sending address works the moment the integration is installed
- * and before any domain is verified, but it only delivers to the address that
- * owns the Resend account. Set `NOTIFY_FROM_EMAIL` to an address on a verified
- * domain to have the mail come from the borough and reach the whole roster.
+ * Who the mail comes from.
+ *
+ * `RESEND_EMAIL_DOMAIN` is written by the Vercel integration and holds the
+ * domain the resource was provisioned with, so the sending address follows the
+ * provisioning rather than being spelt out twice in two places that can drift.
+ *
+ * Resend refuses any `from` whose domain it has not verified, which means this
+ * returns 403 until the DKIM and SPF records are added to that domain's DNS.
+ * That is the right failure: it is loud in the logs, it costs nothing (the
+ * claim is released and the notification centre is unaffected), and the day the
+ * records land the mail simply starts working with no deploy and no env change.
+ *
+ * The sandbox address Resend offers instead, `onboarding@resend.dev`, is not
+ * used as a fallback on purpose. It only ever delivers to the address that owns
+ * the Resend account, so on a roster of nine it would quietly reach one person
+ * while reporting success, which is worse than not sending.
  */
-const FROM = process.env.NOTIFY_FROM_EMAIL?.trim() || "Forum CDN-NDG <onboarding@resend.dev>";
+const FROM =
+  process.env.NOTIFY_FROM_EMAIL?.trim() ||
+  `Forum CDN-NDG <forum@${process.env.RESEND_EMAIL_DOMAIN?.trim() || "resend.dev"}>`;
 
 /** The address inside a "Name <addr>" pair, or the string itself if it is bare. */
 const bareAddress = (from: string) => from.match(/<([^>]+)>/)?.[1]?.trim() ?? from.trim();
@@ -152,6 +166,7 @@ const compose = (topic: TopicNotice) => {
  * a header on a message that may well be forwarded outside the office.
  */
 async function send(
+  issueId: string,
   recipients: string[],
   message: ReturnType<typeof compose>,
 ): Promise<boolean> {
@@ -167,6 +182,13 @@ async function send(
       headers: {
         authorization: `Bearer ${apiKey}`,
         "content-type": "application/json",
+        // Belt to the claim row's braces. The claim stops this path being
+        // entered twice for one topic; the key stops one entry that was
+        // retried underneath us, by the runtime or by the network, from
+        // arriving at Resend as two messages. Resend holds it for 24 hours,
+        // which is far longer than any retry of a request that has already
+        // been sent.
+        "idempotency-key": `citizen-topic/${issueId}`,
       },
       body: JSON.stringify({
         from: FROM,
@@ -227,7 +249,7 @@ async function emailStaffAboutTopic(topic: TopicNotice): Promise<void> {
   // Neither is a failure, and neither should release a claim.
   if (recipients.length === 0) return;
 
-  const sent = await send(recipients, compose(topic));
+  const sent = await send(topic.issueId, recipients, compose(topic));
 
   if (!sent) {
     const { error: releaseError } = await supabase.rpc("release_topic_notification", {
