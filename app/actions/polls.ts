@@ -139,8 +139,6 @@ export async function createPoll(
     await supabase.from("issues").update(translation).eq("id", data);
   }
 
-  // A ballot a resident opened is a topic like any other, and the office hears
-  // about it the same way. Behind the response, as in `createIssue`.
   after(() => notifyStaffOfNewTopic(data));
 
   revalidatePath(`/${locale}`);

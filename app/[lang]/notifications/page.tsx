@@ -20,20 +20,6 @@ import {
   PAGE_TITLE,
 } from "@/components/ui/styles";
 
-/**
- * The notification centre.
- *
- * One list, newest first, of everything residents have published. Gated twice
- * like the review queue: the page turns away anyone who is not on the borough
- * office, and the SELECT policy on `public.notifications` returns them nothing
- * regardless. The second check is the one that matters; the first is so the
- * answer is a sentence rather than an empty list that reads as good news.
- *
- * Deliberately not cleared by arriving. Somebody who opens this on a phone,
- * reads two lines and locks the screen has not dealt with anything, and a
- * centre that empties itself on sight is a centre that loses the third item
- * every time. Clearing it is a button, and it is theirs to press.
- */
 export default async function NotificationsPage({
   params,
 }: {
@@ -74,13 +60,7 @@ export default async function NotificationsPage({
           </div>
         ) : (
           <>
-            {/* The whole row goes when there is nothing unread, rather than the
-                button alone. "0 notifications non lues" is a sentence nobody
-                needs: the list below it already says everything has been read,
-                and a count of zero is a number reporting on its own absence. */}
             {unread > 0 && (
-              // On a 320px screen this wraps rather than shrinking the button
-              // below a target worth tapping.
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                 <p className={`text-[15px] leading-[22px] ${MUTED}`}>
                   {t.notifications.unread(unread)}
@@ -102,14 +82,9 @@ export default async function NotificationsPage({
 
                 return (
                   <li key={notice.id}>
-                    {/* The whole row is the target, so the card lifts on hover
-                        rather than the title alone turning into a link inside
-                        a box that is also clickable. */}
                     <Link
                       href={`/${lang}/sujets/${notice.issueId}`}
-                      className={`${CARD} flex gap-3 p-4 transition-shadow hover:shadow-[0_4px_16px_rgba(26,26,26,0.08)] ${
-                        notice.read ? "" : "border-l-[3px] border-l-[#a3162c]"
-                      }`}
+                      className={`${CARD} flex gap-3 p-4 transition-shadow hover:shadow-[0_4px_16px_rgba(26,26,26,0.08)]`}
                     >
                       <Avatar
                         person={{
@@ -121,8 +96,6 @@ export default async function NotificationsPage({
                         size="md"
                       />
 
-                      {/* min-w-0, or the title's longest word sets the width of
-                          the column and pushes the pill off a small screen. */}
                       <div className="min-w-0 flex-1">
                         <p className={`text-[13px] leading-[18px] ${MUTED}`}>
                           {t.notifications.newTopic(name)}

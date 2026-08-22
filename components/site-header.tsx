@@ -41,10 +41,6 @@ export async function SiteHeader({
 }) {
   const t = getDictionary(lang);
 
-  // Counted only for the people the menu will show it to, so an ordinary
-  // visitor's masthead costs exactly what it did before. The two queries go
-  // together rather than one after the other: both are for the same person, on
-  // the same request, and neither depends on the other.
   const isOffice = user?.role === "official";
   const [moderationCount, unreadCount] = isOffice
     ? await Promise.all([countOpenFlags(), countUnreadNotifications()])
@@ -114,9 +110,6 @@ export async function SiteHeader({
             moderationCount={moderationCount}
           />
 
-          {/* The bell sits between the sections and the account, which is where
-              a signed-in person looks for it, and it is the only thing in this
-              row that appears for one kind of account and not another. */}
           <div className="ml-auto flex shrink-0 items-center">
             {isOffice && (
               <NotificationBell

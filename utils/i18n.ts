@@ -313,12 +313,6 @@ const fr = {
     waiting: (n: number) =>
       n === 1 ? "1 message en attente" : `${n} messages en attente`,
   },
-  /**
-   * The notification centre, which only the borough office ever sees. Written
-   * in both languages for the same reason the review queue is: several of the
-   * people on `public.staff` work in English, and a screen they check every
-   * morning is not the place to make them read a second language.
-   */
   notifications: {
     title: "Notifications",
     intro:

@@ -2,16 +2,6 @@ import { cookies } from "next/headers";
 import { createClient } from "./server";
 import type { Category } from "@/utils/issues";
 
-/**
- * Reading the notification centre.
- *
- * Every function here goes through the signed-in browser's own client, so RLS
- * decides what comes back and this file never has to. A resident calling any of
- * it gets an empty list and a zero, which is the correct answer rather than a
- * refusal: they have no notifications, because nothing on this site sends them
- * one yet.
- */
-
 export type Notice = {
   id: string;
   createdAt: string;
@@ -43,17 +33,11 @@ type NoticeRow = {
   actor: ProfileRow | ProfileRow[];
 };
 
-/** PostgREST returns an embedded one-to-one as an object or a one-element array. */
+const DEFAULT_LIMIT = 50;
+
 const one = <T,>(value: T | T[] | null): T | null =>
   (Array.isArray(value) ? value[0] : value) ?? null;
 
-/**
- * The badge in the masthead.
- *
- * Counted through an RPC rather than a `head: true` count so the whole thing is
- * one statement Postgres answers from the partial index on unread rows, on a
- * query that runs for every member of staff on every page they load.
- */
 export async function countUnreadNotifications(): Promise<number> {
   const supabase = createClient(await cookies());
   const { data, error } = await supabase.rpc("unread_notification_count");
@@ -61,14 +45,7 @@ export async function countUnreadNotifications(): Promise<number> {
   return typeof data === "number" ? data : 0;
 }
 
-/**
- * The centre itself, newest first.
- *
- * The topic is embedded rather than fetched per row: this is a page of fifty
- * notices, and fifty round trips to render a list is the sort of thing that
- * only shows up on the week the borough has a bad news cycle.
- */
-export async function listNotifications(limit = 50): Promise<Notice[]> {
+export async function listNotifications(limit = DEFAULT_LIMIT): Promise<Notice[]> {
   const supabase = createClient(await cookies());
 
   const { data, error } = await supabase
@@ -85,9 +62,6 @@ export async function listNotifications(limit = 50): Promise<Notice[]> {
 
   return (data as unknown as NoticeRow[])
     .map((row): Notice | null => {
-      // A notice whose topic is gone cascades away with it, so this only fires
-      // inside the moment between the delete and the embed coming back null.
-      // Dropping it is right: there is nothing left to open.
       if (!row.issue) return null;
 
       const actor = one(row.actor);
@@ -99,8 +73,6 @@ export async function listNotifications(limit = 50): Promise<Notice[]> {
         title: row.issue.title,
         category: row.issue.category as Category,
         actor: {
-          // Empty once the author closes their account, which is what tells the
-          // card not to link a name to a profile that is no longer there.
           id: actor?.id ?? null,
           firstName: actor?.first_name ?? "",
           lastName: actor?.last_name ?? "",

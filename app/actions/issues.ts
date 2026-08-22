@@ -169,9 +169,6 @@ export async function createIssue(
 
   await storeOfficialTranslation(supabase, user.id, data.id, title, body, locale);
 
-  // The office is told after the resident has been sent to their own post, not
-  // before. `after` still runs when the `redirect` below throws, so nothing is
-  // lost by putting the resident first.
   after(() => notifyStaffOfNewTopic(data.id));
 
   revalidatePath(`/${locale}`);
