@@ -36,6 +36,8 @@ const sender = () =>
   process.env.NOTIFY_FROM_EMAIL?.trim() ||
   `Forum CDN-NDG <forum@${process.env.RESEND_EMAIL_DOMAIN?.trim() || "resend.dev"}>`;
 
+const replyTo = () => process.env.NOTIFY_REPLY_TO?.trim() || "forumcdnndg@ensemblemtl.org";
+
 const bareAddress = (from: string) => from.match(/<([^>]+)>/)?.[1]?.trim() ?? from.trim();
 
 const escapeHtml = (value: string) =>
@@ -123,6 +125,7 @@ async function send(
         from,
         to: [bareAddress(from)],
         bcc: recipients,
+        reply_to: replyTo(),
         subject: message.subject,
         text: message.text,
         html: message.html,
