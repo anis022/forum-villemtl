@@ -61,9 +61,21 @@ Then raise the limit. Enabling custom SMTP moves the cap from two an hour to thi
 
 ## Capacity
 
-Resend's free tier is 3000 messages a month with a daily ceiling of 100. The paid tier at twenty dollars a month is 50000. A verification code is one message and a staff notification is one message regardless of how many addresses are in the blind copy field, so the count grows with sign in attempts rather than with membership.
+Resend's free tier is 3000 messages a month with a daily ceiling of 100. The paid
+tier at twenty dollars a month is 50000. A verification code is one message and a
+staff notification is one message regardless of how many addresses are in the
+blind copy field, so the count grows with sign in attempts rather than with
+membership.
 
-The free tier's hundred a day is the number to watch. It is comfortable during a normal week and too small on the day the forum is announced to the membership.
+The daily ceiling is the one that bites. At around 300 members, the day the forum
+is announced puts every one of them through a sign in at once, and a person who
+does not see the code and presses resend twice counts as three. That is several
+hundred messages against a limit of a hundred, so the paid tier has to be in place
+before the announcement goes out, not after the first member reports that no code
+arrived.
+
+A normal week afterwards sits far below the free limit. The plan is worth having
+for launch week specifically.
 
 ## Verifying it works
 
