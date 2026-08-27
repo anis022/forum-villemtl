@@ -8,9 +8,8 @@ import type { PollMapResponse } from "@/utils/polls";
 import { dateLocale, type Locale } from "@/utils/i18n";
 import { MUTED } from "@/components/ui/styles";
 import {
+  addBasemap,
   MAP_OPTIONS,
-  TILE_OPTIONS,
-  TILE_URL,
   addBoroughOutline,
   frameBorough,
   BOROUGH_BOUNDS,
@@ -71,7 +70,7 @@ export function PollMap({
       frameBorough(L, map, 0.25);
       map.scrollWheelZoom.enable();
       L.control.zoom({ position: "bottomright" }).addTo(map);
-      L.tileLayer(TILE_URL, TILE_OPTIONS).addTo(map);
+      await addBasemap(L, map);
       void addBoroughOutline(L, map);
 
       responses.forEach((response, index) => {

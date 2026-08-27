@@ -15,11 +15,10 @@ import {
 } from "@/utils/issues";
 import { type Locale } from "@/utils/i18n";
 import {
+  addBasemap,
   BOROUGH_BOUNDS,
   BOROUGH_CENTER,
   MAP_OPTIONS,
-  TILE_OPTIONS,
-  TILE_URL,
 } from "@/utils/map";
 
 export type IssueMapLabels = {
@@ -135,7 +134,7 @@ export function IssueMap({
       map.scrollWheelZoom.enable();
       map.setView(BOROUGH_CENTER, 12, { animate: false });
       L.control.zoom({ position: "bottomleft" }).addTo(map);
-      L.tileLayer(TILE_URL, TILE_OPTIONS).addTo(map);
+      await addBasemap(L, map);
       layerRef.current = L.layerGroup().addTo(map);
 
       observer = new ResizeObserver(() => map.invalidateSize({ animate: false }));

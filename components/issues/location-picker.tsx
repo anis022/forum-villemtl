@@ -4,10 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import "leaflet/dist/leaflet.css";
 import type { Map as LeafletMap, Marker } from "leaflet";
 import {
+  addBasemap,
   BOROUGH_BOUNDS,
   MAP_OPTIONS,
-  TILE_OPTIONS,
-  TILE_URL,
   addBoroughOutline,
   frameBorough,
 } from "@/utils/map";
@@ -75,7 +74,7 @@ export function LocationPicker({
       frameBorough(L, map, 0.25);
       L.control.zoom({ position: "bottomright" }).addTo(map);
 
-      L.tileLayer(TILE_URL, TILE_OPTIONS).addTo(map);
+      await addBasemap(L, map);
       // Shows the picker's own rule: inside the outline is where a pin is
       // accepted, so the fence is visible before anyone hits it.
       void addBoroughOutline(L, map);
