@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { getDictionary } from "@/utils/i18n";
+import { siteOrigin } from "@/utils/site";
 import type { Category } from "@/utils/issues";
 
 type TopicNotice = {
@@ -20,16 +21,6 @@ const serviceClient = () => {
   const key = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) return null;
   return createClient(url, key, { auth: { persistSession: false } });
-};
-
-const siteOrigin = () => {
-  const explicit = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-  if (explicit) return explicit.replace(/\/+$/, "");
-
-  const vercel = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim();
-  if (vercel) return `https://${vercel.replace(/^https?:\/\//, "").replace(/\/+$/, "")}`;
-
-  return "https://cdnndg.vercel.app";
 };
 
 const sender = () =>

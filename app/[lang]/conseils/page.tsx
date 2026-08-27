@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
 import { CouncilChat } from "@/components/council/council-chat";
@@ -21,6 +22,17 @@ import { getDictionary, isLocale } from "@/utils/i18n";
  * composer is enabled only for a current member and the route re-checks the
  * same rule before doing any work.
  */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ lang: string }>;
+}): Promise<Metadata> {
+  const { lang } = await params;
+  if (!isLocale(lang)) return {};
+  const t = getDictionary(lang);
+  return { title: t.nav.short.council, alternates: { canonical: `/${lang}/conseils` } };
+}
+
 export default async function CouncilPage({
   params,
 }: {

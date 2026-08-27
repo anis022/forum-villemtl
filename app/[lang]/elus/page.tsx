@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -17,6 +18,17 @@ import {
   PAGE_SHELL,
   PAGE_TITLE,
 } from "@/components/ui/styles";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ lang: string }>;
+}): Promise<Metadata> {
+  const { lang } = await params;
+  if (!isLocale(lang)) return {};
+  const t = getDictionary(lang);
+  return { title: t.nav.short.officials, alternates: { canonical: `/${lang}/elus` } };
+}
 
 export default async function OfficialsPage({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params;

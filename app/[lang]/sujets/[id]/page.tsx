@@ -1,3 +1,5 @@
+import { cache } from "react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
@@ -29,6 +31,46 @@ import { IssuePost } from "@/components/issues/issue-post";
 import { getDictionary, isLocale } from "@/utils/i18n";
 import { BTN_SECONDARY, CARD, MUTED, PAGE_MAIN, PAGE_SHELL } from "@/components/ui/styles";
 import { Avatar } from "@/components/ui/avatar";
+import { siteOrigin } from "@/utils/site";
+
+/**
+ * Read once per request even though the page and its metadata both ask for it.
+ * Without this a topic costs two round trips to the database to render one page.
+ */
+const loadIssue = cache(getIssue);
+
+/**
+ * A topic is the thing people actually send each other, straight from the share
+ * button on the card. Without this the link arrives as a bare URL and the person
+ * receiving it has to open it to find out what it is.
+ */
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ lang: string; id: string }>;
+}): Promise<Metadata> {
+  const { lang, id } = await params;
+  if (!isLocale(lang)) return {};
+
+  const issue = await loadIssue(id, lang);
+  if (!issue) return {};
+
+  const summary = issue.body.replace(/\s+/g, " ").trim();
+  const description = summary.length > 200 ? `${summary.slice(0, 200).trimEnd()}…` : summary;
+  const url = `${siteOrigin()}/${lang}/sujets/${id}`;
+
+  return {
+    title: issue.title,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      type: "article",
+      title: issue.title,
+      description,
+      url,
+    },
+  };
+}
 
 export default async function IssuePage({
   params,
@@ -44,7 +86,7 @@ export default async function IssuePage({
   const { r, edit } = await searchParams;
   const [viewer, issue, ballot] = await Promise.all([
     getSessionContext(),
-    getIssue(id, lang),
+    loadIssue(id, lang),
     ballotForIssue(id),
   ]);
   if (!issue) notFound();

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
 import { MapMobileHeader } from "@/components/issues/map-mobile-header";
@@ -6,6 +7,17 @@ import { getDictionary, isLocale, dateLocale } from "@/utils/i18n";
 import { listEvents } from "@/utils/supabase/events";
 import { MUTED } from "@/components/ui/styles";
 import { EventMap } from "@/components/events/event-map";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ lang: string }>;
+}): Promise<Metadata> {
+  const { lang } = await params;
+  if (!isLocale(lang)) return {};
+  const t = getDictionary(lang);
+  return { title: t.nav.short.events, alternates: { canonical: `/${lang}/evenements` } };
+}
 
 export default async function EventsPage({
   params,

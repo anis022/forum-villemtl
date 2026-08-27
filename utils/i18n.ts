@@ -62,6 +62,11 @@ export type ErrorCode =
   | "messageRefused";
 
 const fr = {
+  meta: {
+    siteName: "Forum CDN-NDG",
+    siteDescription:
+      "Le forum des membres d'Ensemble Montréal dans Côte-des-Neiges–Notre-Dame-de-Grâce. Signalez un enjeu de quartier, suivez les projets et lisez ce que le conseil d'arrondissement y répond.",
+  },
   header: {
     menu: "Menu",
     search: "Recherche",
@@ -846,6 +851,11 @@ const fr = {
 export type Dictionary = typeof fr;
 
 const en: Dictionary = {
+  meta: {
+    siteName: "Forum CDN-NDG",
+    siteDescription:
+      "The forum for Ensemble Montréal members in Côte-des-Neiges–Notre-Dame-de-Grâce. Report a neighbourhood issue, follow the projects, and read what the borough council says back.",
+  },
   header: {
     menu: "Menu",
     search: "Search",
