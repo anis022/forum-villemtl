@@ -3,16 +3,27 @@ import { DEFAULT_BOROUGH } from "@/utils/boroughs";
 // One basemap for the whole site, so the events map, the reports map and the
 // location picker cannot drift apart.
 //
-// OpenFreeMap's "positron" style, drawn from OpenStreetMap data: a pale, near
-// grey basemap that says enough about the street grid and then gets out of the
-// way, leaving the coloured status pins as the only saturated thing on screen.
+// CARTO Positron: a pale, near-grey basemap that says just enough about the
+// street grid and gets out of the way, so the coloured status pins are the only
+// saturated thing on screen and carry the page on their own.
 //
-// It replaces CARTO because CARTO now stamps "API KEY REQUIRED" across every
-// raster tile served without a key, and says in its own documentation that it is
-// considering ending data updates to the raster basemaps. This needs no key, no
-// account and no request limit, and vector tiles stay sharp on the retina
-// screens most of the traffic arrives on.
-export const BASEMAP_STYLE = "https://tiles.openfreemap.org/styles/positron";
+// CARTO now stamps "API KEY REQUIRED" diagonally across every raster tile served
+// without a key, so the maps read as broken software rather than as a map. The
+// key is free, covers five million tiles a month and is requested in a minute at
+// carto.com/basemaps/apikey. It is public by necessity: the browser fetches the
+// tiles, so the key travels in the URL and cannot be a secret.
+const CARTO_KEY = process.env.NEXT_PUBLIC_CARTO_API_KEY?.trim();
+
+const CARTO_TILES = `https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png?key=${CARTO_KEY}`;
+
+// Where the maps go when no key is configured. OpenStreetMap's own tiles need no
+// key and are never watermarked, so a deploy that forgot the variable still gets
+// a working map. It is far louder than Positron and the coloured pins have to
+// fight it, which is the point: a legible map in the wrong style beats a correct
+// style with "API KEY REQUIRED" written across it.
+const OSM_TILES = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+
+export const TILE_URL = CARTO_KEY ? CARTO_TILES : OSM_TILES;
 
 /**
  * The borough every map opens on, with padding. The report form refuses a pin
@@ -70,32 +81,19 @@ export const MAP_OPTIONS = {
   scrollWheelZoom: false,
   zoomControl: false,
   fadeAnimation: false,
-  // Used to ride along on the raster tile layer. Without it here, a map whose
-  // basemap is a canvas has no ceiling and keeps zooming past the data.
-  maxZoom: 19,
 } as const;
 
 // CARTO's terms want them credited beside OpenStreetMap; without their tiles it
 // is OpenStreetMap alone, and crediting a provider we are not using is wrong.
-export const TILE_ATTRIBUTION =
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+export const TILE_ATTRIBUTION = CARTO_KEY
+  ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+  : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
 
-/**
- * Put the basemap under a Leaflet map.
- *
- * MapLibre draws into its own canvas below Leaflet's panes, and Leaflet keeps
- * everything else: the markers, the borough outline, the bounds and every click
- * handler already written against them. Loaded on demand so the renderer stays
- * out of the bundle of a page that never opens a map.
- */
-export async function addBasemap(
-  L: typeof import("leaflet"),
-  map: import("leaflet").Map,
-): Promise<void> {
-  const { maplibreGL } = await import("@maplibre/maplibre-gl-leaflet");
-  maplibreGL({ style: BASEMAP_STYLE, attributionControl: false }).addTo(map);
-  map.attributionControl?.addAttribution(TILE_ATTRIBUTION);
-}
+export const TILE_OPTIONS = {
+  attribution: TILE_ATTRIBUTION,
+  maxZoom: 19,
+  className: "map-tiles",
+} as const;
 
 /** Served from our own origin: see scripts/ingest/borough-outline.ts. */
 const OUTLINE_URL = DEFAULT_BOROUGH.outlineUrl;

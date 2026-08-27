@@ -25,10 +25,11 @@ import {
   type When,
 } from "@/utils/events";
 import {
-  addBasemap,
   BOROUGH_BOUNDS,
   BOROUGH_CENTER,
   MAP_OPTIONS,
+  TILE_OPTIONS,
+  TILE_URL,
 } from "@/utils/map";
 
 export type MapLabels = {
@@ -155,7 +156,7 @@ export function EventMap({
       map.scrollWheelZoom.enable();
       map.setView(BOROUGH_CENTER, 12, { animate: false });
       L.control.zoom({ position: "bottomleft" }).addTo(map);
-      await addBasemap(L, map);
+      L.tileLayer(TILE_URL, TILE_OPTIONS).addTo(map);
       layerRef.current = L.layerGroup().addTo(map);
 
       map.on("click", (event: { latlng: { lat: number; lng: number } }) => {
