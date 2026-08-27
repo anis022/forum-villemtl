@@ -8,8 +8,24 @@ import { DEFAULT_BOROUGH } from "@/utils/boroughs";
 // transit, buildings and neighbourhood labels. The previous Positron layer was
 // intentionally grey and then desaturated again in CSS, which removed most of
 // that local character.
-export const TILE_URL =
-  "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
+//
+// CARTO now stamps "API KEY REQUIRED" diagonally across every raster tile served
+// without a key, so the maps read as broken software rather than as a map. The
+// key is free, covers five million tiles a month and is requested in a minute at
+// carto.com/basemaps/apikey. It is public by necessity: the browser fetches the
+// tiles, so the key travels in the URL and cannot be a secret.
+const CARTO_KEY = process.env.NEXT_PUBLIC_CARTO_API_KEY?.trim();
+
+const CARTO_TILES = `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=${CARTO_KEY}`;
+
+// Where the maps go when no key is configured. OpenStreetMap's own tiles need no
+// key and are never watermarked, so a deploy that forgot the variable still gets
+// a working map. It is louder than Voyager and the coloured pins have to fight it
+// a little, which is the point: a legible map in the wrong style beats a correct
+// style with "API KEY REQUIRED" written across it.
+const OSM_TILES = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+
+export const TILE_URL = CARTO_KEY ? CARTO_TILES : OSM_TILES;
 
 /**
  * The borough every map opens on, with padding. The report form refuses a pin
@@ -69,8 +85,11 @@ export const MAP_OPTIONS = {
   fadeAnimation: false,
 } as const;
 
-export const TILE_ATTRIBUTION =
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
+// CARTO's terms want them credited beside OpenStreetMap; without their tiles it
+// is OpenStreetMap alone, and crediting a provider we are not using is wrong.
+export const TILE_ATTRIBUTION = CARTO_KEY
+  ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+  : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
 
 export const TILE_OPTIONS = {
   attribution: TILE_ATTRIBUTION,
