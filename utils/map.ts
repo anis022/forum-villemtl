@@ -3,11 +3,9 @@ import { DEFAULT_BOROUGH } from "@/utils/boroughs";
 // One basemap for the whole site, so the events map, the reports map and the
 // location picker cannot drift apart.
 //
-// CARTO Voyager keeps the street hierarchy quiet enough for coloured pins but
-// restores the things a resident uses to orient themselves: parks, water,
-// transit, buildings and neighbourhood labels. The previous Positron layer was
-// intentionally grey and then desaturated again in CSS, which removed most of
-// that local character.
+// CARTO Positron: a pale, near-grey basemap that says just enough about the
+// street grid and gets out of the way, so the coloured status pins are the only
+// saturated thing on screen and carry the page on their own.
 //
 // CARTO now stamps "API KEY REQUIRED" diagonally across every raster tile served
 // without a key, so the maps read as broken software rather than as a map. The
@@ -16,12 +14,12 @@ import { DEFAULT_BOROUGH } from "@/utils/boroughs";
 // tiles, so the key travels in the URL and cannot be a secret.
 const CARTO_KEY = process.env.NEXT_PUBLIC_CARTO_API_KEY?.trim();
 
-const CARTO_TILES = `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=${CARTO_KEY}`;
+const CARTO_TILES = `https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png?key=${CARTO_KEY}`;
 
 // Where the maps go when no key is configured. OpenStreetMap's own tiles need no
 // key and are never watermarked, so a deploy that forgot the variable still gets
-// a working map. It is louder than Voyager and the coloured pins have to fight it
-// a little, which is the point: a legible map in the wrong style beats a correct
+// a working map. It is far louder than Positron and the coloured pins have to
+// fight it, which is the point: a legible map in the wrong style beats a correct
 // style with "API KEY REQUIRED" written across it.
 const OSM_TILES = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
 
