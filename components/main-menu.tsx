@@ -78,7 +78,15 @@ export function MainMenu({
     };
   }, [open]);
 
-  useEffect(() => setOpen(false), [pathname]);
+  // Close on navigation. Done during render rather than in an effect: an effect
+  // would paint the new page with the panel still over it and close it on the
+  // frame after, which on a phone is a visible flash of the old menu on top of
+  // the page you just asked for.
+  const [openedAt, setOpenedAt] = useState(pathname);
+  if (openedAt !== pathname) {
+    setOpenedAt(pathname);
+    setOpen(false);
+  }
 
   const items = [
     { href: `/${lang}`, label: labels.forum, short: labels.short.forum, desc: labels.forumDesc },

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 
@@ -90,14 +90,21 @@ export function AuthModal({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<ErrorCode | null>(null);
   const [height, setHeight] = useState<number | undefined>(undefined);
-  const [mounted, setMounted] = useState(false);
 
   /** Carried into the code screen: the address to verify against. */
   const [email, setEmail] = useState("");
   const [cooldown, setCooldown] = useState(0);
   const [resent, setResent] = useState(false);
 
-  useEffect(() => setMounted(true), []);
+  // False while rendering on the server, true once in the browser. The portal
+  // below needs `document.body`, which does not exist during SSR. A `useEffect`
+  // setting a flag does the same job but renders the modal twice on mount, and
+  // this reads the same in one pass.
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 
   // Drive the native dialog from the `open` prop so we get focus trapping,
   // Esc-to-close and an inert background for free. This runs as a layout
