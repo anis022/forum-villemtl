@@ -57,16 +57,26 @@ export function formatDateShort(iso: string, lang: Locale) {
 }
 
 /**
- * Category and status sit side by side, but they answer different questions —
- * what this is about, and where it stands — so they must not look alike. The
- * category is an outline pill and status is filled.
+ * Category and status sit side by side, but they answer different questions,
+ * what this is about and where it stands, so they must not look alike. The
+ * category is outlined and status is filled.
+ *
+ * Rounded the way everything else here is rounded, not capsules. A fully
+ * rounded label reads as a badge stuck onto the card rather than as part of it,
+ * and there are two of them in the corner of every post in the feed.
+ *
+ * 10px is the radius the buttons use and the one that appears most often in
+ * `styles.ts`, so these sit in the same family as the surfaces around them.
+ * Going up to the field's 12px or the card's 16px would not read as a larger
+ * corner at this size, it would read as a capsule again: the label is about
+ * 20px tall, so anything past half of that is a semicircle.
  */
 export function CategoryTag({ category, lang }: { category: Category; lang: Locale }) {
   return (
-    /* A shade tighter on phones. These two pills sit in the corner of a card
+    /* A shade tighter on phones. These two labels sit in the corner of a card
        whose other half is a person's name, and at full size they left that name
        too little room to be worth reading. */
-    <span className="inline-flex max-w-[11ch] items-center truncate rounded-full border border-[#e9e0d6] px-2 py-0.5 text-[11px] font-bold text-[#6e6a72] sm:max-w-none sm:px-2.5 sm:py-1 sm:text-[12px]">
+    <span className="inline-flex max-w-[11ch] items-center truncate rounded-[10px] border border-[#e9e0d6] px-2 py-0.5 text-[11px] font-bold text-[#6e6a72] sm:max-w-none sm:px-2.5 sm:py-1 sm:text-[12px]">
       {getDictionary(lang).categories[category]}
     </span>
   );
@@ -82,7 +92,7 @@ const STATUS_STYLES: Record<Status, string> = {
 export function StatusTag({ status, lang }: { status: Status; lang: Locale }) {
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-bold sm:px-2.5 sm:py-1 sm:text-[12px] ${STATUS_STYLES[status]}`}
+      className={`inline-flex items-center rounded-[10px] px-2 py-0.5 text-[11px] font-bold sm:px-2.5 sm:py-1 sm:text-[12px] ${STATUS_STYLES[status]}`}
     >
       {getDictionary(lang).statuses[status]}
     </span>
