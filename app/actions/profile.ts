@@ -74,7 +74,10 @@ export async function updateAvatar(formData: FormData): Promise<ProfileResult> {
   const { error: uploadError } = await supabase.storage
     .from("avatars")
     .upload(path, webp, { upsert: true, contentType: "image/webp" });
-  if (uploadError) return { ok: false, error: "uploadFailed" };
+  if (uploadError) {
+    console.error("[profile] avatar upload:", uploadError.message);
+    return { ok: false, error: "uploadFailed" };
+  }
 
   const {
     data: { publicUrl },
@@ -84,7 +87,10 @@ export async function updateAvatar(formData: FormData): Promise<ProfileResult> {
     .from("profiles")
     .update({ avatar_url: `${publicUrl}?v=${Date.now()}` })
     .eq("id", user.id);
-  if (saveError) return { ok: false, error: "uploadFailed" };
+  if (saveError) {
+    console.error("[profile] avatar url save:", saveError.message);
+    return { ok: false, error: "uploadFailed" };
+  }
 
   // Earlier versions stored the original extension. Once the WebP is live,
   // remove those now-unreferenced copies so optimization also reduces storage.
@@ -113,7 +119,10 @@ export async function removeAvatar(): Promise<ProfileResult> {
     .from("profiles")
     .update({ avatar_url: null })
     .eq("id", user.id);
-  if (error) return { ok: false, error: "uploadFailed" };
+  if (error) {
+    console.error("[profile] avatar clear:", error.message);
+    return { ok: false, error: "uploadFailed" };
+  }
 
   revalidatePath("/", "layout");
   return { ok: true };
@@ -140,7 +149,10 @@ export async function closeAccount(): Promise<ProfileResult> {
   if (!user) return { ok: false, error: "notSignedIn" };
 
   const { error } = await supabase.rpc("close_my_account");
-  if (error) return { ok: false, error: "publishFailed" };
+  if (error) {
+    console.error("[profile] close account:", error.message);
+    return { ok: false, error: "publishFailed" };
+  }
 
   await supabase.auth.signOut();
   revalidatePath("/", "layout");

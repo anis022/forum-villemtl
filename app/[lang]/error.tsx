@@ -9,7 +9,7 @@ import { BTN_PRIMARY, BTN_SECONDARY, CARD, MUTED, PAGE_MAIN, PAGE_SHELL } from "
  * What a reader sees when something under this route throws.
  *
  * There was no boundary at all, so every failure fell through to Next's own
- * fallback: "This page couldn't load. Reload to try again, or go back." — in
+ * fallback: "This page couldn't load. Reload to try again, or go back.", in
  * English whatever language the reader was in, on a site whose whole obligation
  * is to be bilingual, and with no sign of where they were.
  *
@@ -46,6 +46,24 @@ export default function RouteError({
               {t.errorPage.home}
             </a>
           </div>
+          {/*
+            Next hashes the server-side error and puts the same string in the
+            runtime log and on this object, so it is the one identifier a
+            reader and a log search can both hold. Showing it is what turns
+            "it didn't work" into a line somebody can find: an elected member
+            lost a post to a 1 MB upload cap, and the digest that named it
+            expired an hour later, unread.
+
+            Absent when the throw happened in the browser rather than on the
+            server, so the whole block goes rather than showing a bare label.
+          */}
+          {error.digest ? (
+            <p className={`mt-5 text-[13px] leading-[20px] ${MUTED}`}>
+              {t.errorPage.reference} <code className="font-mono">{error.digest}</code>
+              <br />
+              {t.errorPage.referenceHint}
+            </p>
+          ) : null}
         </div>
       </main>
     </div>

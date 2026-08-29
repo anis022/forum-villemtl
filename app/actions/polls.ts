@@ -206,7 +206,10 @@ export async function submitMapPollResponse(
     const { error: uploadError } = await supabase.storage
       .from("poll-pin-images")
       .upload(imagePath, webp, { contentType: "image/webp" });
-    if (uploadError) return { error: "uploadFailed", values };
+    if (uploadError) {
+      console.error("[polls] pin image upload:", uploadError.message);
+      return { error: "uploadFailed", values };
+    }
   }
 
   const { error } = await supabase.rpc("submit_poll_map_response", {
