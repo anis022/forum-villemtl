@@ -25,7 +25,10 @@ import { getSessionContext } from "@/utils/supabase/auth";
 import { ballotForIssue } from "@/utils/supabase/polls";
 import { PollPanel } from "@/components/polls/poll-panel";
 import { AddPin } from "@/components/polls/add-pin";
-import { REPLIES_PAGE, getIssue, listComments } from "@/utils/supabase/issues";
+import { REPLIES_PAGE, categoryCounts, getIssue, listComments } from "@/utils/supabase/issues";
+import { ForumSidebar } from "@/components/forum-sidebar";
+import { listActiveMembers } from "@/utils/supabase/community";
+import { listTrendingContent } from "@/utils/supabase/trending";
 import { editedByOther } from "@/utils/issues";
 import { IssueActions } from "@/components/issues/issue-actions";
 import { IssuePost } from "@/components/issues/issue-post";
@@ -85,10 +88,13 @@ export default async function IssuePage({
 
   const t = getDictionary(lang);
   const { r, edit } = await searchParams;
-  const [viewer, issue, ballot] = await Promise.all([
+  const [viewer, issue, ballot, members, trending, counts] = await Promise.all([
     getSessionContext(),
     loadIssue(id, lang),
     ballotForIssue(id),
+    listActiveMembers(3),
+    listTrendingContent(3),
+    categoryCounts(),
   ]);
   if (!issue) notFound();
   const { user, canParticipate } = viewer;
@@ -103,6 +109,10 @@ export default async function IssuePage({
   const isOfficial = canParticipate && user?.role === "official";
   const isAuthor = canParticipate && Boolean(user) && user!.id === issue.author.id;
   const editing = edit === "1" && (isAuthor || isOfficial);
+  const sidebarCategories = counts
+    .filter(({ count }) => count > 0)
+    .map(({ category: key, count }) => ({ key, count, label: t.categories[key] }));
+
   const withdrawLabels = {
     withdraw: t.issue.withdraw,
     withdrawing: t.issue.withdrawing,
@@ -122,8 +132,20 @@ export default async function IssuePage({
           {t.issue.back}
         </Link>
 
+        {/*
+          The same two columns the feed is built on, for the same reason.
+          Without them this page was one card stretched across the full 1200px
+          container with the body text capped at 68ch inside it, so a third of
+          the width was permanently blank down the right-hand side, and a
+          portrait photo was blown up to fill a box far wider than the picture.
+          Reading a topic and reading the list of topics are the same activity
+          on the same site: the page around them should not change shape.
+        */}
+        <div className="mt-4 grid items-start gap-7 lg:grid-cols-[minmax(0,1fr)_300px] xl:gap-8 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="min-w-0">
+
         <TranslationProvider kind="issue" id={issue.id} lang={lang}>
-        <article className={`${CARD} mt-4 overflow-hidden`}>
+        <article className={`${CARD} overflow-hidden`}>
           <div className="p-4 md:p-6">
             {/* Same shape as the feed card: pills in the top right corner, and
                 the author block truncates rather than pushing them off. */}
@@ -322,6 +344,26 @@ export default async function IssuePage({
             )}
           </div>
         </section>
+
+        </div>
+
+        <ForumSidebar
+          lang={lang}
+          members={members}
+          categories={sidebarCategories}
+          trending={trending}
+          labels={{
+            activeMembers: t.home.activeMembers,
+            popularCategories: t.home.popularCategories,
+            trending: t.home.trending,
+            discover: t.home.discover,
+            event: t.home.contentEvent,
+            project: t.home.contentProject,
+            contributions: t.home.contributionCount,
+            views: t.home.trafficCount,
+          }}
+        />
+        </div>
       </main>
       <SiteFooter lang={lang} />
     </div>
