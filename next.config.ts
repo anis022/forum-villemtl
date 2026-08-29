@@ -7,6 +7,22 @@ const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL
 const nextConfig: NextConfig = {
   // Hides the dev-only route indicator in the bottom-left corner.
   devIndicators: false,
+  experimental: {
+    serverActions: {
+      // A Server Action body is capped at 1 MB unless this says otherwise, and
+      // the composer sends the photo inline with the form. So every phone
+      // picture was refused with a 413 before `createIssue` ever ran: no row
+      // written, and the generic error page instead of the "image too big"
+      // message, because nothing in the action had a chance to return one.
+      //
+      // Kept above MAX_IMAGE_BYTES in app/actions/issues.ts, which is the size
+      // the composer actually promises. The extra megabyte is for what
+      // multipart/form-data adds around the file (boundaries, part headers,
+      // and the other fields), so that a photo just under the limit is judged
+      // by the action's message and not by the transport.
+      bodySizeLimit: "6mb",
+    },
+  },
   images: {
     // Issue photos are served from the public Supabase storage bucket.
     remotePatterns: supabaseHost
