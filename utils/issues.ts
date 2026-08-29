@@ -86,6 +86,8 @@ export type Issue = {
   author: Author;
   hasVoted: boolean;
   imageUrl: string | null;
+  /** Set instead of `imageUrl` when the attachment is a video, never both. */
+  videoUrl: string | null;
   /** A few of the most recent backers; empty until the list query fills it. */
   supporters: Supporter[];
   /** Where it is. Null on reports filed before locations were asked for. */

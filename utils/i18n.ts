@@ -31,6 +31,9 @@ export type ErrorCode =
   | "notAuthorized"
   | "imageType"
   | "imageTooBig"
+  | "videoType"
+  | "videoTooBig"
+  | "videoTooLong"
   | "uploadFailed"
   | "emailInvalid"
   | "notMember"
@@ -422,6 +425,8 @@ const fr = {
     body: "Quelque chose s'est mal passé de notre côté. Réessayez, ou revenez au forum.",
     retry: "Réessayer",
     home: "Retour au forum",
+    reference: "Code de l'erreur",
+    referenceHint: "Donnez ce code si vous nous signalez le problème.",
   },
   pages: {
     projectsTitle: "État d'avancement des projets",
@@ -536,11 +541,16 @@ const fr = {
     locationOutside: "Cet endroit est hors de l'arrondissement.",
     locationDenied: "Position indisponible. Cliquez sur la carte à la place.",
     locationClear: "Effacer",
-    fieldPhoto: "Photo",
+    fieldPhoto: "Photo ou vidéo",
     fieldPhotoOptional: "(facultatif)",
     fieldPhotoChoose: "Choisir un fichier",
-    fieldPhotoHint: "JPEG, PNG ou WebP, 5 Mo maximum. La photo sera optimisée en WebP.",
+    fieldPhotoHint:
+      "Photo : JPEG, PNG ou WebP, 5 Mo maximum. Vidéo : MP4, WebM ou MOV, 60 secondes et 50 Mo maximum.",
     photoPreviewAlt: "Aperçu de la photo sélectionnée",
+    mediaUploading: "Envoi de la vidéo",
+    mediaUploaded: "Vidéo envoyée",
+    mediaRemove: "Retirer",
+    mediaWait: "Attendez la fin de l'envoi",
     publish: "Publier le sujet",
     publishing: "Publication…",
     anonymousAuthor: "Citoyen·ne",
@@ -573,6 +583,12 @@ const fr = {
     close: "Clore le sujet",
     reopen: "Rouvrir le sujet",
     photoAlt: "Photo jointe",
+    videoAlt: "Vidéo jointe",
+    // A .mov recorded by an iPhone is HEVC, which Safari plays and Chrome
+    // and Firefox generally do not. Nothing here re-encodes it, so the honest
+    // thing is to say so and hand over the file rather than show a dead frame.
+    videoUnsupported: "Cette vidéo ne peut pas être lue dans votre navigateur.",
+    videoOpen: "Ouvrir la vidéo",
     share: "Partager",
     copied: "Lien copié",
     backToIssue: "← Retour au sujet",
@@ -803,7 +819,10 @@ const fr = {
     notAuthorized: "Vous n'êtes pas autorisé·e à modifier ce sujet.",
     imageType: "Formats acceptés : JPEG, PNG ou WebP.",
     imageTooBig: "L'image ne doit pas dépasser 5 Mo.",
-    uploadFailed: "Le téléversement de l'image a échoué.",
+    videoType: "Formats vidéo acceptés : MP4, WebM ou MOV.",
+    videoTooBig: "La vidéo ne doit pas dépasser 50 Mo.",
+    videoTooLong: "La vidéo ne doit pas dépasser 60 secondes.",
+    uploadFailed: "Le téléversement a échoué.",
     emailInvalid: "Veuillez saisir une adresse courriel valide.",
     // Says which address was refused and where to go about it. "Adresse non
     // reconnue" would leave someone rereading their own typing with no idea
@@ -1180,6 +1199,8 @@ const en: Dictionary = {
     body: "Something went wrong on our side. Try again, or go back to the forum.",
     retry: "Try again",
     home: "Back to the forum",
+    reference: "Error code",
+    referenceHint: "Quote this code if you report the problem to us.",
   },
   pages: {
     projectsTitle: "Project progress",
@@ -1292,11 +1313,16 @@ const en: Dictionary = {
     locationOutside: "That spot is outside the borough.",
     locationDenied: "Location unavailable. Click the map instead.",
     locationClear: "Clear",
-    fieldPhoto: "Photo",
+    fieldPhoto: "Photo or video",
     fieldPhotoOptional: "(optional)",
     fieldPhotoChoose: "Choose file",
-    fieldPhotoHint: "JPEG, PNG or WebP, 5 MB maximum. The photo will be optimized as WebP.",
+    fieldPhotoHint:
+      "Photo: JPEG, PNG or WebP, 5 MB maximum. Video: MP4, WebM or MOV, 60 seconds and 50 MB maximum.",
     photoPreviewAlt: "Preview of the selected photo",
+    mediaUploading: "Uploading video",
+    mediaUploaded: "Video uploaded",
+    mediaRemove: "Remove",
+    mediaWait: "Wait for the upload to finish",
     publish: "Publish topic",
     publishing: "Publishing…",
     anonymousAuthor: "Resident",
@@ -1326,6 +1352,9 @@ const en: Dictionary = {
     close: "Close topic",
     reopen: "Reopen topic",
     photoAlt: "Attached photo",
+    videoAlt: "Attached video",
+    videoUnsupported: "This video cannot be played in your browser.",
+    videoOpen: "Open the video",
     share: "Share",
     copied: "Link copied",
     backToIssue: "← Back to the topic",
@@ -1545,7 +1574,10 @@ const en: Dictionary = {
     notAuthorized: "You are not allowed to modify this topic.",
     imageType: "Accepted formats: JPEG, PNG or WebP.",
     imageTooBig: "The image must not exceed 5 MB.",
-    uploadFailed: "The image upload failed.",
+    videoType: "Accepted video formats: MP4, WebM or MOV.",
+    videoTooBig: "The video must not exceed 50 MB.",
+    videoTooLong: "The video must not exceed 60 seconds.",
+    uploadFailed: "The upload failed.",
     emailInvalid: "Please enter a valid email address.",
     notMember:
       "That address is not on the Ensemble Montréal CDN-NDG membership list. Use the address you gave when you joined, or write to the borough office to have it corrected.",

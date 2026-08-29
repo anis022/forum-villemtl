@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { createIssue, type ActionState } from "@/app/actions/issues";
 import { CATEGORY_KEYS } from "@/utils/issues";
 import { getDictionary, type Locale } from "@/utils/i18n";
@@ -18,6 +18,8 @@ import {
 import { CharacterCounter } from "@/components/ui/character-counter";
 import { LocationPicker } from "./location-picker";
 import { resilient } from "@/utils/resilient-action";
+import { discardVideo, isVideo, uploadVideo, type UploadHandle } from "@/utils/upload-video";
+import type { ErrorCode } from "@/utils/i18n";
 
 const initial: ActionState = { error: null };
 
@@ -26,6 +28,14 @@ export function NewIssueForm({ lang }: { lang: Locale; isAdmin?: boolean }) {
   const [state, formAction, pending] = useActionState(resilient(createIssue), initial);
   const [preview, setPreview] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
+  /** Which of the two the preview is showing, so it knows what to render. */
+  const [kind, setKind] = useState<"image" | "video" | null>(null);
+  /** Where the video landed. The only thing about it the action ever sees. */
+  const [videoPath, setVideoPath] = useState<string | null>(null);
+  /** 0-100 while bytes are moving, null when nothing is in flight. */
+  const [percent, setPercent] = useState<number | null>(null);
+  const [uploadError, setUploadError] = useState<ErrorCode | null>(null);
+  const upload = useRef<UploadHandle | null>(null);
   const [titleLength, setTitleLength] = useState(0);
   const [bodyLength, setBodyLength] = useState(0);
 
@@ -35,6 +45,65 @@ export function NewIssueForm({ lang }: { lang: Locale; isAdmin?: boolean }) {
     },
     [preview],
   );
+
+  // Nothing restores `videoPath` after a refused submission because nothing has
+  // to: `useActionState` re-renders this component rather than remounting it,
+  // so an upload that already succeeded is still in state when the error comes
+  // back. Somebody who mistyped a title retypes the title, not the video.
+
+  const clearAttachment = () => {
+    upload.current?.cancel();
+    upload.current = null;
+    if (videoPath) discardVideo(videoPath);
+    setVideoPath(null);
+    setPercent(null);
+    setKind(null);
+    setFileName(null);
+    setPreview(null);
+    setUploadError(null);
+  };
+
+  /**
+   * A photograph rides along in the form and is converted server-side. A video
+   * is far too large for that, so it goes to storage on its own and only the
+   * path it was given is submitted.
+   *
+   * The input is emptied once a video has been taken off it. Leaving the file
+   * on the input would put fifty megabytes into the form body, which is the
+   * exact limit this whole path exists to stay under.
+   */
+  const onPick = async (input: HTMLInputElement) => {
+    const file = input.files?.[0];
+    clearAttachment();
+    if (!file) return;
+
+    setFileName(file.name);
+    setPreview(URL.createObjectURL(file));
+
+    if (!isVideo(file)) {
+      setKind("image");
+      return;
+    }
+
+    setKind("video");
+    input.value = "";
+    setPercent(0);
+
+    const handle = uploadVideo(file, setPercent);
+    upload.current = handle;
+    const result = await handle.promise;
+    upload.current = null;
+    setPercent(null);
+
+    if ("error" in result) {
+      setUploadError(result.error);
+      setKind(null);
+      setFileName(null);
+      setPreview(null);
+      return;
+    }
+    setVideoPath(result.path);
+  };
 
   return (
     <form action={formAction} noValidate className={`${CARD} p-6`}>
@@ -161,13 +230,9 @@ export function NewIssueForm({ lang }: { lang: Locale; isAdmin?: boolean }) {
             id="issue-image"
             name="image"
             type="file"
-            accept="image/jpeg,image/png,image/webp"
-            disabled={pending}
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              setFileName(file?.name ?? null);
-              setPreview(file ? URL.createObjectURL(file) : null);
-            }}
+            accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime"
+            disabled={pending || percent !== null}
+            onChange={(event) => void onPick(event.target)}
             className="peer sr-only"
           />
           <label
@@ -188,15 +253,72 @@ export function NewIssueForm({ lang }: { lang: Locale; isAdmin?: boolean }) {
           {fileName && (
             <span className={`max-w-full break-all text-[13px] ${MUTED}`}>{fileName}</span>
           )}
+          {fileName && percent === null && (
+            <button
+              type="button"
+              onClick={clearAttachment}
+              disabled={pending}
+              className="text-[13px] font-bold text-[#a3162c] hover:underline disabled:opacity-60"
+            >
+              {t.issue.mediaRemove}
+            </button>
+          )}
         </div>
+
+        {/* Fifty megabytes over a phone connection is long enough that silence
+            reads as a hang, and the one thing somebody does when a form looks
+            stuck is press the button again. */}
+        {percent !== null && (
+          <div className="mt-3">
+            <div className="flex items-center justify-between text-[13px]">
+              <span className={MUTED}>{t.issue.mediaUploading}</span>
+              <span className={MUTED}>{percent}%</span>
+            </div>
+            <div
+              role="progressbar"
+              aria-valuenow={percent}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={t.issue.mediaUploading}
+              className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-[#f2ece4]"
+            >
+              <div
+                className="h-full bg-[#a3162c] transition-[width] duration-200"
+                style={{ width: `${percent}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* The upload finished while the rest of the form is still being
+            written, so the state has to be visible or it reads as unsaved. */}
+        {videoPath && percent === null && (
+          <p className="mt-2 text-[13px] font-bold text-[#1f7a4d]">{t.issue.mediaUploaded}</p>
+        )}
+
+        {/* The hidden field is the whole of what the action receives about a
+            video: see `ownedVideoPath` for what it can and cannot conclude. */}
+        <input type="hidden" name="videoPath" value={videoPath ?? ""} readOnly />
         <p className={`mt-1 text-[14px] ${MUTED}`}>{t.issue.fieldPhotoHint}</p>
 
-        {preview && (
+        {preview && kind === "image" && (
           /* eslint-disable-next-line @next/next/no-img-element -- blob: preview, not a remote asset */
           <img
             src={preview}
             alt={t.issue.photoPreviewAlt}
             className="mt-3 max-h-64 rounded-[14px] border border-[#e9e0d6]"
+          />
+        )}
+
+        {/* Played from the local file rather than from storage: it is already on
+            this device, and the upload may still be in flight behind it. */}
+        {preview && kind === "video" && (
+          <video
+            src={preview}
+            controls
+            playsInline
+            preload="metadata"
+            className="mt-3 max-h-64 w-full rounded-[14px] border border-[#e9e0d6] bg-[#1c1714]"
           />
         )}
       </div>
@@ -212,13 +334,20 @@ export function NewIssueForm({ lang }: { lang: Locale; isAdmin?: boolean }) {
         </a>
       </p>
 
-      {state.error && (
+      {(uploadError ?? state.error) && (
         <p role="alert" className={`mb-5 ${ALERT}`}>
-          {t.errors[state.error]}
+          {t.errors[(uploadError ?? state.error)!]}
         </p>
       )}
 
-      <button type="submit" disabled={pending} className={BTN_PRIMARY}>
+      {/* Publishing mid-upload would file the report without the video that is
+          still on its way to storage, and nothing afterwards would attach it. */}
+      <button
+        type="submit"
+        disabled={pending || percent !== null}
+        className={BTN_PRIMARY}
+        title={percent !== null ? t.issue.mediaWait : undefined}
+      >
         {pending ? t.issue.publishing : t.issue.publish}
       </button>
     </form>

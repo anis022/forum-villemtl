@@ -42,6 +42,27 @@ const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
 /**
+ * A video arrives as a path, not as bytes.
+ *
+ * Everything else attached to a report is uploaded here, inside the action,
+ * after the session has been re-checked, and a photograph is re-encoded on the
+ * way through so storage never sees the original file. None of that survives
+ * contact with fifty megabytes: a server action caps its request body, and
+ * buffering a phone video through a function to hand it straight back to
+ * storage would be slow, expensive, and no safer at the end of it.
+ *
+ * So the browser uploads to `issue-videos` first and submits what it got back.
+ * The storage policies in 0041 are what make that safe rather than this
+ * function, because they are the only thing standing between the request and
+ * the bucket. What is left to check here is that the path is one those policies
+ * could have produced: they confine a writer to a folder named after their own
+ * uid, so a path outside the caller's folder is a path they did not write and
+ * has no business being attached to their report.
+ */
+const ownedVideoPath = (path: string, userId: string) =>
+  path.startsWith(`${userId}/`) && !path.includes("..") && path.length <= 200;
+
+/**
  * Every action re-checks the session server-side. RLS is the real backstop,
  * but failing here gives a usable message instead of an opaque policy error.
  */
@@ -96,12 +117,18 @@ export async function createIssue(
   const body = String(formData.get("body") ?? "").trim();
   const category = String(formData.get("category") ?? "general") as Category;
   const image = formData.get("image");
+  // Already in storage by the time this runs: the composer uploads a video
+  // before it submits. Only the path comes through here, and `ownedVideoPath`
+  // says why that is the whole of what can be checked.
+  const videoPath = String(formData.get("videoPath") ?? "").trim();
 
   const rawLat = String(formData.get("lat") ?? "").trim();
   const rawLon = String(formData.get("lon") ?? "").trim();
   const lat = rawLat === "" ? null : Number(rawLat);
   const lon = rawLon === "" ? null : Number(rawLon);
 
+  // No `videoPath` here: the composer holds it in state across a refusal, so
+  // echoing it back would be a second copy of something already safe.
   const values = { title, body, category, lat, lon };
 
   if (title.length < 5) return { error: "titleTooShort", values };
@@ -132,8 +159,20 @@ export async function createIssue(
 
   // Uploaded before the insert so a storage failure doesn't leave a published
   // issue pointing at a file that was never stored.
-  let imagePath: string | null = null;
-  if (image instanceof File && image.size > 0) {
+  let mediaPath: string | null = null;
+  let mediaType: "image" | "video" | null = null;
+
+  // The video is looked at first. A submission carrying both did not come from
+  // the composer, which offers one attachment and swaps it when you pick again;
+  // and between the two, the video is the one that already cost an upload.
+  if (videoPath) {
+    if (!ownedVideoPath(videoPath, user.id)) {
+      console.error("[issues] video path outside the uploader's folder:", user.id);
+      return { error: "uploadFailed", values };
+    }
+    mediaPath = videoPath;
+    mediaType = "video";
+  } else if (image instanceof File && image.size > 0) {
     if (!ALLOWED_IMAGE_TYPES.includes(image.type)) return { error: "imageType", values };
     if (image.size > MAX_IMAGE_BYTES) return { error: "imageTooBig", values };
 
@@ -152,20 +191,54 @@ export async function createIssue(
       .from("issue-images")
       .upload(path, webp, { contentType: "image/webp" });
 
-    if (uploadError) return { error: "uploadFailed", values };
-    imagePath = path;
+    if (uploadError) {
+      console.error("[issues] photo upload:", uploadError.message);
+      return { error: "uploadFailed", values };
+    }
+    mediaPath = path;
+    mediaType = "image";
   }
 
-  const { data, error } = await supabase
-    .from("issues")
-    .insert({ author_id: user.id, title, body, category, image_path: imagePath, lat, lon })
-    .select("id")
-    .single();
+  /*
+   * `media_type` arrives with migration 0041, and the queries that read it
+   * already fall back when it is absent. This is the same courtesy on the way
+   * in, and it matters more: a select naming a missing column empties a feed,
+   * but an insert naming one refuses every post on the site, including the
+   * plain-text ones that never wanted an attachment. Deploying this before
+   * running the migration would take the forum down rather than leave video
+   * unavailable, and those are very different afternoons.
+   */
+  const insert = (withMediaType: boolean) =>
+    supabase
+      .from("issues")
+      .insert({
+        author_id: user.id,
+        title,
+        body,
+        category,
+        image_path: mediaPath,
+        ...(withMediaType ? { media_type: mediaType } : {}),
+        lat,
+        lon,
+      })
+      .select("id")
+      .single();
+
+  let { data, error } = await insert(true);
+  if (error?.message.includes("media_type")) {
+    ({ data, error } = await insert(false));
+  }
 
   // `isBlocked` covers the gap between the screen above and the insert: the
   // lexicon is a table somebody may have just edited.
   if (isBlocked(error)) return { error: "messageRefused", values };
-  if (error || !data) return { error: "publishFailed", values };
+  // The reader gets a code that names the outcome; the reason it happened is
+  // only ever here. A return with nothing logged is a failure nobody can
+  // account for afterwards, which is how a lost post becomes a guess.
+  if (error || !data) {
+    console.error("[issues] insert:", error?.message ?? "no row returned");
+    return { error: "publishFailed", values };
+  }
 
   await storeOfficialTranslation(supabase, user.id, data.id, title, body, locale);
 
@@ -503,7 +576,10 @@ export async function updateIssue(
     .eq("id", issueId);
 
   if (isBlocked(error)) return { error: "messageRefused", values };
-  if (error) return { error: "publishFailed", values };
+  if (error) {
+    console.error("[issues] edit:", error.message);
+    return { error: "publishFailed", values };
+  }
 
   // A ballot rides along in the same submission, because a topic that asks a
   // question and the choices under it are one thing to the person editing them.
@@ -526,7 +602,10 @@ export async function updateIssue(
       p_poll_id: pollId,
       p_options: labels.map((label, i) => ({ id: ids[i] || null, label })),
     });
-    if (ballotError) return { error: "publishFailed", values };
+    if (ballotError) {
+      console.error("[issues] save_poll_options:", ballotError.message);
+      return { error: "publishFailed", values };
+    }
   }
 
   await storeOfficialTranslation(supabase, user.id, issueId, title, body, locale);

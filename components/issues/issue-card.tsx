@@ -5,6 +5,7 @@ import { CARD_INTERACTIVE, MUTED } from "@/components/ui/styles";
 import { Avatar, FacePile } from "@/components/ui/avatar";
 import { TranslateButton, Translated, TranslationProvider } from "@/components/translate";
 import { IssuePhoto } from "./issue-photo";
+import { IssueVideo } from "./issue-video";
 import { PollBallot } from "@/components/polls/poll-ballot";
 import { VoteButton } from "./vote-button";
 import type { Ballot } from "@/utils/polls";
@@ -108,12 +109,27 @@ export function IssueCard({
         </Link>
       )}
 
+      {/* Not wrapped in the link the photo is wrapped in. Every control a video
+          has lives inside the frame, so a link over the top of it turns a press
+          on "pause" into a navigation away from the thing you were watching. */}
+      {issue.videoUrl && (
+        <IssueVideo
+          src={issue.videoUrl}
+          cap="max-h-[420px]"
+          label={t.issue.videoAlt}
+          unsupported={t.issue.videoUnsupported}
+          openLabel={t.issue.videoOpen}
+        />
+      )}
+
       {/* No padding on top unless a photograph put something above it.
           Otherwise this block's top padding stacked under the previous block's
           bottom padding and the footer's own rule added a third gap on top of
           those two — about fifty pixels of nothing between a ballot and the
           buttons that act on it. */}
-      <div className={`px-3.5 pb-4 sm:px-5 ${issue.imageUrl || ballot ? "pt-3.5" : ""}`}>
+      <div
+        className={`px-3.5 pb-4 sm:px-5 ${issue.imageUrl || issue.videoUrl || ballot ? "pt-3.5" : ""}`}
+      >
         {ballot && (
           <div className="mb-3">
             <PollBallot ballot={ballot} canVote={canVote} lang={lang} compact />

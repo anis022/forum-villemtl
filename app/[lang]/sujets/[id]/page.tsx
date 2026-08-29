@@ -9,6 +9,7 @@ import { ShareButton } from "@/components/issues/share-button";
 import { CommentForm } from "@/components/issues/comment-form";
 import { CommentThread } from "@/components/issues/comment-thread";
 import { IssuePhoto } from "@/components/issues/issue-photo";
+import { IssueVideo } from "@/components/issues/issue-video";
 import { TranslateButton, TranslationProvider } from "@/components/translate";
 import { StatusControls } from "@/components/issues/status-controls";
 import {
@@ -206,6 +207,16 @@ export default async function IssuePage({
               alt={`${t.issue.photoAlt} : ${issue.title}`}
               cap="max-h-[620px]"
               sizes="(min-width: 1024px) 900px, 100vw"
+            />
+          )}
+
+          {issue.videoUrl && (
+            <IssueVideo
+              src={issue.videoUrl}
+              cap="max-h-[620px]"
+              label={`${t.issue.videoAlt} : ${issue.title}`}
+              unsupported={t.issue.videoUnsupported}
+              openLabel={t.issue.videoOpen}
             />
           )}
 

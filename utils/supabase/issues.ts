@@ -34,6 +34,8 @@ type IssueRow = {
   comment_count: number;
   created_at: string;
   image_path: string | null;
+  /** Null on every row written before 0041, all of which are photographs. */
+  media_type?: string | null;
   lat: number | null;
   lon: number | null;
   edited_at: string | null;
@@ -50,12 +52,21 @@ type IssueRow = {
  * those residents to upload anything, and a seed that depends on a storage
  * bucket having been filled by hand is a seed that only works on one machine.
  */
-const imageUrl = (path: string | null) =>
+const publicUrl = (bucket: string, path: string | null) =>
   path === null || path === ""
     ? null
     : path.startsWith("/")
       ? path
-      : `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/issue-images/${path}`;
+      : `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`;
+
+const imageUrl = (path: string | null) => publicUrl("issue-images", path);
+
+/**
+ * Video lives in a bucket of its own, so the path alone does not say where to
+ * look: `media_type` does. A row from before 0041 has no answer there, which is
+ * the right answer, because there were no videos to be had.
+ */
+const videoUrl = (path: string | null) => publicUrl("issue-videos", path);
 
 const toAuthor = (profile: ProfileRow): Author => ({
   id: profile?.id ?? "",
@@ -106,7 +117,8 @@ const toIssue = (
   createdAt: row.created_at,
   author: toAuthor(row.author),
   hasVoted: votedIds.has(row.id),
-  imageUrl: imageUrl(row.image_path),
+  imageUrl: row.media_type === "video" ? null : imageUrl(row.image_path),
+  videoUrl: row.media_type === "video" ? videoUrl(row.image_path) : null,
   supporters: supporters.get(row.id) ?? [],
   lat: row.lat === null ? null : Number(row.lat),
   lon: row.lon === null ? null : Number(row.lon),
@@ -149,8 +161,20 @@ const feedBodyField = () => (hasBodyPreview ? "body:body_preview" : "body");
 const feedTranslatedField = () =>
   hasBodyPreview ? "translated_body:translated_body_preview" : "translated_body";
 
+/**
+ * Same arrangement as `body_preview` above, for `media_type` (migration 0041).
+ * Until it is applied the column does not exist, and asking for it would fail
+ * the whole query and empty the feed over a column whose absence already means
+ * what the fallback would assume anyway: everything here is a photograph.
+ */
+let hasMediaType = true;
+const missingMediaType = (message: string | undefined) =>
+  Boolean(message && message.includes("media_type"));
+
+const mediaFields = () => (hasMediaType ? "image_path, media_type" : "image_path");
+
 const issueSelect = (bodyField: string, translatedBodyField: string) =>
-  `id, title, ${bodyField}, category, status, vote_count, comment_count, created_at, image_path, lat, lon, edited_at, edited_by, translated_title, ${translatedBodyField}, translated_to, author:profiles!issues_author_id_fkey(${profileFields()})`;
+  `id, title, ${bodyField}, category, status, vote_count, comment_count, created_at, ${mediaFields()}, lat, lon, edited_at, edited_by, translated_title, ${translatedBodyField}, translated_to, author:profiles!issues_author_id_fkey(${profileFields()})`;
 
 /**
  * Same arrangement as `body_preview`, for the columns migration 0038 adds.
@@ -266,7 +290,7 @@ export async function listIssues(
       .select(
         hasTranslation
           ? issueSelect(feedBodyField(), feedTranslatedField())
-          : `id, title, ${feedBodyField()}, category, status, vote_count, comment_count, created_at, image_path, lat, lon, edited_at, edited_by, author:profiles!issues_author_id_fkey(${profileFields()})`,
+          : `id, title, ${feedBodyField()}, category, status, vote_count, comment_count, created_at, ${mediaFields()}, lat, lon, edited_at, edited_by, author:profiles!issues_author_id_fkey(${profileFields()})`,
       )
       .limit(limit + 1);
     if (term) query = query.or(`title.ilike.%${term}%,body.ilike.%${term}%`);
@@ -280,6 +304,10 @@ export async function listIssues(
   let { data, error } = await run();
   if (error && missingTranslation(error.message)) {
     hasTranslation = false;
+    ({ data, error } = await run());
+  }
+  if (error && missingMediaType(error.message)) {
+    hasMediaType = false;
     ({ data, error } = await run());
   }
   if (error && missingBodyPreview(error.message)) {
@@ -346,7 +374,7 @@ export async function getIssue(id: string, lang?: Locale): Promise<Issue | null>
       .select(
         hasTranslation
           ? issueSelect("body", "translated_body")
-          : `id, title, body, category, status, vote_count, comment_count, created_at, image_path, lat, lon, edited_at, edited_by, author:profiles!issues_author_id_fkey(${profileFields()})`,
+          : `id, title, body, category, status, vote_count, comment_count, created_at, ${mediaFields()}, lat, lon, edited_at, edited_by, author:profiles!issues_author_id_fkey(${profileFields()})`,
       )
       .eq("id", id)
       .maybeSingle();
@@ -354,6 +382,10 @@ export async function getIssue(id: string, lang?: Locale): Promise<Issue | null>
   let { data, error } = await run();
   if (error && missingTranslation(error.message)) {
     hasTranslation = false;
+    ({ data, error } = await run());
+  }
+  if (error && missingMediaType(error.message)) {
+    hasMediaType = false;
     ({ data, error } = await run());
   }
   if (error && missingLateProfileColumn(error.message)) {
