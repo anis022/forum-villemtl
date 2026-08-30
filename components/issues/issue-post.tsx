@@ -97,7 +97,13 @@ export function IssuePost({
           <Translated field="title">{title}</Translated>
         </h1>
 
-        <p className="mt-3 max-w-[68ch] whitespace-pre-wrap break-words text-[17px] leading-[27px]">
+        {/* Justified, with hyphenation on. The two go together: justifying
+            without it stretches the word spaces to cover whatever the line is
+            short by, and French runs long enough ("stationnement",
+            "arrondissement") that the gaps turn into rivers down the column.
+            `hyphens-auto` reads the `lang` on <html>, which the layout sets
+            per locale, so each language breaks by its own rules. */}
+        <p className="mt-3 max-w-[68ch] hyphens-auto whitespace-pre-wrap break-words text-justify text-[17px] leading-[27px]">
           <Translated field="body">{body}</Translated>
         </p>
 

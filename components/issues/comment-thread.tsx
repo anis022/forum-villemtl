@@ -150,7 +150,7 @@ export function CommentThread({
             actingAsOfficial={!isAuthor}
             readerIsOfficial={isOfficial}
           >
-            <p className="mt-1.5 whitespace-pre-wrap break-words leading-[26px]">
+            <p className="mt-1.5 hyphens-auto whitespace-pre-wrap break-words text-justify leading-[26px]">
               <Translated field="body">{comment.body}</Translated>
             </p>
           </CommentActions>
