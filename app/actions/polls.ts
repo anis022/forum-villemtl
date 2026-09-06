@@ -10,6 +10,7 @@ import { DEFAULT_LOCALE, isLocale, type ErrorCode, type Locale } from "@/utils/i
 import { BOROUGH_BOUNDS } from "@/utils/map";
 import { CATEGORY_KEYS, type Category } from "@/utils/issues";
 import { imageFileToWebp } from "@/utils/server-image";
+import { attachMedia, readMedia } from "@/utils/issue-media";
 import { translateForOffice } from "@/utils/official-translation";
 import { notifyStaffOfNewTopic } from "@/utils/notify/staff";
 
@@ -114,6 +115,21 @@ export async function createPoll(
     }
   }
 
+  /*
+   * The attachment, read before the ballot is written so a refused photograph
+   * costs nothing. A ballot is a topic, and a topic may carry one file — this
+   * composer simply never offered it, which meant the one kind of question most
+   * likely to need a picture ("which of these two crossings") was the one kind
+   * that could not have one.
+   *
+   * `create_poll_topic` does the insert and takes no media argument, so the file
+   * is attached in a second statement below. That is the same shape as the
+   * translation further down, and for the same reason: neither is worth a new
+   * signature on a function the database already has.
+   */
+  const media = await readMedia(supabase, user.id, formData);
+  if (media.kind === "error") return { error: media.error, values };
+
   // Returns the *topic* id, because the topic is what was created; the ballot
   // is a row hanging off it that nothing outside this file needs to name.
   const { data, error } = await supabase.rpc("create_poll_topic", {
@@ -129,6 +145,10 @@ export async function createPoll(
 
   if (isBlocked(error)) return { error: "messageRefused", values };
   if (error || typeof data !== "string") return { error: "pollPublishFailed", values };
+
+  if (media.kind === "set") {
+    await attachMedia(supabase, data, media.path, media.type);
+  }
 
   // A poll is a topic, so an official one is bilingual like any other. The
   // choices themselves stay in the language they were written in: they are

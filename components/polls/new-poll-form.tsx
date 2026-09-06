@@ -2,10 +2,11 @@
 
 import { useActionState, useRef, useState } from "react";
 import { createPoll, type PollActionState } from "@/app/actions/polls";
-import { getDictionary, type Locale } from "@/utils/i18n";
+import { getDictionary, type ErrorCode, type Locale } from "@/utils/i18n";
 import { CATEGORY_KEYS } from "@/utils/issues";
 import type { PollKind } from "@/utils/polls";
 import { CharacterCounter } from "@/components/ui/character-counter";
+import { MediaPicker } from "@/components/issues/media-picker";
 import { resilient } from "@/utils/resilient-action";
 import {
   ALERT,
@@ -29,6 +30,9 @@ export function NewPollForm({ lang, isAdmin }: { lang: Locale; isAdmin: boolean 
   const [allowPinDescription, setAllowPinDescription] = useState(true);
   const [allowPinImage, setAllowPinImage] = useState(false);
   const [maxPinsPerMember, setMaxPinsPerMember] = useState(1);
+  /** True while a video is on its way to storage: publishing now would lose it. */
+  const [mediaBusy, setMediaBusy] = useState(false);
+  const [mediaError, setMediaError] = useState<ErrorCode | null>(null);
   const [choices, setChoices] = useState<Choice[]>([
     { key: 0, value: "" },
     { key: 1, value: "" },
@@ -284,15 +288,30 @@ export function NewPollForm({ lang, isAdmin }: { lang: Locale; isAdmin: boolean 
         </fieldset>
       )}
 
-      <div className="my-6" />
+      {/* After the ballot, because the picture illustrates the question rather
+          than being one of the answers. A ballot is a topic, so it carries one
+          attachment on exactly the terms every other topic does. */}
+      <div className="mt-6 mb-5">
+        <MediaPicker
+          lang={lang}
+          disabled={pending}
+          onBusy={setMediaBusy}
+          onError={setMediaError}
+        />
+      </div>
 
-      {state.error && (
+      {(mediaError ?? state.error) && (
         <p role="alert" className={`mb-5 ${ALERT}`}>
-          {t.errors[state.error]}
+          {t.errors[(mediaError ?? state.error)!]}
         </p>
       )}
 
-      <button type="submit" disabled={pending} className={BTN_PRIMARY}>
+      <button
+        type="submit"
+        disabled={pending || mediaBusy}
+        className={BTN_PRIMARY}
+        title={mediaBusy ? t.issue.mediaWait : undefined}
+      >
         {pending ? t.poll.publishing : t.poll.publish}
       </button>
     </form>
