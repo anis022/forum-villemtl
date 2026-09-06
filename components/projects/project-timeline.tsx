@@ -1,4 +1,4 @@
-import { isPast, say, type Milestone } from "@/utils/projects";
+import { formatMilestoneOn, isPast, say, type Milestone } from "@/utils/projects";
 import { dateLocale, getDictionary, type Locale } from "@/utils/i18n";
 import { MUTED } from "@/components/ui/styles";
 
@@ -7,24 +7,13 @@ import { MUTED } from "@/components/ui/styles";
  *
  * `onLabel` wins when it is there: "Été 2026" and "2009 – 2018" are the honest
  * renderings of dates that a formatter would otherwise have to invent a day
- * for. Everything else is derived, so a `YYYY` prints as a year rather than as
- * the 1st of January it would parse to.
+ * for. Everything else goes through `formatMilestoneOn`, which prints each date
+ * at the precision it is known to and refuses to hand `Intl` a day that does
+ * not exist.
  */
 function milestoneDate(m: Milestone, lang: Locale): string {
   if (m.onLabel) return say(m.onLabel, lang);
-  const locale = dateLocale(lang);
-  if (m.on.length === 4) return m.on;
-  if (m.on.length === 7) {
-    const [y, mo] = m.on.split("-").map(Number);
-    return new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" }).format(
-      new Date(y, mo - 1, 1),
-    );
-  }
-  return new Intl.DateTimeFormat(locale, {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  }).format(new Date(`${m.on}T12:00:00`));
+  return formatMilestoneOn(m.on, dateLocale(lang));
 }
 
 /**
@@ -46,8 +35,13 @@ export function ProjectTimeline({
 }) {
   const t = getDictionary(lang);
   const completed = milestones.filter((milestone) => isPast(milestone.on));
-  const upcoming = milestones.filter((milestone) => !isPast(milestone.on));
   const current = completed.at(-1) ?? milestones[0];
+  // On a project where nothing has happened yet, the first scheduled milestone
+  // is what the top block shows, so it is not also a next step: it was printed
+  // twice, once as the latest update and once as step 1.
+  const upcoming = milestones.filter(
+    (milestone) => milestone !== current && !isPast(milestone.on),
+  );
   const previous = completed.filter((milestone) => milestone !== current).reverse();
 
   return (

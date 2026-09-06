@@ -63,6 +63,115 @@ const ownedVideoPath = (path: string, userId: string) =>
   path.startsWith(`${userId}/`) && !path.includes("..") && path.length <= 200;
 
 /**
+ * What a submission says about the one file a post carries.
+ *
+ * `keep` is the common case on an edit: somebody fixed a typo and never went
+ * near the attachment. It is not the same as `clear`, which is somebody
+ * pressing "Retirer" — and nothing in the form body distinguishes the two on
+ * its own, since both arrive with an empty file input, so the picker sends
+ * `removeMedia` to say which happened.
+ */
+type MediaChoice =
+  | { kind: "keep" }
+  | { kind: "clear" }
+  | { kind: "set"; path: string; type: "image" | "video" }
+  | { kind: "error"; error: ErrorCode };
+
+/**
+ * Read the attachment off a submission, uploading a photograph on the way.
+ *
+ * The video is looked at first. A submission carrying both did not come from
+ * the picker, which offers one attachment and swaps it when you pick again; and
+ * between the two, the video is the one that already cost an upload.
+ */
+async function readMedia(
+  supabase: Awaited<ReturnType<typeof requireUser>>["supabase"],
+  userId: string,
+  formData: FormData,
+): Promise<MediaChoice> {
+  // Already in storage by the time this runs: the picker uploads a video before
+  // the form is submitted. Only the path comes through here, and
+  // `ownedVideoPath` says why that is the whole of what can be checked.
+  const videoPath = String(formData.get("videoPath") ?? "").trim();
+  if (videoPath) {
+    if (!ownedVideoPath(videoPath, userId)) {
+      console.error("[issues] video path outside the uploader's folder:", userId);
+      return { kind: "error", error: "uploadFailed" };
+    }
+    return { kind: "set", path: videoPath, type: "video" };
+  }
+
+  const image = formData.get("image");
+  if (image instanceof File && image.size > 0) {
+    if (!ALLOWED_IMAGE_TYPES.includes(image.type)) {
+      return { kind: "error", error: "imageType" };
+    }
+    if (image.size > MAX_IMAGE_BYTES) return { kind: "error", error: "imageTooBig" };
+
+    // The uid folder prefix is what the storage policy checks.
+    const path = `${userId}/${crypto.randomUUID()}.webp`;
+
+    let webp: Buffer;
+    try {
+      webp = await imageFileToWebp(image);
+    } catch (conversionError) {
+      console.error("[issues] image conversion:", conversionError);
+      return { kind: "error", error: "imageType" };
+    }
+
+    const { error } = await supabase.storage
+      .from("issue-images")
+      .upload(path, webp, { contentType: "image/webp" });
+
+    if (error) {
+      console.error("[issues] photo upload:", error.message);
+      return { kind: "error", error: "uploadFailed" };
+    }
+    return { kind: "set", path, type: "image" };
+  }
+
+  return String(formData.get("removeMedia") ?? "") === "1"
+    ? { kind: "clear" }
+    : { kind: "keep" };
+}
+
+/**
+ * Take a replaced attachment out of storage.
+ *
+ * Awaited rather than deferred to `after`. A file the row no longer points at
+ * is still a public URL somebody could hand around, so "the photo I put up by
+ * mistake is gone" has to be true when the save returns, not eventually — and
+ * a deletion left running past the response had no one left to report to when
+ * it failed, which is how the first version of this quietly kept every
+ * replaced file.
+ *
+ * The delete policies are migration 0012 for photographs and 0041 for video,
+ * and both confine the caller to their own folder unless they hold office — so
+ * a resident replacing their own picture removes their own picture, and nothing
+ * else. A policy that refuses removes no rows and reports no error, so the
+ * empty result is checked rather than the error alone.
+ */
+async function discardMedia(
+  supabase: Awaited<ReturnType<typeof requireUser>>["supabase"],
+  path: string | null,
+  type: string | null,
+) {
+  // A path starting with `/` is a file shipped in `public/` by the demonstration
+  // seed, not something in a bucket. See `publicUrl` in utils/supabase/issues.
+  if (!path || path.startsWith("/")) return;
+  const bucket = type === "video" ? "issue-videos" : "issue-images";
+  const { data, error } = await supabase.storage.from(bucket).remove([path]);
+  if (error || !data?.length) {
+    console.error(
+      "[issues] a replaced file stayed in storage:",
+      bucket,
+      path,
+      error?.message ?? "the delete policy matched no row",
+    );
+  }
+}
+
+/**
  * Every action re-checks the session server-side. RLS is the real backstop,
  * but failing here gives a usable message instead of an opaque policy error.
  */
@@ -116,12 +225,6 @@ export async function createIssue(
   const title = String(formData.get("title") ?? "").trim();
   const body = String(formData.get("body") ?? "").trim();
   const category = String(formData.get("category") ?? "general") as Category;
-  const image = formData.get("image");
-  // Already in storage by the time this runs: the composer uploads a video
-  // before it submits. Only the path comes through here, and `ownedVideoPath`
-  // says why that is the whole of what can be checked.
-  const videoPath = String(formData.get("videoPath") ?? "").trim();
-
   const rawLat = String(formData.get("lat") ?? "").trim();
   const rawLon = String(formData.get("lon") ?? "").trim();
   const lat = rawLat === "" ? null : Number(rawLat);
@@ -159,45 +262,11 @@ export async function createIssue(
 
   // Uploaded before the insert so a storage failure doesn't leave a published
   // issue pointing at a file that was never stored.
-  let mediaPath: string | null = null;
-  let mediaType: "image" | "video" | null = null;
+  const media = await readMedia(supabase, user.id, formData);
+  if (media.kind === "error") return { error: media.error, values };
 
-  // The video is looked at first. A submission carrying both did not come from
-  // the composer, which offers one attachment and swaps it when you pick again;
-  // and between the two, the video is the one that already cost an upload.
-  if (videoPath) {
-    if (!ownedVideoPath(videoPath, user.id)) {
-      console.error("[issues] video path outside the uploader's folder:", user.id);
-      return { error: "uploadFailed", values };
-    }
-    mediaPath = videoPath;
-    mediaType = "video";
-  } else if (image instanceof File && image.size > 0) {
-    if (!ALLOWED_IMAGE_TYPES.includes(image.type)) return { error: "imageType", values };
-    if (image.size > MAX_IMAGE_BYTES) return { error: "imageTooBig", values };
-
-    // The uid folder prefix is what the storage policy checks.
-    const path = `${user.id}/${crypto.randomUUID()}.webp`;
-
-    let webp: Buffer;
-    try {
-      webp = await imageFileToWebp(image);
-    } catch (conversionError) {
-      console.error("[issues] image conversion:", conversionError);
-      return { error: "imageType", values };
-    }
-
-    const { error: uploadError } = await supabase.storage
-      .from("issue-images")
-      .upload(path, webp, { contentType: "image/webp" });
-
-    if (uploadError) {
-      console.error("[issues] photo upload:", uploadError.message);
-      return { error: "uploadFailed", values };
-    }
-    mediaPath = path;
-    mediaType = "image";
-  }
+  const mediaPath = media.kind === "set" ? media.path : null;
+  const mediaType = media.kind === "set" ? media.type : null;
 
   /*
    * `media_type` arrives with migration 0041, and the queries that read it
@@ -570,15 +639,70 @@ export async function updateIssue(
   if (body.length > 5000) return { error: "bodyTooLong", values };
   if (!CATEGORY_KEYS.includes(category as Category)) return { error: "badCategory", values };
 
-  const { error } = await supabase
-    .from("issues")
-    .update({ title, body, category, edited_at: new Date().toISOString(), edited_by: user.id })
-    .eq("id", issueId);
+  /*
+   * The attachment, which could not be changed at all until now: the editor
+   * offered a title, a body and a category, and `updateIssue` never named
+   * `image_path`, so a report filed with the wrong photograph kept it for good
+   * unless the whole topic was withdrawn and its replies went with it.
+   *
+   * Read before the row is touched, for the reason `createIssue` reads it
+   * before the insert: a storage failure must not leave a saved post pointing
+   * at a file that was never stored.
+   */
+  const media = await readMedia(supabase, user.id, formData);
+  if (media.kind === "error") return { error: media.error, values };
+
+  // Only when it changed. `keep` is the common case — somebody fixed a typo —
+  // and naming the columns anyway would rewrite them with what they already
+  // hold on a database where migration 0041 has not been applied yet.
+  const previous =
+    media.kind === "keep"
+      ? null
+      : ((
+          await supabase
+            .from("issues")
+            .select("image_path, media_type")
+            .eq("id", issueId)
+            .maybeSingle()
+        ).data as { image_path: string | null; media_type?: string | null } | null);
+
+  const edit = {
+    title,
+    body,
+    category,
+    edited_at: new Date().toISOString(),
+    edited_by: user.id,
+  };
+
+  const nextPath: string | null = media.kind === "set" ? media.path : null;
+  const nextType: "image" | "video" | null = media.kind === "set" ? media.type : null;
+
+  // Same fallback as the insert: a database without 0041 has no `media_type`,
+  // and naming it there would refuse the edit rather than merely lose the kind.
+  const save = (withMediaType: boolean) =>
+    supabase
+      .from("issues")
+      .update({
+        ...edit,
+        ...(media.kind === "keep"
+          ? {}
+          : { image_path: nextPath, ...(withMediaType ? { media_type: nextType } : {}) }),
+      })
+      .eq("id", issueId);
+
+  let { error } = await save(true);
+  if (error?.message.includes("media_type")) ({ error } = await save(false));
 
   if (isBlocked(error)) return { error: "messageRefused", values };
   if (error) {
     console.error("[issues] edit:", error.message);
     return { error: "publishFailed", values };
+  }
+
+  // The row no longer points at it, so the old file is nothing but a public URL
+  // somebody could still hand around.
+  if (previous && previous.image_path !== nextPath) {
+    await discardMedia(supabase, previous.image_path, previous.media_type ?? null);
   }
 
   // A ballot rides along in the same submission, because a topic that asks a

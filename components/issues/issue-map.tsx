@@ -20,6 +20,7 @@ import {
   MAP_OPTIONS,
   TILE_OPTIONS,
   TILE_URL,
+  addBoroughOutline,
 } from "@/utils/map";
 
 export type IssueMapLabels = {
@@ -88,7 +89,15 @@ export function IssueMap({
   const filtersRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const layerRef = useRef<LayerGroup | null>(null);
-  const [markers] = useState(() => new Map<string, Marker>());
+  /**
+   * Every subject id points at the pin that carries it, which is not one pin
+   * per subject: two reports about the same corner land on the same pixel, and
+   * two pins stacked there read as one badly drawn pin. They share a marker,
+   * and the marker says how many it stands for.
+   */
+  const [markers] = useState(
+    () => new Map<string, { marker: Marker; count: number; status: Status }>(),
+  );
   const dragRef = useRef<{
     startY: number;
     startOffset: number;
@@ -136,6 +145,10 @@ export function IssueMap({
       map.setView(BOROUGH_CENTER, 12, { animate: false });
       L.control.zoom({ position: "bottomleft" }).addTo(map);
       L.tileLayer(TILE_URL, TILE_OPTIONS).addTo(map);
+      // The borough, veiled outside and traced along its edge. The picker and
+      // the poll map have always drawn it; the two public maps did not, so a
+      // reader had to know where CDN-NDG ends to make sense of the pins.
+      void addBoroughOutline(L, map);
       layerRef.current = L.layerGroup().addTo(map);
 
       observer = new ResizeObserver(() => map.invalidateSize({ animate: false }));
@@ -263,31 +276,67 @@ export function IssueMap({
       layer.clearLayers();
       markers.clear();
 
+      const card = (issue: (typeof shown)[number]) =>
+        `<strong style="font-size:14px">${escapeHtml(issue.title)}</strong>` +
+        `<br><span style="color:#6e6a72">${escapeHtml(labels.statuses[issue.status])} &middot; ${issue.voteCount}</span>` +
+        `<br><a href="/${lang}/sujets/${issue.id}" style="color:#a3162c;font-weight:700">${escapeHtml(labels.open)}</a>`;
+
+      // Five decimal places is about a metre, which is the same doorway as far
+      // as a 36px pin is concerned.
+      const groups = new Map<string, (typeof shown)[number][]>();
       for (const issue of shown) {
-        const marker = L.marker([issue.lat!, issue.lon!], {
-          title: issue.title,
-          icon: issueMarker(L, issue.status, false),
+        const key = `${issue.lat!.toFixed(5)},${issue.lon!.toFixed(5)}`;
+        const group = groups.get(key);
+        if (group) group.push(issue);
+        else groups.set(key, [issue]);
+      }
+
+      // The pin takes the least settled status in the group. A resolved report
+      // sitting on an open one must not colour the corner as dealt with.
+      const RANK: Status[] = ["open", "answered", "resolved"];
+      const worst = (group: (typeof shown)[number][]) =>
+        group.reduce(
+          (carried, issue) =>
+            RANK.indexOf(issue.status) < RANK.indexOf(carried) ? issue.status : carried,
+          group[0].status,
+        );
+
+      for (const group of groups.values()) {
+        const [first] = group;
+        const status = worst(group);
+        const marker = L.marker([first.lat!, first.lon!], {
+          title: group.length === 1 ? first.title : `${group.length}`,
+          icon: issueMarker(L, status, false, group.length),
         });
         marker.bindPopup(
-          `<strong style="font-size:14px">${escapeHtml(issue.title)}</strong>` +
-            `<br><span style="color:#6e6a72">${escapeHtml(labels.statuses[issue.status])} &middot; ${issue.voteCount}</span>` +
-            `<br><a href="/${lang}/sujets/${issue.id}" style="color:#a3162c;font-weight:700">${escapeHtml(labels.open)}</a>`,
+          group.length === 1
+            ? card(first)
+            : `<div style="max-height:220px;overflow-y:auto">` +
+                group
+                  .map(
+                    (issue, index) =>
+                      `<div style="${index ? "border-top:1px solid #e9e0d6;margin-top:10px;padding-top:10px" : ""}">${card(issue)}</div>`,
+                  )
+                  .join("") +
+                `</div>`,
           { maxWidth: Math.min(300, (containerRef.current?.clientWidth ?? 300) - 32) },
         );
-        marker.on("mouseover", () => setHovered(issue.id));
+        marker.on("mouseover", () => setHovered(first.id));
         marker.on("mouseout", () => setHovered(null));
         marker.on("click", () => {
-          setSelected(issue.id);
+          setSelected(first.id);
           if (sheetCollapsed) return;
           requestAnimationFrame(() => {
-            document.getElementById(`map-issue-${issue.id}`)?.scrollIntoView({
+            document.getElementById(`map-issue-${first.id}`)?.scrollIntoView({
               behavior: "smooth",
               block: "nearest",
             });
           });
         });
         marker.addTo(layer);
-        markers.set(issue.id, marker);
+        for (const issue of group) {
+          markers.set(issue.id, { marker, count: group.length, status });
+        }
       }
     })();
 
@@ -302,8 +351,16 @@ export function IssueMap({
     (async () => {
       const L = await import("leaflet");
       if (cancelled) return;
+      // One call per pin, not per subject standing behind it.
+      const activeMarker = active ? (markers.get(active)?.marker ?? null) : null;
+      const drawn = new Set<Marker>();
       for (const issue of shown) {
-        markers.get(issue.id)?.setIcon(issueMarker(L, issue.status, active === issue.id));
+        const entry = markers.get(issue.id);
+        if (!entry || drawn.has(entry.marker)) continue;
+        drawn.add(entry.marker);
+        entry.marker.setIcon(
+          issueMarker(L, entry.status, entry.marker === activeMarker, entry.count),
+        );
       }
     })();
 
@@ -695,11 +752,20 @@ function ResultCount({
 }
 
 /** Circular symbols mirror the map's three states without relying on colour. */
-function issueMarker(L: typeof import("leaflet"), status: Status, raised: boolean) {
+/**
+ * The pin, and how many subjects stand behind it.
+ *
+ * A count replaces the status glyph rather than sitting next to it on a badge:
+ * the shape and the colour still carry the status, and a stack of reports is
+ * about how many there are before it is about what each one says.
+ */
+function issueMarker(L: typeof import("leaflet"), status: Status, raised: boolean, count = 1) {
   const size = raised ? 44 : 36;
   const color = STATUS_MAP_COLORS[status];
   const glyph =
-    status === "resolved"
+    count > 1
+      ? `<text x="20" y="20.5" text-anchor="middle" dominant-baseline="central" font-family="Inter,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="${count > 99 ? 13 : 16}" font-weight="700" fill="#fff">${count > 99 ? "99+" : count}</text>`
+      : status === "resolved"
       ? `<path d="M13 19.5l4.2 4.2 8-8.5" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`
       : status === "answered"
         ? `<rect x="14" y="14" width="12" height="12" rx="2" fill="#fff"/>`

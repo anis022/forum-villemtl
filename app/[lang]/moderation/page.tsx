@@ -11,7 +11,6 @@ import {
   HERO_BAND,
   MUTED,
   PAGE_HERO_INNER,
-  PAGE_INTRO,
   PAGE_MAIN,
   PAGE_SHELL,
   PAGE_TITLE,
@@ -56,9 +55,6 @@ export default async function ModerationPage({
           <h1 className={PAGE_TITLE}>
             {t.moderation.title}
           </h1>
-          {isOfficial && (
-            <p className={PAGE_INTRO}>{t.moderation.intro}</p>
-          )}
         </div>
       </div>
 

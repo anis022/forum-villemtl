@@ -7,7 +7,6 @@ import { getSessionContext } from "@/utils/supabase/auth";
 import { getDictionary, isLocale } from "@/utils/i18n";
 import {
   HERO_BAND,
-  MUTED,
   PAGE_HERO_INNER,
   PAGE_MAIN,
   PAGE_SHELL,
@@ -40,9 +39,6 @@ export default async function NewIssuePage({
           <h1 className={`${PAGE_TITLE} mt-3`}>
             {t.issue.newTitle}
           </h1>
-          <p className={`mt-2 max-w-[640px] text-[16px] leading-[24px] ${MUTED}`}>
-            {t.issue.newSubtitle}
-          </p>
         </div>
       </div>
 

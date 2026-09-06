@@ -68,7 +68,7 @@ const fr = {
   meta: {
     siteName: "Forum CDN-NDG",
     siteDescription:
-      "Le forum des membres d'Ensemble Montréal dans Côte-des-Neiges–Notre-Dame-de-Grâce. Signalez un enjeu de quartier, suivez les projets et lisez ce que le conseil d'arrondissement y répond.",
+      "Le forum des membres d'Ensemble Montréal dans Côte-des-Neiges–Notre-Dame-de-Grâce. Signalez un enjeu, suivez les projets, lisez les réponses du conseil.",
   },
   header: {
     menu: "Menu",
@@ -87,11 +87,11 @@ const fr = {
     events: "Carte des événements dans l'arrondissement",
     council: "Vos questions sur le conseil d'arrondissement",
     officials: "Personnes élues de l'arrondissement",
-    forumDesc: "Discutez des enjeux de votre quartier et soutenez les sujets prioritaires.",
+    forumDesc: "Les enjeux du quartier, et les sujets à appuyer.",
     projectsDesc: "Suivez l'avancement des chantiers et des projets en cours.",
     eventsDesc: "Repérez les activités et les événements à venir près de chez vous.",
-    councilDesc: "Posez une question sur les séances et lisez le passage qui y répond, dans la vidéo.",
-    officialsDesc: "Voyez qui vous représente, dans quel district, et comment les joindre.",
+    councilDesc: "Vos questions sur les séances du conseil.",
+    officialsDesc: "Qui vous représente, et comment les joindre.",
     // The inline navigation in the masthead is one line of six links; the long
     // labels above are what the mega-menu panel shows, where there is room to
     // say what each section actually is.
@@ -106,8 +106,6 @@ const fr = {
   },
   officials: {
     title: "Personnes élues de l'arrondissement",
-    intro:
-      "L'équipe élue de Côte-des-Neiges–Notre-Dame-de-Grâce. Les sujets publiés sur ce forum lui sont adressés.",
     roles: {
       mayor: "Mairesse d'arrondissement",
       councillorF: "Conseillère de la Ville",
@@ -123,7 +121,7 @@ const fr = {
     // to someone who wants to know what the council said about their street.
     title: "Demandez ce qui s'est dit au conseil",
     intro:
-      "Posez votre question en une phrase. La réponse arrive avec les passages qui l'appuient et le moment exact dans la vidéo de la séance.",
+      "Posez votre question. La réponse cite les passages et le moment dans la vidéo.",
 
     emptyLead: "Quelques questions pour commencer.",
     examples: [
@@ -155,11 +153,11 @@ const fr = {
     // Said under an extract that carries a name but is not that person's words.
     // The recording runs from the moment the name is called to the next name,
     // so the borough's reply sits inside it and nothing separates the voices.
-    aroundMoment: "Enregistrement à ce moment de la séance. On ne sait pas qui parle : la réponse de l'administration s'y trouve aussi.",
+    aroundMoment: "Ce moment de la séance. On ne sait pas qui parle.",
     moreSources: (n: number) => (n === 1 ? "1 appui de plus" : `${n} appuis de plus`),
     sourceCount: (n: number) => (n === 1 ? "Voir l'appui" : `Voir les ${n} appuis`),
     hideSources: "Replier",
-    sourcesPlaceholder: "Les appuis de la réponse s'affichent ici, avec le passage et le moment dans la vidéo.",
+    sourcesPlaceholder: "Les passages cités s'afficheront ici.",
     watch: "Voir dans la vidéo",
     readPv: "Procès-verbal (PDF)",
     noMoment: "Ce passage n'est pas repéré dans l'enregistrement.",
@@ -176,13 +174,13 @@ const fr = {
     // n'est pas la sienne, et sans promettre un retour à une heure inconnue.
     passagesTitle: "Ce que les archives contiennent",
     fallbackQuota:
-      "Le service de rédaction a atteint sa limite gratuite du jour. La recherche, elle, reste ouverte : voici les passages où vos mots apparaissent.",
+      "Limite quotidienne du service de rédaction atteinte. Voici les passages où vos mots apparaissent.",
     fallbackLimit:
-      "Plusieurs questions coup sur coup. Voici directement les passages où vos mots apparaissent.",
+      "Trop de questions coup sur coup. Voici les passages où vos mots apparaissent.",
     fallbackError:
-      "Je n'ai pas réussi à rédiger de réponse. Voici directement les passages où vos mots apparaissent.",
+      "Aucune réponse rédigée. Voici les passages où vos mots apparaissent.",
     nothingFound:
-      "Ces mots n'apparaissent dans aucune séance enregistrée. Essayez un mot plus simple, ou le nom d'une rue.",
+      "Ces mots n'apparaissent dans aucune séance. Essayez un mot plus simple, ou un nom de rue.",
 
     network: "La demande n'a pas abouti. Réessayez.",
     errorGeneric: "La question n'a pas pu être traitée. Réessayez.",
@@ -191,11 +189,11 @@ const fr = {
     // will meet it. Repeating it under every reply would train people to stop
     // seeing it.
     disclaimer:
-      "Les réponses sont écrites par une machine à partir des procès-verbaux de l'arrondissement et de la transcription automatique des enregistrements. Le passage cité peut contenir des erreurs de transcription : avant de le reprendre, écoutez le moment dans la vidéo.",
+      "Réponses écrites par une machine, à partir des procès-verbaux et d'une transcription automatique. Écoutez la vidéo avant de citer un passage.",
   },
   events: {
     intro:
-      "Les activités et événements en cours ou à venir dans Côte-des-Neiges–Notre-Dame-de-Grâce, situés sur la carte. Cherchez-y, ou filtrez par date et par type.",
+      "Ce qui se passe dans l'arrondissement, sur la carte.",
     mapLabel: "Carte des événements de l'arrondissement",
     searchPlaceholder: "Rechercher un événement, un lieu…",
     filterWhen: "Date",
@@ -209,19 +207,19 @@ const fr = {
     settings: { outdoor: "À l'extérieur", indoor: "En salle", online: "En ligne" },
     allSettings: "Partout",
     // Autour d'un point : l'invitation, puis les distances une fois le point posé.
-    nearbyHint: "Cliquez sur la carte pour voir ce qui se passe autour d'un endroit.",
+    nearbyHint: "Cliquez sur la carte pour voir ce qu'il y a autour.",
     nearbyLabel: "Autour du point",
     nearbyClear: "Enlever le point",
     nearbyNoneTitle: "Rien à cet endroit",
     nearbyNoneBody:
-      "Aucun événement dans ce rayon. Élargissez-le, ou cliquez ailleurs sur la carte.",
+      "Rien dans ce rayon. Élargissez-le, ou cliquez ailleurs.",
     todayPill: "Aujourd'hui",
     type: "Type d'activité",
     allTypes: "Tous les types",
     eventOne: "événement",
     eventMany: "événements",
     noneTitle: "Aucun événement",
-    noneBody: "Aucun événement ne correspond à ces filtres. Essayez un autre district ou type.",
+    noneBody: "Aucun événement ne correspond à ces filtres.",
     details: "Voir la fiche",
     online: "En ligne",
     unmapped: "sans lieu sur la carte",
@@ -229,55 +227,55 @@ const fr = {
     showMore: "Afficher plus",
     emptyTitle: "Aucun événement chargé",
     emptyBody:
-      "Les données n'ont pas encore été synchronisées. Revenez après l'exécution du script de synchronisation.",
+      "Données pas encore synchronisées.",
     source:
-      "Source : données ouvertes de la Ville de Montréal (événements publics), synchronisées quotidiennement. Le district est déterminé à partir des coordonnées, et le nom du lieu retrouvé à partir du parc contenant le point lorsque l'adresse est absente.",
+      "Source : données ouvertes de la Ville de Montréal, synchronisées chaque jour.",
   },
   account: {
     heading: "Vos renseignements",
     boroughTitle: "Votre arrondissement",
     boroughBody:
-      "L'arrondissement dont vous suivez les sujets, les projets et les séances du conseil.",
+      "L'arrondissement que vous suivez.",
     // Dit une fois, sous le choix. Un seul arrondissement est ouvert et
     // quelqu'un qui n'y habite pas doit savoir pourquoi il ne se voit pas dans
     // la liste, plutôt que de croire le site cassé.
     boroughOnly:
-      "Le forum ne couvre pour l'instant que Côte-des-Neiges–Notre-Dame-de-Grâce. D'autres arrondissements s'ajouteront à cette liste.",
+      "Le forum ne couvre que Côte-des-Neiges–Notre-Dame-de-Grâce pour l'instant.",
     boroughSaved: "Arrondissement enregistré.",
     downloadTitle: "Télécharger mes données",
     downloadBody:
-      "Un fichier contenant tout ce que le forum détient sur vous : votre compte, votre profil, vos signalements, vos réponses et vos appuis.",
+      "Tout ce que le forum détient sur vous : compte, profil, signalements, réponses, appuis.",
     download: "Télécharger",
     closeTitle: "Fermer mon compte",
     closeBody:
-      "Votre courriel, votre nom et votre photo sont supprimés, et vos appuis retirés. Vos signalements et vos réponses restent en ligne mais ne portent plus votre nom, pour ne pas effacer les échanges auxquels d'autres ont participé. Retirez d'abord ceux que vous ne voulez pas laisser. C'est irréversible.",
+      "Votre courriel, votre nom et votre photo sont supprimés, et vos appuis retirés. Vos signalements et vos réponses restent en ligne sans votre nom. Retirez d'abord ceux que vous ne voulez pas laisser. C'est irréversible.",
     close: "Fermer mon compte",
     closing: "Fermeture…",
     confirmWord: "fermer",
     confirmPrompt: "Écrivez « fermer » pour confirmer.",
     confirmYes: "Fermer définitivement",
     cancel: "Annuler",
-    failed: "La fermeture a échoué. Réessayez, ou écrivez à la personne responsable.",
+    failed: "La fermeture a échoué. Réessayez.",
   },
   privacy: {
     title: "Confidentialité",
     updated: "À jour au",
     contactHeading: "Exercer vos droits",
     contactBody:
-      "Pour obtenir copie de vos renseignements, faire corriger une erreur, demander la révision d'un message refusé ou fermer votre compte, écrivez à la personne responsable de l'accès aux documents et de la protection des renseignements personnels.",
+      "Pour une copie de vos renseignements, une correction, la révision d'un message refusé ou la fermeture de votre compte, écrivez à la personne responsable de l'accès aux documents et de la protection des renseignements personnels.",
     contactMissing:
-      "Les coordonnées de la personne responsable ne sont pas encore inscrites sur cette page. En attendant, adressez votre demande au bureau de l'arrondissement.",
+      "Coordonnées pas encore inscrites. Adressez votre demande au bureau de l'arrondissement.",
     contactCai:
-      "Si notre réponse ne vous satisfait pas, vous pouvez vous adresser à la Commission d'accès à l'information du Québec :",
+      "Si la réponse ne vous satisfait pas, adressez-vous à la Commission d'accès à l'information du Québec :",
   },
   moderation: {
     title: "Modération",
     intro:
-      "Gérez les accès administrateurs et relisez les messages signalés depuis un seul espace réservé au cabinet.",
+      "Accès administrateurs et messages signalés.",
     navLabel: "Modération",
     accessTitle: "Accès administrateur",
     accessIntro:
-      "Une adresse active peut ouvrir les outils internes, modérer le forum et publier les projets. Son compte devient administrateur dès que son adresse est confirmée.",
+      "Une adresse active ouvre les outils internes, la modération et la publication des projets, dès qu'elle est confirmée.",
     accessEmail: "Adresse courriel",
     accessEmailPlaceholder: "prenom.nom@exemple.org",
     accessAdd: "Accorder l’accès",
@@ -306,7 +304,7 @@ const fr = {
     accessFailed: "La modification n’a pas pu être enregistrée.",
     messagesTitle: "Messages signalés",
     messagesIntro:
-      "Ces messages sont publiés. Le filtre y a repéré des mots qui méritent une relecture. Lisez le message en contexte avant de décider.",
+      "Ces messages sont publiés. Le filtre y a repéré des mots à relire en contexte.",
     empty: "Rien en attente.",
     emptyBody: "Aucun message n'attend d'être relu.",
     forbidden: "Cette page est réservée au cabinet de l'arrondissement.",
@@ -317,14 +315,12 @@ const fr = {
     dismiss: "Laisser passer",
     dismissing: "En cours…",
     dismissHint:
-      "Le message reste publié et sort de cette liste. Pour le retirer, ouvrez-le et supprimez-le.",
+      "Le message reste publié et sort de la liste.",
     waiting: (n: number) =>
       n === 1 ? "1 message en attente" : `${n} messages en attente`,
   },
   notifications: {
     title: "Notifications",
-    intro:
-      "Ce que les résidentes et résidents publient sur le forum, du plus récent au plus ancien.",
     navLabel: "Notifications",
     open: "Ouvrir les notifications",
     unread: (n: number) =>
@@ -335,7 +331,7 @@ const fr = {
     someone: "Une résidente ou un résident",
     empty: "Rien de nouveau.",
     emptyBody:
-      "Vous verrez ici chaque sujet publié par une résidente ou un résident de l'arrondissement.",
+      "Chaque sujet publié par une résidente ou un résident apparaîtra ici.",
     forbidden: "Cette page est réservée au cabinet de l'arrondissement.",
   },
   /**
@@ -348,7 +344,7 @@ const fr = {
   projectAdmin: {
     queueTitle: "Projets en attente",
     queueIntro:
-      "Ce que le relevé automatique des séances a proposé, et ce que le cabinet a commencé à écrire. Rien ici n'est visible par les résidentes et résidents avant d'être publié.",
+      "Propositions du relevé automatique et brouillons du cabinet. Rien n'est visible avant publication.",
     empty: "Rien en attente.",
     fromCron: "Relevé automatique",
     fromStaff: "Écrit par le cabinet",
@@ -356,7 +352,7 @@ const fr = {
     editProject: "Modifier ce projet",
     editing: "Modifie",
     creating: "Crée",
-    incomplete: "Incomplet : il manque une photo, un texte dans les deux langues ou une deuxième date.",
+    incomplete: "Incomplet : photo, texte dans les deux langues ou deuxième date manquants.",
     ready: "Prêt à publier",
     open: "Ouvrir",
     approve: "Publier",
@@ -366,7 +362,7 @@ const fr = {
     working: "Enregistrement…",
     visualEditor: "Modifier la fiche",
     visualEditorHint:
-      "Modifiez directement ce que les citoyennes et citoyens verront, puis publiez lorsque la fiche est prête.",
+      "Modifiez la page telle qu'elle sera vue, puis publiez.",
     citizenPreview: "Aperçu de la fiche publique",
     editLanguage: "Langue du contenu à modifier",
     languageReady: "Cette langue semble complète",
@@ -394,6 +390,8 @@ const fr = {
     mainPhoto: "Image principale",
     galleryPhoto: "Galerie",
     emptyPhotos: "Ajoutez au moins une photo du lieu ou du projet.",
+    emptyGallery:
+      "La première photo devient l'image principale.",
     photoCaption: "Légende",
     photoCredit: "Crédit et licence",
     milestonesLabel: "Dates",
@@ -401,6 +399,7 @@ const fr = {
     milestoneOn: "Date (AAAA, AAAA-MM ou AAAA-MM-JJ)",
     milestoneDateLabel: "Date affichée",
     milestoneDateLabelPlaceholder: "Été 2026 (facultatif)",
+    milestoneOnInvalid: "Une date s'écrit 2026, 2026-06 ou 2026-06-01.",
     milestoneBody: "Détails",
     milestoneReferences: "Résolution et source de cette étape",
     milestoneResolution: "Résolution",
@@ -419,6 +418,32 @@ const fr = {
     councilTerm: "Mot à chercher dans le registre du conseil",
     whatTheCronRead: "Ce que le relevé a lu",
     onlyOffice: "Cette page est réservée au cabinet de l'arrondissement.",
+    howToEdit:
+      "Écrivez directement sur la page. Chaque zone teintée est un champ. Rien n'est visible avant publication.",
+    checklist: "Avant de publier",
+    checklistReady: "Tout y est. Cette fiche peut être publiée.",
+    checklistMissing: (language: string) => `Il manque en ${language}`,
+    inFrench: "français",
+    inEnglish: "anglais",
+    needDescription: "Un paragraphe de description",
+    needPhoto: "Au moins une photo",
+    needCaption: "Une légende pour chaque photo",
+    needMilestones: "Au moins deux dates",
+    needMilestoneTitle: "Un intitulé pour chaque date",
+    blocked: "À corriger avant d'enregistrer",
+    blockedSlug:
+      "Minuscules, chiffres et traits d'union seulement.",
+    blockedDates: (n: number) =>
+      n === 1 ? "Une date est mal écrite." : `${n} dates sont mal écrites.`,
+    blockedDateBlank: (n: number) =>
+      n === 1 ? "Une étape n'a pas encore de date." : `${n} étapes n'ont pas encore de date.`,
+  },
+  notFoundPage: {
+    title: "Cette page n'existe pas",
+    body:
+      "Le lien est peut-être périmé, ou le sujet a été retiré. Le forum, lui, est toujours là.",
+    home: "Retour au forum",
+    projects: "Voir les projets",
   },
   errorPage: {
     title: "Cette page n'a pas pu s'afficher",
@@ -430,8 +455,6 @@ const fr = {
   },
   pages: {
     projectsTitle: "État d'avancement des projets",
-    projectsIntro:
-      "Suivez l'avancement des chantiers et des projets en cours dans l'arrondissement.",
     eventsTitle: "Carte des événements dans l'arrondissement",
     eventsIntro: "Découvrez les événements à venir près de chez vous.",
     comingSoon: "Cette section sera bientôt disponible.",
@@ -460,7 +483,7 @@ const fr = {
     raisedIntro: (people: number, sittings: number) =>
       `${people} ${people === 1 ? "personne a soulevé" : "personnes ont soulevé"} ce dossier à la période de questions, sur ${sittings} ${sittings === 1 ? "séance" : "séances"}.`,
     noResolutions:
-      "Aucune résolution du conseil d'arrondissement ne porte sur ce dossier dans les séances indexées.",
+      "Aucune résolution du conseil sur ce dossier.",
     questionOrale: "Question orale",
     questionEcrite: "Question écrite",
     readMinutes: "Procès-verbal",
@@ -468,7 +491,7 @@ const fr = {
     credits: "Crédits photo",
     emptyTitle: "Aucun projet suivi pour l'instant",
     emptyBody:
-      "Un projet apparaît ici une fois qu'il a une description et une chronologie vérifiable. Les dossiers qui n'ont encore qu'une date ne sont pas listés.",
+      "Un projet apparaît ici dès qu'il a une description et une chronologie vérifiable.",
     milestoneCount: (n: number) => (n === 1 ? "1 étape" : `${n} étapes`),
   },
   home: {
@@ -477,7 +500,7 @@ const fr = {
     report: "Signaler un enjeu",
     ctaTitle: "Un problème dans votre quartier?",
     signInPrompt:
-      "Tout le monde peut lire le forum. Seuls les membres d’Ensemble Montréal peuvent publier, répondre ou soutenir un sujet.",
+      "Seuls les membres d’Ensemble Montréal peuvent publier, répondre ou appuyer un sujet.",
     topTitle: "Sujets les plus soutenus",
     topicsTitle: "Sujets",
     showMore: "Afficher plus de sujets",
@@ -523,8 +546,6 @@ const fr = {
   issue: {
     back: "← Retour au forum",
     newTitle: "Signaler un enjeu",
-    newSubtitle:
-      "Décrivez la situation le plus précisément possible. Les autres citoyen·ne·s pourront soutenir votre sujet et le cabinet de l'arrondissement pourra y répondre.",
     fieldTitle: "Titre du sujet",
     fieldTitleHint: "Entre 5 et 150 caractères.",
     fieldTitlePlaceholder: "Ex. : Nids-de-poule sur la rue Sherbrooke",
@@ -532,7 +553,7 @@ const fr = {
     fieldBody: "Description",
     fieldBodyHint: "Au moins 20 caractères.",
     fieldBodyPlaceholder:
-      "Décrivez la situation, l'endroit précis et son impact sur le quartier.",
+      "La situation, l'endroit précis, son impact.",
     fieldLocation: "Endroit",
     locationHint: "Cliquez sur la carte pour indiquer où se trouve le problème.",
     locationChosen: "Endroit indiqué",
@@ -545,11 +566,12 @@ const fr = {
     fieldPhotoOptional: "(facultatif)",
     fieldPhotoChoose: "Choisir un fichier",
     fieldPhotoHint:
-      "Photo : JPEG, PNG ou WebP, 5 Mo maximum. Vidéo : MP4, WebM ou MOV, 60 secondes et 50 Mo maximum.",
+      "JPEG, PNG ou WebP, 5 Mo. MP4, WebM ou MOV, 60 s et 50 Mo.",
     photoPreviewAlt: "Aperçu de la photo sélectionnée",
     mediaUploading: "Envoi de la vidéo",
     mediaUploaded: "Vidéo envoyée",
     mediaRemove: "Retirer",
+    mediaReplace: "Remplacer",
     mediaWait: "Attendez la fin de l'envoi",
     publish: "Publier le sujet",
     publishing: "Publication…",
@@ -565,7 +587,7 @@ const fr = {
     addComment: "Ajouter un commentaire",
     replyAsOfficial: "Répondre au nom du cabinet",
     officialHint:
-      "Votre réponse sera identifiée comme officielle et le sujet passera à « Répondu ».",
+      "Réponse identifiée comme officielle. Le sujet passera à « Répondu ».",
     commentPlaceholder: "Votre message…",
     reply: "Répondre",
     replyingTo: (name: string) => `Réponse à ${name}`,
@@ -575,11 +597,9 @@ const fr = {
     send: "Publier",
     sending: "Envoi…",
     signInToComment:
-      "Tout le monde peut lire la discussion. Seuls les membres d’Ensemble Montréal peuvent y répondre.",
+      "Seuls les membres d’Ensemble Montréal peuvent répondre.",
     officialAnswer: "Réponse officielle",
     officialSpace: "Espace du cabinet",
-    officialSpaceHint:
-      "Vous pouvez changer l'état de ce sujet et publier une réponse officielle.",
     close: "Clore le sujet",
     reopen: "Rouvrir le sujet",
     photoAlt: "Photo jointe",
@@ -595,47 +615,42 @@ const fr = {
     // « Annuler » sort d'une confirmation de retrait, la seule qui reste.
     cancelEdit: "Annuler",
     collectionNotice:
-      "Votre nom, le texte, la photo et l'épingle seront publics et resteront en ligne tant que vous ne les retirerez pas.",
+      "Votre nom, le texte, la photo et l'épingle seront publics.",
     editedByAuthor: (date: string) => `modifié le ${date}`,
     editedByOfficial: (date: string) => `modifié par le cabinet le ${date}`,
     editPost: "Modifier",
     saveEdit: "Enregistrer les modifications",
     savingEdit: "Enregistrement…",
-    editNote: "Les réponses déjà publiées restent en place. La date de modification s'affiche sous le sujet.",
     withdraw: "Retirer",
     withdrawing: "Retrait…",
     withdrawConfirmTitle: "Retirer ce sujet?",
     withdrawConfirmBody:
-      "Le sujet, ses réponses et ses soutiens seront supprimés définitivement. Cette action est irréversible.",
+      "Le sujet, ses réponses et ses soutiens seront supprimés. Irréversible.",
     withdrawConfirmYes: "Retirer définitivement",
     withdrawOfficialNote:
-      "Ce sujet a été publié par une autre personne. Vous agissez ici au nom du cabinet.",
+      "Sujet publié par une autre personne. Vous agissez au nom du cabinet.",
     moderateNote:
-      "Cette réponse a été publiée par une autre personne. Vous agissez ici au nom du cabinet.",
+      "Réponse publiée par une autre personne. Vous agissez au nom du cabinet.",
     deleteReply: "Supprimer",
     deleteReplyTitle: "Supprimer cette réponse?",
     deleteReplyBody:
-      "Les réponses qui y sont rattachées seront supprimées avec elle. Cette action est irréversible.",
+      "Les réponses rattachées seront supprimées avec elle. Irréversible.",
     deleteReplyYes: "Supprimer définitivement",
     deleting: "Suppression…",
   },
   poll: {
     label: "Sondage citoyen",
     ctaTitle: "Vous souhaitez plutôt consulter les citoyen·ne·s?",
-    ctaBody: "Créez un sondage et recueillez l’avis des membres sur une question précise.",
+    ctaBody: "Recueillez l’avis des membres sur une question précise.",
     ctaButton: "Créer un sondage",
     backToForum: "← Retour au forum",
     backToPolls: "← Retour aux sondages",
     listTitle: "Sondages citoyens",
-    listSubtitle:
-      "Répondez aux questions publiées par l’équipe d’Ensemble Montréal et consultez les résultats en temps réel.",
     latestTitle: "Sondages citoyens",
     seeAll: "Voir tous les sondages",
     emptyTitle: "Aucun sondage pour le moment",
     emptyBody: "Les nouveaux sondages publiés par l’équipe apparaîtront ici.",
     newTitle: "Créer un sondage citoyen",
-    newSubtitle:
-      "Posez une question claire, puis choisissez un vote classique ou une consultation interactive sur la carte. Le sondage sera visible par tout le monde dès sa publication.",
     modeTitle: "Type de sondage",
     modeHint: "Choisissez la manière dont les membres pourront répondre.",
     choiceModeTitle: "Sondage classique",
@@ -646,7 +661,7 @@ const fr = {
     questionPlaceholder: "Ex. : Quelle amélioration devrait être priorisée dans ce parc?",
     descriptionLabel: "Contexte",
     optional: "(facultatif)",
-    descriptionPlaceholder: "Ajoutez les renseignements utiles pour aider les citoyen·ne·s à répondre.",
+    descriptionPlaceholder: "Les renseignements utiles pour répondre.",
     choicesTitle: "Choix de réponse",
     choicesHint: "Ajoutez entre 2 et 10 choix. Leur ordre sera conservé.",
     choiceLabel: (n: number) => `Choix ${n}`,
@@ -657,12 +672,12 @@ const fr = {
     saveChoices: "Enregistrer les choix",
     cancelEdit: "Annuler",
     editWarning:
-      "Renommer un choix garde ses votes. Retirer un choix supprime les votes qui lui ont été donnés.",
+      "Renommer un choix garde ses votes. Le retirer supprime les siens.",
     removeKeepsNoVotes: (n: number) =>
       n === 1 ? "Retirer ce choix supprimera 1 vote" : `Retirer ce choix supprimera ${n} votes`,
     mapSettingsTitle: "Personnaliser les points sur la carte",
     mapSettingsHint:
-      "Décidez exactement ce que les citoyen·ne·s pourront joindre à chaque point.",
+      "Ce qui peut être joint à chaque point.",
     allowPinDescriptionTitle: "Autoriser une description",
     allowPinDescriptionBody: "Un court texte pourra expliquer pourquoi cet endroit est choisi.",
     allowPinImageTitle: "Autoriser une photo",
@@ -673,7 +688,7 @@ const fr = {
     publish: "Publier le sondage",
     publishing: "Publication…",
     collectionNotice:
-      "La question, le contexte et les résultats agrégés seront publics. Le choix individuel de chaque membre ne sera jamais affiché publiquement.",
+      "La question, le contexte et les résultats agrégés sont publics. Jamais le choix individuel.",
     votes: (n: number) => (n === 1 ? "1 vote" : `${n} votes`),
     mapResponses: (n: number) => (n === 1 ? "1 point citoyen" : `${n} points citoyens`),
     open: "Voir et voter",
@@ -684,14 +699,14 @@ const fr = {
     voting: "Enregistrement…",
     selected: "Votre choix",
     membersOnly:
-      "Les résultats sont publics. Seuls les membres d’Ensemble Montréal peuvent voter.",
+      "Résultats publics. Seuls les membres d’Ensemble Montréal peuvent voter.",
     mapMembersOnly:
-      "Tout le monde peut consulter la carte. Seuls les membres d’Ensemble Montréal peuvent y ajouter un point.",
+      "Carte publique. Seuls les membres d’Ensemble Montréal peuvent ajouter un point.",
     changeHint: "Vous pouvez modifier votre choix en tout temps.",
     noVotes: "Aucun vote pour le moment.",
     addPinConfirm: "Ajouter ce point?",
     addPinTitle: "Ajouter votre point",
-    addPinBody: "Cliquez sur la carte pour indiquer l’endroit qui répond à la question.",
+    addPinBody: "Cliquez sur la carte pour indiquer l’endroit.",
     pinLocation: "Emplacement",
     pinDescriptionLabel: "Description du point",
     pinDescriptionPlaceholder: "Expliquez brièvement votre choix…",
@@ -710,7 +725,7 @@ const fr = {
         : `Vous avez ajouté ${current} point${current > 1 ? "s" : ""} sur ${max}.`,
     pinLimitNotice: "Vous avez atteint la limite de points prévue pour ce sondage.",
     mapPublicNotice:
-      "L’emplacement, la description et la photo ajoutés à un point sont publics. Votre nom n’est pas affiché avec la contribution.",
+      "L’emplacement, la description et la photo sont publics. Votre nom n’est pas affiché.",
   },
   profile: {
     topics: "Sujets",
@@ -756,7 +771,7 @@ const fr = {
     // more, so the sentence says where the name came from instead of who typed
     // it, which is the fact a member would otherwise have to guess at.
     collectionNotice:
-      "Réservé aux membres d'Ensemble Montréal dans CDN-NDG. Votre compte se crée à la première connexion, au nom de votre adhésion, qui sera public. Votre courriel n'est jamais affiché.",
+      "Réservé aux membres d'Ensemble Montréal dans CDN-NDG. Le compte se crée à la première connexion, au nom de votre adhésion, qui sera public. Votre courriel n'est jamais affiché.",
     working: "Un instant…",
     codeTitle: "Code de vérification",
     codeSentTo: (email: string) => `Code envoyé à ${email}.`,
@@ -774,7 +789,7 @@ const fr = {
     follow: "Nous suivre",
     newWindow: "(nouvelle fenêtre)",
     tagline:
-      "Un espace pour parler de Côte-des-Neiges–Notre-Dame-de-Grâce. Soulevez un enjeu, ou appuyez celui d'une voisine ou d'un voisin.",
+      "Un espace pour parler de Côte-des-Neiges–Notre-Dame-de-Grâce.",
   },
   translate: {
     action: "Traduire",
@@ -810,7 +825,7 @@ const fr = {
     bodyTooShort: "La description doit contenir au moins 20 caractères.",
     bodyTooLong: "La description ne peut pas dépasser 5000 caractères.",
     badCategory: "Veuillez choisir une catégorie valide.",
-    networkFailed: "L'envoi n'a pas abouti. Vérifiez votre connexion et réessayez, votre texte est encore là.",
+    networkFailed: "L'envoi n'a pas abouti. Votre texte est encore là, réessayez.",
     publishFailed: "La publication a échoué. Veuillez réessayer.",
     commentTooShort: "Votre commentaire est trop court.",
     commentTooLong: "Votre commentaire ne peut pas dépasser 5000 caractères.",
@@ -828,7 +843,7 @@ const fr = {
     // reconnue" would leave someone rereading their own typing with no idea
     // whether the problem is the address or the membership behind it.
     notMember:
-      "Cette adresse ne figure pas parmi les membres d'Ensemble Montréal CDN-NDG. Utilisez l'adresse fournie lors de votre adhésion, ou écrivez au cabinet pour la faire corriger.",
+      "Cette adresse ne figure pas parmi les membres d'Ensemble Montréal CDN-NDG. Utilisez celle de votre adhésion, ou écrivez au cabinet.",
     membershipExpired:
       "Votre adhésion est échue. Renouvelez-la pour retrouver l'accès au forum.",
     codeInvalid: "Code invalide ou expiré.",
@@ -836,7 +851,7 @@ const fr = {
     tooManyCodes: "Trop de demandes. Veuillez patienter une minute.",
     locationRequired: "Indiquez l'endroit sur la carte en cliquant dessus.",
     locationOutside:
-      "Cet endroit est hors de Côte-des-Neiges–Notre-Dame-de-Grâce. Choisissez un point dans l'arrondissement.",
+      "Cet endroit est hors de l'arrondissement.",
     boroughUnknown: "Cet arrondissement n'est pas encore couvert par le forum.",
     boroughFailed: "Votre arrondissement n'a pas pu être enregistré. Réessayez.",
     pollQuestionTooShort: "La question doit contenir au moins 5 caractères.",
@@ -863,7 +878,7 @@ const fr = {
     // traitement automatisé, et l'article 12.1 de la Loi 25 oblige à le dire au
     // moment de la décision et à ouvrir une porte vers une personne.
     messageRefused:
-      "Ce message n'a pas été publié : un filtre automatique y a repéré des propos injurieux ou menaçants. Reformulez-le sans viser personne, ou demandez qu'une personne le relise. Voir la page Confidentialité.",
+      "Message refusé par le filtre automatique. Reformulez sans viser personne, ou demandez une relecture.",
   },
 };
 
@@ -873,7 +888,7 @@ const en: Dictionary = {
   meta: {
     siteName: "Forum CDN-NDG",
     siteDescription:
-      "The forum for Ensemble Montréal members in Côte-des-Neiges–Notre-Dame-de-Grâce. Report a neighbourhood issue, follow the projects, and read what the borough council says back.",
+      "The forum for Ensemble Montréal members in Côte-des-Neiges–Notre-Dame-de-Grâce. Report an issue, follow the projects, read the council's replies.",
   },
   header: {
     menu: "Menu",
@@ -892,11 +907,11 @@ const en: Dictionary = {
     events: "Map of events in the borough",
     council: "Your questions about the borough council",
     officials: "Your elected officials",
-    forumDesc: "Discuss issues in your neighbourhood and back the topics that matter.",
+    forumDesc: "Neighbourhood issues, and the topics to back.",
     projectsDesc: "Follow the progress of construction and current projects.",
     eventsDesc: "Find activities and upcoming events near you.",
-    councilDesc: "Ask about the meetings and read the passage that answers you, in the video.",
-    officialsDesc: "See who represents you, in which district, and how to reach them.",
+    councilDesc: "Your questions about council meetings.",
+    officialsDesc: "Who represents you, and how to reach them.",
     short: {
       forum: "Forum",
       officials: "Officials",
@@ -908,8 +923,6 @@ const en: Dictionary = {
   },
   officials: {
     title: "Your elected officials",
-    intro:
-      "The elected team for Côte-des-Neiges–Notre-Dame-de-Grâce. They are who the topics posted on this forum are addressed to.",
     roles: {
       mayor: "Borough mayor",
       councillorF: "City councillor",
@@ -922,7 +935,7 @@ const en: Dictionary = {
   council: {
     title: "Ask what was said at council",
     intro:
-      "Ask your question in one sentence. The answer comes back with the passages behind it and the exact moment in the video of the meeting.",
+      "Ask your question. The answer cites the passages and the moment in the video.",
 
     emptyLead: "A few questions to start with.",
     examples: [
@@ -932,7 +945,7 @@ const en: Dictionary = {
     ],
     placeholder: "Your question",
     membersOnly:
-      "Answers remain visible to everyone. Only Ensemble Montréal members can send a question.",
+      "Only Ensemble Montréal members can ask a question.",
     membersOnlyPlaceholder: "For Ensemble Montréal members",
     send: "Ask",
     sending: "Working",
@@ -950,11 +963,11 @@ const en: Dictionary = {
 
     sources: "What this answer rests on",
     sourceNumber: (n: number) => `Source ${n}`,
-    aroundMoment: "The recording at this point in the sitting. Who is speaking is not known: the borough's reply is in here too.",
+    aroundMoment: "This point in the sitting. Who is speaking is not known.",
     moreSources: (n: number) => (n === 1 ? "1 more source" : `${n} more sources`),
     sourceCount: (n: number) => (n === 1 ? "See the source" : `See the ${n} sources`),
     hideSources: "Fold away",
-    sourcesPlaceholder: "The sources behind an answer show up here, with the passage and the moment in the video.",
+    sourcesPlaceholder: "The passages cited will show up here.",
     watch: "Watch in the video",
     readPv: "Minutes (PDF)",
     noMoment: "This passage is not pinned to a moment in the recording.",
@@ -968,23 +981,23 @@ const en: Dictionary = {
 
     passagesTitle: "What the archive holds",
     fallbackQuota:
-      "The writing service has used up its free allowance for the day. The search has not: here are the passages where your words come up.",
+      "The writing service has used up its daily allowance. Here are the passages where your words come up.",
     fallbackLimit:
-      "Several questions in a row. Here are the passages where your words come up, straight from the archive.",
+      "Too many questions in a row. Here are the passages where your words come up.",
     fallbackError:
-      "I could not write an answer. Here are the passages where your words come up, straight from the archive.",
+      "No answer could be written. Here are the passages where your words come up.",
     nothingFound:
-      "These words do not come up in any recorded meeting. Try a simpler word, or a street name.",
+      "These words do not come up in any meeting. Try a simpler word, or a street name.",
 
     network: "The request did not go through. Try again.",
     errorGeneric: "The question could not be handled. Try again.",
 
     disclaimer:
-      "Answers are machine-written from the borough's official minutes and from an automatic transcription of the recordings. A quoted passage may carry transcription mistakes, so listen to the moment in the video before repeating it.",
+      "Answers are machine-written from the official minutes and an automatic transcription. Listen to the video before quoting a passage.",
   },
   events: {
     intro:
-      "Activities and events happening now or soon in Côte-des-Neiges–Notre-Dame-de-Grâce, placed on the map. Search them, or narrow by date and type.",
+      "What is happening in the borough, on the map.",
     mapLabel: "Map of borough events",
     searchPlaceholder: "Search an event, a place…",
     filterWhen: "Date",
@@ -1002,14 +1015,14 @@ const en: Dictionary = {
     nearbyClear: "Remove the spot",
     nearbyNoneTitle: "Nothing here",
     nearbyNoneBody:
-      "No events within this radius. Widen it, or click somewhere else on the map.",
+      "Nothing within this radius. Widen it, or click somewhere else.",
     todayPill: "Today",
     type: "Activity type",
     allTypes: "All types",
     eventOne: "event",
     eventMany: "events",
     noneTitle: "No events",
-    noneBody: "No events match these filters. Try a wider date range, or clear the search.",
+    noneBody: "No events match these filters.",
     details: "View details",
     online: "Online",
     unmapped: "with no location on the map",
@@ -1017,51 +1030,51 @@ const en: Dictionary = {
     showMore: "Show more",
     emptyTitle: "No events loaded",
     emptyBody:
-      "Data has not been synced yet. Check back once the sync script has run.",
+      "Data has not been synced yet.",
     source:
-      "Source: City of Montréal open data (public events), synced daily. The district is derived from the coordinates, and the venue name resolved from the park containing the point when no address is given.",
+      "Source: City of Montréal open data, synced daily.",
   },
   account: {
     heading: "Your information",
     boroughTitle: "Your borough",
-    boroughBody: "The borough whose topics, projects and council meetings you follow.",
+    boroughBody: "The borough you follow.",
     boroughOnly:
-      "The forum only covers Côte-des-Neiges–Notre-Dame-de-Grâce for now. More boroughs will join this list.",
+      "The forum only covers Côte-des-Neiges–Notre-Dame-de-Grâce for now.",
     boroughSaved: "Borough saved.",
     downloadTitle: "Download my data",
     downloadBody:
-      "A file with everything the forum holds about you: your account, your profile, your reports, your replies and your backing.",
+      "Everything the forum holds about you: account, profile, reports, replies, backing.",
     download: "Download",
     closeTitle: "Close my account",
     closeBody:
-      "Your email, name and photo are deleted, and your backing withdrawn. Your reports and replies stay online but no longer carry your name, so the conversations other people took part in are not torn up. Withdraw the ones you do not want to leave behind first. This cannot be undone.",
+      "Your email, name and photo are deleted, and your backing withdrawn. Your reports and replies stay online without your name. Withdraw the ones you do not want to leave behind first. This cannot be undone.",
     close: "Close my account",
     closing: "Closing…",
     confirmWord: "close",
     confirmPrompt: "Type “close” to confirm.",
     confirmYes: "Close permanently",
     cancel: "Cancel",
-    failed: "Closing failed. Try again, or write to the responsible person.",
+    failed: "Closing failed. Try again.",
   },
   privacy: {
     title: "Privacy",
     updated: "Up to date as of",
     contactHeading: "Exercising your rights",
     contactBody:
-      "To get a copy of your information, have an error corrected, ask for a refused message to be reviewed, or close your account, write to the person responsible for access to documents and the protection of personal information.",
+      "For a copy of your information, a correction, a review of a refused message, or to close your account, write to the person responsible for access to documents and the protection of personal information.",
     contactMissing:
-      "The responsible person's contact details are not yet on this page. In the meantime, address your request to the borough office.",
+      "Contact details are not on this page yet. Address your request to the borough office.",
     contactCai:
-      "If our answer does not satisfy you, you can take it to the Commission d'accès à l'information du Québec:",
+      "If the answer does not satisfy you, take it to the Commission d'accès à l'information du Québec:",
   },
   moderation: {
     title: "Moderation",
     intro:
-      "Manage administrator access and review flagged messages from one private office workspace.",
+      "Administrator access and flagged messages.",
     navLabel: "Moderation",
     accessTitle: "Administrator access",
     accessIntro:
-      "An active address can open internal tools, moderate the forum and publish projects. Its account becomes an administrator as soon as the address is confirmed.",
+      "An active address opens the internal tools, moderation and project publishing, as soon as it is confirmed.",
     accessEmail: "Email address",
     accessEmailPlaceholder: "first.last@example.org",
     accessAdd: "Grant access",
@@ -1090,7 +1103,7 @@ const en: Dictionary = {
     accessFailed: "The change could not be saved.",
     messagesTitle: "Flagged messages",
     messagesIntro:
-      "These messages are published. The filter spotted words worth a second read. Read the message in context before deciding.",
+      "These messages are published. The filter spotted words worth reading in context.",
     empty: "Nothing waiting.",
     emptyBody: "No message is waiting to be read.",
     forbidden: "This page is for the borough office.",
@@ -1101,12 +1114,11 @@ const en: Dictionary = {
     dismiss: "Let it stand",
     dismissing: "Working…",
     dismissHint:
-      "The message stays published and leaves this list. To take it down, open it and delete it.",
+      "The message stays published and leaves the list.",
     waiting: (n: number) => (n === 1 ? "1 message waiting" : `${n} messages waiting`),
   },
   notifications: {
     title: "Notifications",
-    intro: "What residents publish on the forum, newest first.",
     navLabel: "Notifications",
     open: "Open notifications",
     unread: (n: number) =>
@@ -1116,13 +1128,13 @@ const en: Dictionary = {
     newTopic: (name: string) => `${name} published a new topic`,
     someone: "A resident",
     empty: "Nothing new.",
-    emptyBody: "Every topic published by a resident of the borough shows up here.",
+    emptyBody: "Every topic published by a resident will show up here.",
     forbidden: "This page is for the borough office.",
   },
   projectAdmin: {
     queueTitle: "Projects waiting",
     queueIntro:
-      "What the automatic reading of the sittings proposed, and what the office has started writing. Nothing here is visible to residents until it is published.",
+      "Proposals from the automatic reading, and the office's drafts. Nothing is visible before publishing.",
     empty: "Nothing waiting.",
     fromCron: "Read from the record",
     fromStaff: "Written by the office",
@@ -1130,7 +1142,7 @@ const en: Dictionary = {
     editProject: "Edit this project",
     editing: "Edits",
     creating: "Creates",
-    incomplete: "Incomplete: a photo, text in both languages or a second date is missing.",
+    incomplete: "Incomplete: photo, text in both languages or second date missing.",
     ready: "Ready to publish",
     open: "Open",
     approve: "Publish",
@@ -1140,7 +1152,7 @@ const en: Dictionary = {
     working: "Saving…",
     visualEditor: "Edit the project page",
     visualEditorHint:
-      "Edit what residents will see directly, then publish when the page is ready.",
+      "Edit the page as it will be seen, then publish.",
     citizenPreview: "Public page preview",
     editLanguage: "Content language to edit",
     languageReady: "This language looks complete",
@@ -1168,6 +1180,8 @@ const en: Dictionary = {
     mainPhoto: "Main image",
     galleryPhoto: "Gallery",
     emptyPhotos: "Add at least one photo of the place or project.",
+    emptyGallery:
+      "The first photo becomes the lead image.",
     photoCaption: "Caption",
     photoCredit: "Credit and licence",
     milestonesLabel: "Dates",
@@ -1175,6 +1189,7 @@ const en: Dictionary = {
     milestoneOn: "Date (YYYY, YYYY-MM or YYYY-MM-DD)",
     milestoneDateLabel: "Displayed date",
     milestoneDateLabelPlaceholder: "Summer 2026 (optional)",
+    milestoneOnInvalid: "A date is written 2026, 2026-06 or 2026-06-01.",
     milestoneBody: "Details",
     milestoneReferences: "Resolution and source for this milestone",
     milestoneResolution: "Resolution",
@@ -1193,6 +1208,32 @@ const en: Dictionary = {
     councilTerm: "Word to look for in the council record",
     whatTheCronRead: "What the reading found",
     onlyOffice: "This page is for the borough office.",
+    howToEdit:
+      "Write straight onto the page. Every tinted area is a field. Nothing is visible before publishing.",
+    checklist: "Before publishing",
+    checklistReady: "Everything is here. This page can be published.",
+    checklistMissing: (language: string) => `Missing in ${language}`,
+    inFrench: "French",
+    inEnglish: "English",
+    needDescription: "A paragraph of description",
+    needPhoto: "At least one photo",
+    needCaption: "A caption for every photo",
+    needMilestones: "At least two dates",
+    needMilestoneTitle: "A label for every date",
+    blocked: "Fix before saving",
+    blockedSlug:
+      "Lowercase letters, digits and hyphens only.",
+    blockedDates: (n: number) =>
+      n === 1 ? "One date is written wrong." : `${n} dates are written wrong.`,
+    blockedDateBlank: (n: number) =>
+      n === 1 ? "One milestone has no date yet." : `${n} milestones have no date yet.`,
+  },
+  notFoundPage: {
+    title: "This page does not exist",
+    body:
+      "The link may be out of date, or the topic was taken down. The forum is still here.",
+    home: "Back to the forum",
+    projects: "See the projects",
   },
   errorPage: {
     title: "This page could not be shown",
@@ -1204,7 +1245,6 @@ const en: Dictionary = {
   },
   pages: {
     projectsTitle: "Project progress",
-    projectsIntro: "Follow the progress of construction and projects under way in the borough.",
     eventsTitle: "Map of events in the borough",
     eventsIntro: "Discover upcoming events near you.",
     comingSoon: "This section will be available soon.",
@@ -1232,7 +1272,7 @@ const en: Dictionary = {
     raisedIntro: (people: number, sittings: number) =>
       `${people} ${people === 1 ? "person raised" : "people raised"} this at question period, across ${sittings} ${sittings === 1 ? "sitting" : "sittings"}.`,
     noResolutions:
-      "No borough council resolution covers this file in the indexed sittings.",
+      "No council resolution covers this file.",
     questionOrale: "Spoken question",
     questionEcrite: "Written question",
     readMinutes: "Minutes",
@@ -1240,7 +1280,7 @@ const en: Dictionary = {
     credits: "Photo credits",
     emptyTitle: "No projects tracked yet",
     emptyBody:
-      "A project appears here once it has a description and a verifiable timeline. Files with only a single date are not listed.",
+      "A project appears here once it has a description and a verifiable timeline.",
     milestoneCount: (n: number) => (n === 1 ? "1 milestone" : `${n} milestones`),
   },
   home: {
@@ -1249,7 +1289,7 @@ const en: Dictionary = {
     report: "Report an issue",
     ctaTitle: "Something wrong in your neighbourhood?",
     signInPrompt:
-      "Everyone can read the forum. Only Ensemble Montréal members can post, reply, or support a topic.",
+      "Only Ensemble Montréal members can post, reply or back a topic.",
     topTitle: "Most-backed topics",
     topicsTitle: "Topics",
     showMore: "Show more topics",
@@ -1295,8 +1335,6 @@ const en: Dictionary = {
   issue: {
     back: "← Back to the forum",
     newTitle: "Report an issue",
-    newSubtitle:
-      "Describe the situation as precisely as possible. Other residents can back your topic and the borough office can reply to it.",
     fieldTitle: "Topic title",
     fieldTitleHint: "Between 5 and 150 characters.",
     fieldTitlePlaceholder: "E.g. Potholes on Sherbrooke Street",
@@ -1304,7 +1342,7 @@ const en: Dictionary = {
     fieldBody: "Description",
     fieldBodyHint: "At least 20 characters.",
     fieldBodyPlaceholder:
-      "Describe the situation, the exact location and its impact on the neighbourhood.",
+      "The situation, the exact location, its impact.",
     fieldLocation: "Location",
     locationHint: "Click the map to show where the problem is.",
     locationChosen: "Location set",
@@ -1317,11 +1355,12 @@ const en: Dictionary = {
     fieldPhotoOptional: "(optional)",
     fieldPhotoChoose: "Choose file",
     fieldPhotoHint:
-      "Photo: JPEG, PNG or WebP, 5 MB maximum. Video: MP4, WebM or MOV, 60 seconds and 50 MB maximum.",
+      "JPEG, PNG or WebP, 5 MB. MP4, WebM or MOV, 60 s and 50 MB.",
     photoPreviewAlt: "Preview of the selected photo",
     mediaUploading: "Uploading video",
     mediaUploaded: "Video uploaded",
     mediaRemove: "Remove",
+    mediaReplace: "Replace",
     mediaWait: "Wait for the upload to finish",
     publish: "Publish topic",
     publishing: "Publishing…",
@@ -1335,7 +1374,7 @@ const en: Dictionary = {
     addComment: "Add a comment",
     replyAsOfficial: "Reply for the borough office",
     officialHint:
-      "Your reply will be marked as official and the topic will move to “Answered”.",
+      "Marked as an official reply. The topic will move to “Answered”.",
     commentPlaceholder: "Your message…",
     reply: "Reply",
     replyingTo: (name: string) => `Replying to ${name}`,
@@ -1345,10 +1384,9 @@ const en: Dictionary = {
     send: "Post",
     sending: "Sending…",
     signInToComment:
-      "Everyone can read the discussion. Only Ensemble Montréal members can reply.",
+      "Only Ensemble Montréal members can reply.",
     officialAnswer: "Official answer",
     officialSpace: "Official area",
-    officialSpaceHint: "You can change this topic's status and post an official reply.",
     close: "Close topic",
     reopen: "Reopen topic",
     photoAlt: "Attached photo",
@@ -1360,47 +1398,42 @@ const en: Dictionary = {
     backToIssue: "← Back to the topic",
     cancelEdit: "Cancel",
     collectionNotice:
-      "Your name, the text, the photo and the pin will be public and stay online until you withdraw them.",
+      "Your name, the text, the photo and the pin will be public.",
     editedByAuthor: (date: string) => `edited on ${date}`,
     editedByOfficial: (date: string) => `edited by an official on ${date}`,
     editPost: "Edit",
     saveEdit: "Save changes",
     savingEdit: "Saving…",
-    editNote: "Replies already posted stay where they are. The date of the change is shown under the topic.",
     withdraw: "Withdraw",
     withdrawing: "Withdrawing…",
     withdrawConfirmTitle: "Withdraw this topic?",
     withdrawConfirmBody:
-      "The topic, its replies and its support will be deleted permanently. This cannot be undone.",
+      "The topic, its replies and its backing will be deleted. This cannot be undone.",
     withdrawConfirmYes: "Withdraw permanently",
     withdrawOfficialNote:
-      "This topic was posted by someone else. You are acting here for the borough office.",
+      "Posted by someone else. You are acting for the borough office.",
     moderateNote:
-      "This reply was posted by someone else. You are acting here for the borough office.",
+      "Posted by someone else. You are acting for the borough office.",
     deleteReply: "Delete",
     deleteReplyTitle: "Delete this reply?",
     deleteReplyBody:
-      "Any replies attached to it will be deleted with it. This cannot be undone.",
+      "Replies attached to it go with it. This cannot be undone.",
     deleteReplyYes: "Delete permanently",
     deleting: "Deleting…",
   },
   poll: {
     label: "Citizen poll",
     ctaTitle: "Would you rather consult residents?",
-    ctaBody: "Create a poll and gather members’ views on a specific question.",
+    ctaBody: "Gather members’ views on a specific question.",
     ctaButton: "Create a poll",
     backToForum: "← Back to the forum",
     backToPolls: "← Back to polls",
     listTitle: "Citizen polls",
-    listSubtitle:
-      "Answer questions published by the Ensemble Montréal team and see results in real time.",
     latestTitle: "Citizen polls",
     seeAll: "See all polls",
     emptyTitle: "No polls yet",
     emptyBody: "New polls published by the team will appear here.",
     newTitle: "Create a citizen poll",
-    newSubtitle:
-      "Ask a clear question, then choose a classic vote or an interactive map consultation. The poll will be visible to everyone as soon as it is published.",
     modeTitle: "Poll type",
     modeHint: "Choose how members will be able to answer.",
     choiceModeTitle: "Classic poll",
@@ -1411,7 +1444,7 @@ const en: Dictionary = {
     questionPlaceholder: "E.g. Which improvement should be prioritized in this park?",
     descriptionLabel: "Context",
     optional: "(optional)",
-    descriptionPlaceholder: "Add any useful information that will help residents answer.",
+    descriptionPlaceholder: "Anything useful for answering.",
     choicesTitle: "Answer choices",
     choicesHint: "Add between 2 and 10 choices. Their order will be preserved.",
     choiceLabel: (n: number) => `Choice ${n}`,
@@ -1422,7 +1455,7 @@ const en: Dictionary = {
     saveChoices: "Save the choices",
     cancelEdit: "Cancel",
     editWarning:
-      "Renaming a choice keeps its votes. Removing a choice deletes the votes cast for it.",
+      "Renaming a choice keeps its votes. Removing it deletes them.",
     removeKeepsNoVotes: (n: number) =>
       n === 1 ? "Removing this choice will delete 1 vote" : `Removing this choice will delete ${n} votes`,
     mapSettingsTitle: "Customize map points",
@@ -1437,7 +1470,7 @@ const en: Dictionary = {
     publish: "Publish poll",
     publishing: "Publishing…",
     collectionNotice:
-      "The question, context and aggregate results will be public. Each member’s individual choice will never be displayed publicly.",
+      "The question, context and aggregate results are public. Never an individual choice.",
     votes: (n: number) => (n === 1 ? "1 vote" : `${n} votes`),
     mapResponses: (n: number) => (n === 1 ? "1 resident point" : `${n} resident points`),
     open: "View and vote",
@@ -1447,14 +1480,14 @@ const en: Dictionary = {
     updateVote: "Change my vote",
     voting: "Saving…",
     selected: "Your choice",
-    membersOnly: "Results are public. Only Ensemble Montréal members can vote.",
+    membersOnly: "Results are public. Only Ensemble Montréal members vote.",
     mapMembersOnly:
-      "Everyone can view the map. Only Ensemble Montréal members can add a point.",
+      "The map is public. Only Ensemble Montréal members can add a point.",
     changeHint: "You may change your choice at any time.",
     noVotes: "No votes yet.",
     addPinConfirm: "Add this point?",
     addPinTitle: "Add your point",
-    addPinBody: "Click the map to indicate the place that answers the question.",
+    addPinBody: "Click the map to indicate the place.",
     pinLocation: "Location",
     pinDescriptionLabel: "Point description",
     pinDescriptionPlaceholder: "Briefly explain your choice…",
@@ -1473,7 +1506,7 @@ const en: Dictionary = {
         : `You have added ${current} point${current === 1 ? "" : "s"} out of ${max}.`,
     pinLimitNotice: "You have reached the point limit set for this poll.",
     mapPublicNotice:
-      "The location, description and photo added to a point are public. Your name is not displayed with the contribution.",
+      "The location, description and photo are public. Your name is not shown.",
   },
   profile: {
     topics: "Topics",
@@ -1515,7 +1548,7 @@ const en: Dictionary = {
     email: "Email",
     submitSignIn: "Continue",
     collectionNotice:
-      "For Ensemble Montréal members in CDN-NDG. Your account is created on first sign-in, under the name on your membership, which will be public. Your email is never shown.",
+      "For Ensemble Montréal members in CDN-NDG. The account is created on first sign-in, under the name on your membership, which will be public. Your email is never shown.",
     working: "One moment…",
     codeTitle: "Verification code",
     codeSentTo: (email: string) => `Code sent to ${email}.`,
@@ -1533,7 +1566,7 @@ const en: Dictionary = {
     follow: "Follow us",
     newWindow: "(opens in a new window)",
     tagline:
-      "A place to talk about Côte-des-Neiges–Notre-Dame-de-Grâce. Raise an issue, or back a neighbour's.",
+      "A place to talk about Côte-des-Neiges–Notre-Dame-de-Grâce.",
   },
   translate: {
     action: "Translate",
@@ -1565,7 +1598,7 @@ const en: Dictionary = {
     bodyTooShort: "The description must be at least 20 characters.",
     bodyTooLong: "The description cannot exceed 5000 characters.",
     badCategory: "Please choose a valid category.",
-    networkFailed: "That did not go through. Check your connection and try again -- your text is still here.",
+    networkFailed: "That did not go through. Your text is still here, try again.",
     publishFailed: "Publishing failed. Please try again.",
     commentTooShort: "Your comment is too short.",
     commentTooLong: "Your comment cannot exceed 5000 characters.",
@@ -1580,14 +1613,14 @@ const en: Dictionary = {
     uploadFailed: "The upload failed.",
     emailInvalid: "Please enter a valid email address.",
     notMember:
-      "That address is not on the Ensemble Montréal CDN-NDG membership list. Use the address you gave when you joined, or write to the borough office to have it corrected.",
+      "That address is not on the Ensemble Montréal CDN-NDG membership list. Use the one you joined with, or write to the borough office.",
     membershipExpired: "Your membership has lapsed. Renew it to get back into the forum.",
     codeInvalid: "Invalid or expired code.",
     codeSendFailed: "The code could not be sent. Please try again.",
     tooManyCodes: "Too many requests. Please wait one minute.",
     locationRequired: "Point out the spot by clicking the map.",
     locationOutside:
-      "That spot is outside Côte-des-Neiges–Notre-Dame-de-Grâce. Pick a point inside the borough.",
+      "That spot is outside the borough.",
     boroughUnknown: "The forum does not cover that borough yet.",
     boroughFailed: "Your borough could not be saved. Please try again.",
     pollQuestionTooShort: "The question must be at least 5 characters.",
@@ -1608,7 +1641,7 @@ const en: Dictionary = {
     pollPinLimitReached: "You have reached the point limit for this poll.",
     pollPinFailed: "The point could not be added. Please try again.",
     messageRefused:
-      "This message was not published: an automatic filter found abusive or threatening language in it. Rewrite it without targeting anyone, or ask for a person to review it. See the Privacy page.",
+      "Refused by the automatic filter. Rewrite it without targeting anyone, or ask for a review.",
   },
 };
 

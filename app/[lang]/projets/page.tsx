@@ -13,7 +13,6 @@ import {
   HERO_BAND,
   MUTED,
   PAGE_HERO_INNER,
-  PAGE_INTRO,
   PAGE_MAIN,
   PAGE_SHELL,
   PAGE_TITLE,
@@ -50,7 +49,6 @@ export default async function ProjectsPage({ params }: { params: Promise<{ lang:
           <h1 className={PAGE_TITLE}>
             {t.pages.projectsTitle}
           </h1>
-          <p className={PAGE_INTRO}>{t.pages.projectsIntro}</p>
         </div>
       </div>
 

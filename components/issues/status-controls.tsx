@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { setIssueStatus } from "@/app/actions/issues";
-import { ALERT, BTN_SECONDARY, MUTED } from "@/components/ui/styles";
+import { ALERT, BTN_SECONDARY } from "@/components/ui/styles";
 import type { Status } from "@/utils/issues";
 import { getDictionary, type ErrorCode, type Locale } from "@/utils/i18n";
 
@@ -36,9 +36,6 @@ export function StatusControls({
   return (
     <div className="mt-5 rounded-[14px] border border-[#a3162c] bg-[#f6e7ea] p-5">
       <p className="font-bold text-[#a3162c]">{t.issue.officialSpace}</p>
-      <p className={`mt-1 text-[15px] ${MUTED}`}>
-        {t.issue.officialSpaceHint}
-      </p>
 
       <div className="mt-4 flex flex-wrap gap-3">
         {status !== "resolved" && (

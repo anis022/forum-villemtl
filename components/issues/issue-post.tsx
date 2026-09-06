@@ -8,7 +8,8 @@ import { updateIssue } from "@/app/actions/issues";
 import type { ActionState } from "@/app/actions/issues";
 import { CATEGORY_KEYS, type Category } from "@/utils/issues";
 import type { Ballot } from "@/utils/polls";
-import { getDictionary, type Locale } from "@/utils/i18n";
+import { getDictionary, type ErrorCode, type Locale } from "@/utils/i18n";
+import { MediaPicker, type ExistingMedia } from "./media-picker";
 import { ALERT, BTN_PRIMARY, BTN_SECONDARY, FIELD, LABEL, MUTED } from "@/components/ui/styles";
 
 const initial: ActionState = { error: null };
@@ -35,6 +36,7 @@ export function IssuePost({
   isOfficialView,
   lang,
   ballot,
+  media,
   editing,
   children,
 }: {
@@ -52,6 +54,11 @@ export function IssuePost({
    * and no way to express "rename that choice and fix the title" as one act.
    */
   ballot?: Ballot | null;
+  /**
+   * The photograph or video the post already carries, so the editor can show
+   * what is attached and offer to replace or drop it.
+   */
+  media?: ExistingMedia;
   /**
    * Whether the form is open, decided by `?edit=1` rather than by state here.
    *
@@ -78,6 +85,9 @@ export function IssuePost({
   const [choices, setChoices] = useState(() =>
     (ballot?.options ?? []).map((option) => ({ ...option })),
   );
+  /** True while a video is on its way to storage: saving now would lose it. */
+  const [mediaBusy, setMediaBusy] = useState(false);
+  const [mediaError, setMediaError] = useState<ErrorCode | null>(null);
   const [state, formAction, pending] = useActionState<ActionState, FormData>(
     async (previous, data) => {
       const result = await updateIssue(issueId, previous, data);
@@ -176,6 +186,14 @@ export function IssuePost({
         </select>
       </div>
 
+      <MediaPicker
+        lang={lang}
+        disabled={pending}
+        existing={media}
+        onBusy={setMediaBusy}
+        onError={setMediaError}
+      />
+
       {ballot && ballot.kind === "choice" && (
         <div>
           <p className={LABEL}>{t.poll.choicesTitle}</p>
@@ -231,14 +249,19 @@ export function IssuePost({
         </div>
       )}
 
-      {state.error && (
+      {(mediaError ?? state.error) && (
         <p role="alert" className={ALERT}>
-          {t.errors[state.error]}
+          {t.errors[(mediaError ?? state.error)!]}
         </p>
       )}
 
       <div className="flex flex-wrap gap-2">
-        <button type="submit" className={BTN_PRIMARY} disabled={pending}>
+        <button
+          type="submit"
+          className={BTN_PRIMARY}
+          disabled={pending || mediaBusy}
+          title={mediaBusy ? t.issue.mediaWait : undefined}
+        >
           {pending ? t.issue.savingEdit : t.issue.saveEdit}
         </button>
         <button
@@ -251,7 +274,6 @@ export function IssuePost({
         </button>
       </div>
 
-      <p className={`text-[13px] leading-[19px] ${MUTED}`}>{t.issue.editNote}</p>
     </form>
   );
 }

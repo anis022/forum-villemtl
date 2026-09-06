@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useState } from "react";
 import { createIssue, type ActionState } from "@/app/actions/issues";
 import { CATEGORY_KEYS } from "@/utils/issues";
 import { getDictionary, type Locale } from "@/utils/i18n";
@@ -17,8 +17,8 @@ import {
 } from "@/components/ui/styles";
 import { CharacterCounter } from "@/components/ui/character-counter";
 import { LocationPicker } from "./location-picker";
+import { MediaPicker } from "./media-picker";
 import { resilient } from "@/utils/resilient-action";
-import { discardVideo, isVideo, uploadVideo, type UploadHandle } from "@/utils/upload-video";
 import type { ErrorCode } from "@/utils/i18n";
 
 const initial: ActionState = { error: null };
@@ -26,84 +26,12 @@ const initial: ActionState = { error: null };
 export function NewIssueForm({ lang }: { lang: Locale; isAdmin?: boolean }) {
   const t = getDictionary(lang);
   const [state, formAction, pending] = useActionState(resilient(createIssue), initial);
-  const [preview, setPreview] = useState<string | null>(null);
-  const [fileName, setFileName] = useState<string | null>(null);
-  /** Which of the two the preview is showing, so it knows what to render. */
-  const [kind, setKind] = useState<"image" | "video" | null>(null);
-  /** Where the video landed. The only thing about it the action ever sees. */
-  const [videoPath, setVideoPath] = useState<string | null>(null);
-  /** 0-100 while bytes are moving, null when nothing is in flight. */
-  const [percent, setPercent] = useState<number | null>(null);
+  /** True while a video is on its way to storage. Publishing then would file
+      the report without the file that is still travelling. */
+  const [mediaBusy, setMediaBusy] = useState(false);
   const [uploadError, setUploadError] = useState<ErrorCode | null>(null);
-  const upload = useRef<UploadHandle | null>(null);
   const [titleLength, setTitleLength] = useState(0);
   const [bodyLength, setBodyLength] = useState(0);
-
-  useEffect(
-    () => () => {
-      if (preview) URL.revokeObjectURL(preview);
-    },
-    [preview],
-  );
-
-  // Nothing restores `videoPath` after a refused submission because nothing has
-  // to: `useActionState` re-renders this component rather than remounting it,
-  // so an upload that already succeeded is still in state when the error comes
-  // back. Somebody who mistyped a title retypes the title, not the video.
-
-  const clearAttachment = () => {
-    upload.current?.cancel();
-    upload.current = null;
-    if (videoPath) discardVideo(videoPath);
-    setVideoPath(null);
-    setPercent(null);
-    setKind(null);
-    setFileName(null);
-    setPreview(null);
-    setUploadError(null);
-  };
-
-  /**
-   * A photograph rides along in the form and is converted server-side. A video
-   * is far too large for that, so it goes to storage on its own and only the
-   * path it was given is submitted.
-   *
-   * The input is emptied once a video has been taken off it. Leaving the file
-   * on the input would put fifty megabytes into the form body, which is the
-   * exact limit this whole path exists to stay under.
-   */
-  const onPick = async (input: HTMLInputElement) => {
-    const file = input.files?.[0];
-    clearAttachment();
-    if (!file) return;
-
-    setFileName(file.name);
-    setPreview(URL.createObjectURL(file));
-
-    if (!isVideo(file)) {
-      setKind("image");
-      return;
-    }
-
-    setKind("video");
-    input.value = "";
-    setPercent(0);
-
-    const handle = uploadVideo(file, setPercent);
-    upload.current = handle;
-    const result = await handle.promise;
-    upload.current = null;
-    setPercent(null);
-
-    if ("error" in result) {
-      setUploadError(result.error);
-      setKind(null);
-      setFileName(null);
-      setPreview(null);
-      return;
-    }
-    setVideoPath(result.path);
-  };
 
   return (
     <form action={formAction} noValidate className={`${CARD} p-6`}>
@@ -221,106 +149,12 @@ export function NewIssueForm({ lang }: { lang: Locale; isAdmin?: boolean }) {
       </div>
 
       <div className="mb-5">
-        <label htmlFor="issue-image" className={LABEL}>
-          {t.issue.fieldPhoto}{" "}
-          <span className="font-normal">{t.issue.fieldPhotoOptional}</span>
-        </label>
-        <div className="flex flex-wrap items-center gap-3">
-          <input
-            id="issue-image"
-            name="image"
-            type="file"
-            accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime"
-            disabled={pending || percent !== null}
-            onChange={(event) => void onPick(event.target)}
-            className="peer sr-only"
-          />
-          <label
-            htmlFor="issue-image"
-            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-[10px] border border-[#e9e0d6] bg-white px-5 py-[10px] text-[15px] font-bold leading-[22px] text-[#a3162c] transition-all hover:border-[#a3162c] hover:bg-[#f6e7ea] peer-focus-visible:ring-[3px] peer-focus-visible:ring-[#2a2a86] peer-focus-visible:ring-offset-2 peer-disabled:cursor-not-allowed peer-disabled:opacity-60"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path
-                d="M12 15V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14.5V20h14v-5.5"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            {t.issue.fieldPhotoChoose}
-          </label>
-          {fileName && (
-            <span className={`max-w-full break-all text-[13px] ${MUTED}`}>{fileName}</span>
-          )}
-          {fileName && percent === null && (
-            <button
-              type="button"
-              onClick={clearAttachment}
-              disabled={pending}
-              className="text-[13px] font-bold text-[#a3162c] hover:underline disabled:opacity-60"
-            >
-              {t.issue.mediaRemove}
-            </button>
-          )}
-        </div>
-
-        {/* Fifty megabytes over a phone connection is long enough that silence
-            reads as a hang, and the one thing somebody does when a form looks
-            stuck is press the button again. */}
-        {percent !== null && (
-          <div className="mt-3">
-            <div className="flex items-center justify-between text-[13px]">
-              <span className={MUTED}>{t.issue.mediaUploading}</span>
-              <span className={MUTED}>{percent}%</span>
-            </div>
-            <div
-              role="progressbar"
-              aria-valuenow={percent}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-label={t.issue.mediaUploading}
-              className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-[#f2ece4]"
-            >
-              <div
-                className="h-full bg-[#a3162c] transition-[width] duration-200"
-                style={{ width: `${percent}%` }}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* The upload finished while the rest of the form is still being
-            written, so the state has to be visible or it reads as unsaved. */}
-        {videoPath && percent === null && (
-          <p className="mt-2 text-[13px] font-bold text-[#1f7a4d]">{t.issue.mediaUploaded}</p>
-        )}
-
-        {/* The hidden field is the whole of what the action receives about a
-            video: see `ownedVideoPath` for what it can and cannot conclude. */}
-        <input type="hidden" name="videoPath" value={videoPath ?? ""} readOnly />
-        <p className={`mt-1 text-[14px] ${MUTED}`}>{t.issue.fieldPhotoHint}</p>
-
-        {preview && kind === "image" && (
-          /* eslint-disable-next-line @next/next/no-img-element -- blob: preview, not a remote asset */
-          <img
-            src={preview}
-            alt={t.issue.photoPreviewAlt}
-            className="mt-3 max-h-64 rounded-[14px] border border-[#e9e0d6]"
-          />
-        )}
-
-        {/* Played from the local file rather than from storage: it is already on
-            this device, and the upload may still be in flight behind it. */}
-        {preview && kind === "video" && (
-          <video
-            src={preview}
-            controls
-            playsInline
-            preload="metadata"
-            className="mt-3 max-h-64 w-full rounded-[14px] border border-[#e9e0d6] bg-[#1c1714]"
-          />
-        )}
+        <MediaPicker
+          lang={lang}
+          disabled={pending}
+          onBusy={setMediaBusy}
+          onError={setUploadError}
+        />
       </div>
 
       {/* Last thing before the error slot and the publish button. A report
@@ -344,9 +178,9 @@ export function NewIssueForm({ lang }: { lang: Locale; isAdmin?: boolean }) {
           still on its way to storage, and nothing afterwards would attach it. */}
       <button
         type="submit"
-        disabled={pending || percent !== null}
+        disabled={pending || mediaBusy}
         className={BTN_PRIMARY}
-        title={percent !== null ? t.issue.mediaWait : undefined}
+        title={mediaBusy ? t.issue.mediaWait : undefined}
       >
         {pending ? t.issue.publishing : t.issue.publish}
       </button>

@@ -207,6 +207,13 @@ export default async function IssuePage({
               isOfficialView={isOfficial}
               editing={editing}
               ballot={ballot}
+              media={
+                issue.imageUrl
+                  ? { url: issue.imageUrl, kind: "image" }
+                  : issue.videoUrl
+                    ? { url: issue.videoUrl, kind: "video" }
+                    : null
+              }
               lang={lang}
             >
               {ballot && (

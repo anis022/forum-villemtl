@@ -14,7 +14,6 @@ import {
   HERO_BAND,
   MUTED,
   PAGE_HERO_INNER,
-  PAGE_INTRO,
   PAGE_MAIN,
   PAGE_SHELL,
   PAGE_TITLE,
@@ -42,7 +41,6 @@ export default async function NotificationsPage({
       <div className={HERO_BAND}>
         <div className={PAGE_HERO_INNER}>
           <h1 className={PAGE_TITLE}>{t.notifications.title}</h1>
-          {isOffice && <p className={PAGE_INTRO}>{t.notifications.intro}</p>}
         </div>
       </div>
 

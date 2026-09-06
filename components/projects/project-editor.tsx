@@ -5,7 +5,14 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { IssuePhoto } from "@/components/issues/issue-photo";
 import { saveProject, uploadProjectPhoto } from "@/app/actions/projects";
-import { isPast, type Localized, type Milestone, type ProjectContent } from "@/utils/projects";
+import {
+  formatMilestoneOn,
+  isMilestoneDate,
+  isPast,
+  type Localized,
+  type Milestone,
+  type ProjectContent,
+} from "@/utils/projects";
 import { dateLocale, getDictionary, type Locale } from "@/utils/i18n";
 import { ALERT, BTN_PRIMARY, BTN_SECONDARY, CARD, MUTED } from "@/components/ui/styles";
 
@@ -25,34 +32,45 @@ export const BLANK: ProjectContent = {
 /**
  * The public page, editable in place.
  *
- * Not "a form that resembles the page" — the same blocks, in the same order, at
- * the same sizes, reading from `app/[lang]/projets/[slug]/page.tsx` and
- * `components/project-timeline.tsx` as the specification. Where those two put a
- * thing, this puts the same thing with a caret in it. When they change, this
- * changes with them.
+ * Not "a form that resembles the page", but the same blocks, in the same
+ * order, at the same sizes, reading from `app/[lang]/projets/[slug]/page.tsx`
+ * and `components/project-timeline.tsx` as the specification. Where those two
+ * put a thing, this puts the same thing with a caret in it. When they change,
+ * this changes with them.
  *
- * Three earlier mistakes, all of them the same mistake in different clothes:
+ * Four earlier mistakes, all of them the same mistake in different clothes:
  *
  *   Labels. Every value carried an eleven-pixel uppercase caption above it,
  *   which is how a database looks, not how a project page looks. A field is now
  *   the text itself; what the label said is the placeholder and the accessible
  *   name.
  *
- *   A flat list where the timeline goes. The public timeline is not a list — it
- *   is three derived blocks: the latest thing that happened, what is scheduled
- *   next as numbered cards, and the older history folded away. Editing a flat
- *   `<ol>` and then seeing that is editing something else and hoping. The three
- *   blocks are here, and because the grouping is derived from the dates,
- *   changing a date moves a milestone between them as you type.
+ *   A flat list where the timeline goes. The public timeline is not a list:
+ *   it is three derived blocks, the latest thing that happened, what is
+ *   scheduled next as numbered cards, and the older history folded away.
+ *   Editing a flat `<ol>` and then seeing that is editing something else and
+ *   hoping. The three blocks are here, and because the grouping is derived
+ *   from the dates, correcting a date moves a milestone between them.
  *
  *   Controls that appeared on hover. They hid the only affordance the page had,
  *   left a keyboard nothing to aim at, and made the layout jump. Everything is
  *   visible all the time now, and quiet enough to sit beside prose.
  *
- * Order is derived rather than arranged: milestones sort by date on every edit,
- * so there is nothing to drag and no arrows to press. Fixing a wrong date is
- * how you move an entry, which is also the only reason it was in the wrong
- * place.
+ *   A page with nothing on it. Drawing a field as the text it will become is
+ *   right once there is text; on a new project it left a wall of grey sentences
+ *   that read as content somebody had already written, no visible place to
+ *   type, and two red dots that said "not ready" without saying what for. So an
+ *   empty field now carries the shape of the line it is waiting for, every
+ *   empty section holds the control that fills it, and `Checklist` names what
+ *   each language still owes instead of leaving it to be discovered by pressing
+ *   publish and reading a message the database wrote for the cron.
+ *
+ * Order is derived rather than arranged: milestones sort by date, so there is
+ * nothing to drag and no arrows to press. Fixing a wrong date is how you move
+ * an entry, which is also the only reason it was in the wrong place. The sort
+ * runs when a date field is left rather than on every keystroke: a date halfway
+ * through being typed is not yet a date, and reordering on it took the field
+ * out from under the caret.
  */
 export function ProjectEditor({
   lang,
@@ -86,7 +104,7 @@ export function ProjectEditor({
    *
    * Detail, resolution number and outside link are empty on most entries, and
    * rendering four grey placeholders under every card put sixteen lines of
-   * ghost text inside "Prochaines étapes" alone — text that reads as content
+   * ghost text inside "Prochaines étapes" alone, text that reads as content
    * somebody typed. They are folded behind one visible control instead. Not a
    * hover reveal: the control is on screen at all times, it just stands for
    * three fields rather than being them.
@@ -103,9 +121,39 @@ export function ProjectEditor({
     [L]: text,
   });
 
-  /** Milestones always land back sorted, which is what removes the arrows. */
+  /**
+   * Milestones are kept in the order they are in, and sorted when a date is
+   * finished rather than on every keystroke.
+   *
+   * Sorting on each character moved the entry out from under the caret: typing
+   * "2025-07-15" into a project that already had two dates put "202" in the
+   * field and threw the remaining seven characters away, because "2" sorts
+   * before "2019-01-01" and the field was rebuilt somewhere else mid-word.
+   */
   const setMilestones = (next: Milestone[]) =>
-    set({ milestones: [...next].sort(byDate) as ProjectContent["milestones"] });
+    set({ milestones: next as ProjectContent["milestones"] });
+
+  const sortMilestones = () =>
+    setContent((current) => ({
+      ...current,
+      milestones: [...current.milestones].sort(byDate) as ProjectContent["milestones"],
+    }));
+
+  /**
+   * The milestone list the three blocks are grouped from, held still while a
+   * date is being typed.
+   *
+   * The grouping is derived from the dates, so half a date regroups the page:
+   * "2025" is already in the past and jumps the entry from "Prochaines étapes"
+   * to the block at the top, which unmounts the field you are typing into. It
+   * catches up on blur, which is when a date is a date.
+   */
+  const [pinned, setPinned] = useState<readonly Milestone[] | null>(null);
+  const holdLayout = () => setPinned(content.milestones);
+  const releaseLayout = () => {
+    setPinned(null);
+    sortMilestones();
+  };
 
   const patchMilestone = (index: number, next: Partial<Milestone>) =>
     setMilestones(content.milestones.map((m, k) => (k === index ? { ...m, ...next } : m)));
@@ -113,7 +161,19 @@ export function ProjectEditor({
   const submit = (publish: boolean) =>
     start(async () => {
       setError(null);
-      const result = await saveProject(revisionId, { projectId, slug, content, publish });
+      // Oldest first is what the page and the type both promise, and the list
+      // is only sorted when a date is finished, so it is sorted again here in
+      // case a save lands while one is still open.
+      const ordered: ProjectContent = {
+        ...content,
+        milestones: [...content.milestones].sort(byDate) as ProjectContent["milestones"],
+      };
+      const result = await saveProject(revisionId, {
+        projectId,
+        slug,
+        content: ordered,
+        publish,
+      });
       if (result.error) {
         setError(result.error);
         window.scrollTo({ top: 0, behavior: "smooth" });
@@ -144,12 +204,67 @@ export function ProjectEditor({
   // a resident would find in them. Indices travel along, because an edit has to
   // land in the flat array however the view has grouped it.
   const entries = content.milestones.map((milestone, index) => ({ milestone, index }));
-  const done = entries.filter((e) => e.milestone.on && isPast(e.milestone.on));
-  const upcoming = entries.filter((e) => !e.milestone.on || !isPast(e.milestone.on));
+  // Which block an entry belongs in is read off `pinned` while a date is being
+  // typed and off the live list otherwise. Values always come from the live
+  // list, so the field under the caret shows what was just typed even though it
+  // has not moved yet.
+  const order = pinned?.length === content.milestones.length ? pinned : content.milestones;
+  const settled = (index: number) => {
+    const on = order[index]?.on ?? "";
+    return Boolean(on) && isPast(on);
+  };
+  const done = entries.filter((e) => settled(e.index));
   const current = done.at(-1) ?? entries[0];
+  // `current` comes out of the other two blocks, not just out of the history:
+  // on a project where nothing has happened yet it is the first scheduled
+  // milestone, and it used to be drawn twice, once at the top and once as
+  // "next step 1", with two carets editing the same entry.
+  const upcoming = entries.filter((e) => e !== current && !settled(e.index));
   const previous = done.filter((e) => e !== current).reverse();
 
   const [lead, ...gallery] = content.photos;
+
+  // One control, rendered wherever a photo is missing: in the section heading,
+  // and inside the empty box that is asking for one.
+  const upload = (
+    <label className={`${BTN_SECONDARY} cursor-pointer`}>
+      {uploading ? a.uploading : a.addPhoto}
+      <input
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        className="sr-only"
+        disabled={uploading}
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (file) void addPhoto(file);
+          event.target.value = "";
+        }}
+      />
+    </label>
+  );
+
+  const addMilestone = (
+    <button
+      type="button"
+      className={BTN_SECONDARY}
+      onClick={() => setMilestones([...content.milestones, blankMilestone()])}
+    >
+      {a.addMilestone}
+    </button>
+  );
+
+  // What is left to do, computed once and shown twice: as a dot on each
+  // language and as the list under the bar.
+  const gaps = { fr: missingIn(content, "fr", a), en: missingIn(content, "en", a) };
+  const stops = blockers(content, slug, a);
+
+  // Said once, on the page somebody opens with nothing on it, and gone as soon
+  // as there is anything to look at.
+  const blank =
+    !content.title.fr.trim() &&
+    !content.title.en.trim() &&
+    content.photos.length === 0 &&
+    content.milestones.length === 0;
 
   return (
     <div className="w-full">
@@ -157,13 +272,20 @@ export function ProjectEditor({
         a={a}
         editingLang={editingLang}
         setEditingLang={setEditingLang}
-        ready={{ fr: languageReady(content, "fr"), en: languageReady(content, "en") }}
+        ready={{ fr: gaps.fr.length === 0, en: gaps.en.length === 0 }}
         busy={pending || uploading}
+        blocked={stops.length > 0}
         onSave={() => submit(false)}
         onPublish={() => submit(true)}
       />
 
       {error && <p className={`${ALERT} mt-5`}>{error}</p>}
+
+      <Checklist a={a} fr={gaps.fr} en={gaps.en} stops={stops} />
+
+      {blank && (
+        <p className={`mt-3 text-[14px] leading-[21px] ${MUTED}`}>{a.howToEdit}</p>
+      )}
 
       {sourceNote && (
         <aside className="mt-5 rounded-[14px] border border-[#dcd8f2] bg-[#f4f2ff] px-4 py-3">
@@ -212,18 +334,10 @@ export function ProjectEditor({
 
       {/* ---- Avancement du projet ---- */}
       <section className="mt-8">
-        <Head title={t.timeline}>
-          <button
-            type="button"
-            className={BTN_SECONDARY}
-            onClick={() => setMilestones([...content.milestones, blankMilestone()])}
-          >
-            {a.addMilestone}
-          </button>
-        </Head>
+        <Head title={t.timeline}>{addMilestone}</Head>
 
         {entries.length === 0 ? (
-          <Empty text={a.emptyMilestones} />
+          <Empty text={a.emptyMilestones}>{addMilestone}</Empty>
         ) : (
           <div className="mt-3">
             <section className="overflow-hidden rounded-[16px] border border-[#e5ded7] bg-white">
@@ -245,6 +359,8 @@ export function ProjectEditor({
                   lang={L}
                   milestone={current.milestone}
                   onPatch={(next) => patchMilestone(current.index, next)}
+                  onHoldLayout={holdLayout}
+                  onReleaseLayout={releaseLayout}
                   className="mt-2"
                 />
                 <Field
@@ -297,6 +413,8 @@ export function ProjectEditor({
                               lang={L}
                               milestone={entry.milestone}
                               onPatch={(next) => patchMilestone(entry.index, next)}
+                              onHoldLayout={holdLayout}
+                              onReleaseLayout={releaseLayout}
                               compact
                             />
                             <Remove
@@ -376,6 +494,8 @@ export function ProjectEditor({
                         lang={L}
                         milestone={entry.milestone}
                         onPatch={(next) => patchMilestone(entry.index, next)}
+                        onHoldLayout={holdLayout}
+                        onReleaseLayout={releaseLayout}
                         stacked
                       />
                       <div className="min-w-0">
@@ -431,7 +551,7 @@ export function ProjectEditor({
           />
         ) : (
           <div className="border-b border-[#f2ece4] p-5">
-            <Empty text={a.emptyPhotos} />
+            <Empty text={a.emptyPhotos}>{upload}</Empty>
           </div>
         )}
 
@@ -489,7 +609,17 @@ export function ProjectEditor({
 
           <div className="mt-3 space-y-2">
             {content.description.length === 0 ? (
-              <Empty text={a.emptyDescription} />
+              <Empty text={a.emptyDescription}>
+                <button
+                  type="button"
+                  className={BTN_SECONDARY}
+                  onClick={() =>
+                    set({ description: [...content.description, { fr: "", en: "" }] })
+                  }
+                >
+                  {a.addParagraph}
+                </button>
+              </Empty>
             ) : (
               content.description.map((paragraph, i) => (
                 <div key={i} className="flex items-start gap-2">
@@ -522,23 +652,10 @@ export function ProjectEditor({
       {/* ---- the rest of the photographs ---- */}
       <section className="mt-10">
         <Head title={t.photos} big>
-          <label className={`${BTN_SECONDARY} cursor-pointer`}>
-            {uploading ? a.uploading : a.addPhoto}
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              className="sr-only"
-              disabled={uploading}
-              onChange={(event) => {
-                const file = event.target.files?.[0];
-                if (file) void addPhoto(file);
-                event.target.value = "";
-              }}
-            />
-          </label>
+          {upload}
         </Head>
         {gallery.length === 0 ? (
-          <Empty text={a.emptyPhotos} />
+          <Empty text={a.emptyGallery}>{lead ? upload : null}</Empty>
         ) : (
           <ul className="mt-4 grid gap-5 sm:grid-cols-2">
             {gallery.map((photo, k) => {
@@ -717,14 +834,21 @@ function Field({
   name,
   value,
   onChange,
+  onFocus,
+  onBlur,
   placeholder,
+  invalid = false,
   className = "",
 }: {
   as?: "input" | "textarea";
   name: string;
   value: string;
   onChange: (value: string) => void;
+  onFocus?: () => void;
+  onBlur?: () => void;
   placeholder?: string;
+  /** Draws the field as wrong and says so to a screen reader. */
+  invalid?: boolean;
   className?: string;
 }) {
   const ref = useRef<HTMLTextAreaElement | null>(null);
@@ -740,6 +864,12 @@ function Field({
     "block w-full min-w-0 -mx-1.5 rounded-[6px] border-0 bg-transparent px-1.5 py-0.5 outline-none " +
     "transition-colors placeholder:font-normal placeholder:text-[#bdb7bd] " +
     "hover:bg-[#f7f0e8] focus:bg-white focus:ring-2 focus:ring-[#a3162c]/35 " +
+    // An empty field has no text to be shaped like, so it borrows the shape of
+    // the line it is waiting for. Without this a blank project is a page of
+    // grey sentences that read as content somebody wrote rather than as places
+    // to write, which is exactly how the new-project page used to look.
+    (value ? "" : "bg-[#fbf6f0] shadow-[inset_0_-1px_0_#e3d9cf] ") +
+    (invalid ? "bg-[#fdf1f3] shadow-[inset_0_-2px_0_#a3162c] " : "") +
     className;
 
   if (as === "textarea") {
@@ -748,9 +878,12 @@ function Field({
         ref={ref}
         rows={1}
         aria-label={name}
+        aria-invalid={invalid || undefined}
         placeholder={placeholder ?? name}
         value={value}
         onChange={(event) => onChange(event.target.value)}
+        onFocus={onFocus}
+        onBlur={onBlur}
         className={`${shared} resize-none overflow-hidden [field-sizing:content]`}
       />
     );
@@ -759,9 +892,12 @@ function Field({
   return (
     <input
       aria-label={name}
+      aria-invalid={invalid || undefined}
       placeholder={placeholder ?? name}
       value={value}
       onChange={(event) => onChange(event.target.value)}
+      onFocus={onFocus}
+      onBlur={onBlur}
       className={shared}
     />
   );
@@ -771,7 +907,7 @@ function Field({
  * The two halves of a milestone's date.
  *
  * `on` is the machine's date and decides which block the milestone lives in;
- * `onLabel` is what a reader sees when a day would be a lie — "Été 2026",
+ * `onLabel` is what a reader sees when a day would be a lie: "Été 2026",
  * "2009 – 2018". The label's placeholder is the formatted `on`, so the field
  * shows what the public page will print if it is left alone: the empty state
  * doubles as the preview.
@@ -781,6 +917,8 @@ function DateRow({
   lang,
   milestone,
   onPatch,
+  onHoldLayout,
+  onReleaseLayout,
   className = "",
   compact = false,
   stacked = false,
@@ -789,33 +927,55 @@ function DateRow({
   lang: Locale;
   milestone: Milestone;
   onPatch: (next: Partial<Milestone>) => void;
+  /** Called while the machine date is being typed, and when it is finished. */
+  onHoldLayout: () => void;
+  onReleaseLayout: () => void;
   className?: string;
   compact?: boolean;
   stacked?: boolean;
 }) {
   const size = compact ? "text-[12px] leading-[18px]" : "text-[13px] leading-[19px]";
+  // Empty is being written, not wrong. Only something typed can be wrong.
+  const wrong = Boolean(milestone.on) && !isMilestoneDate(milestone.on);
   return (
-    <div className={`${stacked ? "" : "flex flex-wrap items-baseline gap-x-2"} ${className}`}>
-      <Field
-        name={a.milestoneOn}
-        value={milestone.on}
-        onChange={(on) => onPatch({ on })}
-        placeholder="2026-06-01"
-        className={`w-[11ch] shrink-0 font-semibold tabular-nums text-[#6e6a72] ${size}`}
-      />
-      <Field
-        name={a.milestoneDateLabel}
-        value={milestone.onLabel?.[lang] ?? ""}
-        onChange={(text) =>
-          onPatch({
-            onLabel: text
-              ? { ...(milestone.onLabel ?? { fr: "", en: "" }), [lang]: text }
-              : undefined,
-          })
-        }
-        placeholder={datePreview(milestone.on, lang, a.milestoneDateLabelPlaceholder)}
-        className={`${stacked ? "" : "min-w-[10ch] flex-1"} font-semibold text-[#6e6a72] ${size}`}
-      />
+    <div className={className}>
+      {/* `Field` is `w-full` by design, so a width has to be put on a wrapper
+          rather than passed in: on its own the machine date filled the row and
+          pushed the label it belongs beside onto a second line. */}
+      <div className={stacked ? "" : "flex flex-wrap items-baseline gap-x-2"}>
+        <div className={stacked ? "" : "w-[12ch] shrink-0"}>
+          <Field
+            name={a.milestoneOn}
+            value={milestone.on}
+            onChange={(on) => onPatch({ on })}
+            onFocus={onHoldLayout}
+            onBlur={onReleaseLayout}
+            placeholder="2026-06-01"
+            invalid={wrong}
+            className={`font-semibold tabular-nums text-[#6e6a72] ${size}`}
+          />
+        </div>
+        <div className={stacked ? "" : "min-w-[10ch] flex-1"}>
+          <Field
+            name={a.milestoneDateLabel}
+            value={milestone.onLabel?.[lang] ?? ""}
+            onChange={(text) =>
+              onPatch({
+                onLabel: text
+                  ? { ...(milestone.onLabel ?? { fr: "", en: "" }), [lang]: text }
+                  : undefined,
+              })
+            }
+            placeholder={datePreview(milestone.on, lang, a.milestoneDateLabelPlaceholder)}
+            className={`font-semibold text-[#6e6a72] ${size}`}
+          />
+        </div>
+      </div>
+      {wrong && (
+        <p className="mt-1 text-[12px] font-semibold leading-[18px] text-[#a3162c]">
+          {a.milestoneOnInvalid}
+        </p>
+      )}
     </div>
   );
 }
@@ -824,8 +984,8 @@ function DateRow({
  * A milestone's optional half: the detail line, the resolution number, the link.
  *
  * Shown when any of them holds something, and otherwise folded behind one
- * control that is always on screen. The alternative — four empty fields under
- * every entry — printed their own names in grey, which reads as text a person
+ * control that is always on screen. The alternative, four empty fields under
+ * every entry, printed their own names in grey, which reads as text a person
  * typed rather than as a place to type. Sixteen such lines sat inside
  * "Prochaines étapes" alone.
  *
@@ -1038,13 +1198,22 @@ function Head({
   );
 }
 
-function Empty({ text }: { text: string }) {
+/**
+ * A section with nothing in it yet, and the control that fills it.
+ *
+ * The action belongs inside the box rather than only in the heading above:
+ * "add at least one photo" with the upload button four hundred pixels away in
+ * the section header is an instruction with no handle on it, which is most of
+ * what made a new project read as a dead page.
+ */
+function Empty({ text, children }: { text: string; children?: React.ReactNode }) {
   return (
-    <p
+    <div
       className={`mt-3 rounded-[14px] border border-dashed border-[#e5ded7] px-4 py-6 text-center text-[14px] ${MUTED}`}
     >
-      {text}
-    </p>
+      <p>{text}</p>
+      {children && <div className="mt-3 flex justify-center">{children}</div>}
+    </div>
   );
 }
 
@@ -1088,24 +1257,7 @@ function datePreview(on: string, lang: Locale, fallback: string): string {
 }
 
 /** What the public timeline prints for a bare `on`. Mirrors `milestoneDate`. */
-function formatOn(on: string, lang: Locale): string {
-  const locale = dateLocale(lang);
-  if (on.length === 4) return on;
-  if (on.length === 7) {
-    const [y, m] = on.split("-").map(Number);
-    return new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" }).format(
-      new Date(y, m - 1, 1),
-    );
-  }
-  if (on.length === 10) {
-    return new Intl.DateTimeFormat(locale, {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    }).format(new Date(`${on}T12:00:00`));
-  }
-  return on;
-}
+const formatOn = (on: string, lang: Locale): string => formatMilestoneOn(on, dateLocale(lang));
 
 function slugify(value: string): string {
   return value
@@ -1119,16 +1271,131 @@ function slugify(value: string): string {
 }
 
 /** A quiet warning on the language tabs, not a second completeness authority. */
-function languageReady(content: ProjectContent, lang: Locale): boolean {
-  return Boolean(
-    content.title[lang].trim() &&
-      content.summary[lang].trim() &&
-      content.description.length > 0 &&
-      content.description.every((paragraph) => paragraph[lang].trim()) &&
-      content.photos.length > 0 &&
-      content.photos.every((photo) => photo.caption[lang].trim()) &&
-      content.milestones.length >= 2 &&
-      content.milestones.every((milestone) => milestone.title[lang].trim()),
+/**
+ * What one language still owes before the database will publish the page.
+ *
+ * A list rather than a boolean, because the boolean was the whole problem: two
+ * red dots said "not yet" and nothing said what was missing, so the only way to
+ * find out was to press publish and read a Postgres message written for the
+ * cron. The same rules as `project_content_complete` in migration 0028, named
+ * one by one.
+ */
+function missingIn(content: ProjectContent, lang: Locale, a: Admin): string[] {
+  const gaps: string[] = [];
+  if (!content.title[lang].trim()) gaps.push(a.title);
+  if (!content.summary[lang].trim()) gaps.push(a.summary);
+  if (
+    content.description.length === 0 ||
+    content.description.some((paragraph) => !paragraph[lang].trim())
+  ) {
+    gaps.push(a.needDescription);
+  }
+  if (content.photos.length === 0) gaps.push(a.needPhoto);
+  else if (content.photos.some((photo) => !photo.caption[lang].trim())) gaps.push(a.needCaption);
+  if (content.milestones.length < 2) gaps.push(a.needMilestones);
+  else if (content.milestones.some((milestone) => !milestone.title[lang].trim())) {
+    gaps.push(a.needMilestoneTitle);
+  }
+  return gaps;
+}
+
+/**
+ * What stops a save outright, in either language.
+ *
+ * These are the two things the server rejects with a field path rather than a
+ * sentence, so they are worth catching here where the field is on screen.
+ */
+function blockers(content: ProjectContent, slug: string, a: Admin): string[] {
+  const stops: string[] = [];
+  if (slug && !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) stops.push(a.blockedSlug);
+
+  // Blank and malformed both stop a save, and they are not the same news: one
+  // is a date nobody has typed yet, the other is a date typed the way people
+  // say it. Saying "written wrong" about an empty field a person created two
+  // seconds ago by pressing "add a date" is just wrong.
+  const blank = content.milestones.filter((milestone) => !milestone.on.trim()).length;
+  const wrong = content.milestones.filter(
+    (milestone) => milestone.on.trim() && !isMilestoneDate(milestone.on),
+  ).length;
+  if (blank > 0) stops.push(a.blockedDateBlank(blank));
+  if (wrong > 0) stops.push(a.blockedDates(wrong));
+  return stops;
+}
+
+/**
+ * The list of what is left, kept beside the buttons that are waiting on it.
+ *
+ * Collapses to one green line the moment both languages are complete, so it
+ * costs nothing on a finished page and is a running answer on a new one.
+ */
+function Checklist({
+  a,
+  fr,
+  en,
+  stops,
+}: {
+  a: Admin;
+  fr: string[];
+  en: string[];
+  stops: string[];
+}) {
+  if (stops.length === 0 && fr.length === 0 && en.length === 0) {
+    return (
+      <p className="mt-3 flex items-center gap-2 rounded-[14px] border border-[#cfe6d9] bg-[#f2f9f5] px-4 py-3 text-[14px] font-semibold leading-[21px] text-[#1f6b45]">
+        <span className="h-2 w-2 shrink-0 rounded-full bg-[#2f8b57]" aria-hidden="true" />
+        {a.checklistReady}
+      </p>
+    );
+  }
+
+  return (
+    <div className="mt-3 rounded-[14px] border border-[#e5ded7] bg-white p-4">
+      <p className="text-[12px] font-bold uppercase tracking-[0.05em] text-[#5d56b4]">
+        {a.checklist}
+      </p>
+      <div className="mt-2 grid items-start gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
+        {stops.length > 0 && (
+          <Gaps title={a.blocked} items={stops} tone="stop" />
+        )}
+        {fr.length > 0 && <Gaps title={a.checklistMissing(a.inFrench)} items={fr} />}
+        {en.length > 0 && <Gaps title={a.checklistMissing(a.inEnglish)} items={en} />}
+      </div>
+    </div>
+  );
+}
+
+function Gaps({
+  title,
+  items,
+  tone = "todo",
+}: {
+  title: string;
+  items: string[];
+  tone?: "todo" | "stop";
+}) {
+  return (
+    <div className="min-w-0">
+      <p
+        className={`text-[13px] font-semibold leading-[19px] ${
+          tone === "stop" ? "text-[#a3162c]" : "text-[#373238]"
+        }`}
+      >
+        {title}
+      </p>
+      <ul className={`mt-1 space-y-0.5 text-[13px] leading-[19px] ${MUTED}`}>
+        {items.map((item) => (
+          <li key={item} className="flex gap-2">
+            <span
+              className={`mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full ${
+                tone === "stop" ? "bg-[#a3162c]" : "bg-[#d8cfc6]"
+              }`}
+              aria-hidden="true"
+            />
+            <span className="min-w-0">{item}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -1139,6 +1406,7 @@ function Bar({
   setEditingLang,
   ready,
   busy,
+  blocked,
   onSave,
   onPublish,
 }: {
@@ -1147,6 +1415,8 @@ function Bar({
   setEditingLang: (lang: Locale) => void;
   ready: Record<Locale, boolean>;
   busy: boolean;
+  /** Something on the page would be rejected by the server on sight. */
+  blocked: boolean;
   onSave: () => void;
   onPublish: () => void;
 }) {
@@ -1178,10 +1448,22 @@ function Bar({
         ))}
       </div>
       <div className="ml-auto flex flex-wrap items-center gap-2">
-        <button type="button" className={BTN_SECONDARY} disabled={busy} onClick={onSave}>
+        <button
+          type="button"
+          className={BTN_SECONDARY}
+          disabled={busy || blocked}
+          title={blocked ? a.blocked : undefined}
+          onClick={onSave}
+        >
           {busy ? a.working : a.save}
         </button>
-        <button type="button" className={BTN_PRIMARY} disabled={busy} onClick={onPublish}>
+        <button
+          type="button"
+          className={BTN_PRIMARY}
+          disabled={busy || blocked || !ready.fr || !ready.en}
+          title={blocked || !ready.fr || !ready.en ? a.checklist : undefined}
+          onClick={onPublish}
+        >
           {busy ? a.working : a.saveAndPublish}
         </button>
       </div>

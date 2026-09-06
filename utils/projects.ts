@@ -277,7 +277,79 @@ export type ProjectContent = Omit<Project, "slug">;
 export const isPast = (on: string, now = new Date()): boolean => {
   const [y, m] = on.split("-");
   const year = Number(y);
-  if (on.length === 4) return now >= new Date(year + 1, 0, 1);
-  if (on.length === 7) return now >= new Date(year, Number(m), 1);
-  return now >= new Date(on);
+  switch (milestonePrecision(on)) {
+    case "year":
+      return now >= new Date(year + 1, 0, 1);
+    case "month":
+      return now >= new Date(year, Number(m), 1);
+    case "day":
+      return now >= new Date(on);
+    // Half-typed and malformed dates are not history. Without this, `new Date`
+    // reads "01/06/2026" as the 6th of January and a date being typed hops
+    // between the blocks of the timeline on nearly every keystroke.
+    default:
+      return false;
+  }
 };
+
+/**
+ * How much of a milestone's date is actually known.
+ *
+ * `null` is the important case: the editor writes this field on every
+ * keystroke, so it holds half-typed values, and residents type dates the way
+ * they say them ("01/06/2026") rather than the way a database wants them. The
+ * zod schema also lets through a shape that passes the regex but is not a day,
+ * so "2026-13-45" reaches the public page. Feeding either to `Intl` throws
+ * `RangeError: Invalid time value`, which took the page down.
+ */
+export const milestonePrecision = (on: string): "year" | "month" | "day" | null => {
+  const parts = /^(\d{4})(?:-(\d{2})(?:-(\d{2}))?)?$/.exec(on.trim());
+  if (!parts) return null;
+
+  const [, y, mo, d] = parts;
+  if (!mo) return "year";
+
+  const month = Number(mo);
+  if (month < 1 || month > 12) return null;
+  if (!d) return "month";
+
+  // Round-trip the day, which is what catches a 31st of February.
+  const day = Number(d);
+  const date = new Date(Date.UTC(Number(y), month - 1, day));
+  return day >= 1 && date.getUTCMonth() === month - 1 && date.getUTCDate() === day
+    ? "day"
+    : null;
+};
+
+/** True of anything the fields below will format rather than print back raw. */
+export const isMilestoneDate = (on: string): boolean => milestonePrecision(on) !== null;
+
+/**
+ * A milestone's date, printed at the precision it is known to.
+ *
+ * A bare `YYYY` prints as a year rather than as the 1st of January it would
+ * parse to, and anything unparseable prints back as typed: a half-written date
+ * showing itself is what a person is looking at while they write it.
+ */
+export function formatMilestoneOn(on: string, locale: string): string {
+  // Trimmed, because that is what `milestonePrecision` just judged: reading
+  // the padded string back would hand `Date` a "2026-06-01  T12:00:00".
+  const date = on.trim();
+  const [year, month] = date.split("-").map(Number);
+  switch (milestonePrecision(date)) {
+    case "year":
+      return date;
+    case "month":
+      return new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" }).format(
+        new Date(year, month - 1, 1),
+      );
+    case "day":
+      return new Intl.DateTimeFormat(locale, {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      }).format(new Date(`${date}T12:00:00`));
+    default:
+      return on;
+  }
+}

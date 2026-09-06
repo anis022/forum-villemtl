@@ -30,6 +30,7 @@ import {
   MAP_OPTIONS,
   TILE_OPTIONS,
   TILE_URL,
+  addBoroughOutline,
 } from "@/utils/map";
 
 export type MapLabels = {
@@ -96,7 +97,16 @@ export function EventMap({
   const mapRef = useRef<LeafletMap | null>(null);
   const layerRef = useRef<LayerGroup | null>(null);
   const areaRef = useRef<LayerGroup | null>(null);
-  const [markers] = useState(() => new Map<string, Marker>());
+  /**
+   * Every event id points at the pin that carries it, which is not one pin per
+   * event: a library that runs thirty things sends thirty events to the same
+   * coordinates, and thirty teardrops stacked on the same pixel read as one
+   * smudged pin rather than as thirty. They share a marker, and the marker says
+   * how many it stands for.
+   */
+  const [markers] = useState(
+    () => new Map<string, { marker: Marker; count: number; ongoing: boolean }>(),
+  );
   const dragRef = useRef<{
     startY: number;
     startOffset: number;
@@ -157,6 +167,10 @@ export function EventMap({
       map.setView(BOROUGH_CENTER, 12, { animate: false });
       L.control.zoom({ position: "bottomleft" }).addTo(map);
       L.tileLayer(TILE_URL, TILE_OPTIONS).addTo(map);
+      // The borough, veiled outside and traced along its edge. The picker and
+      // the poll map have always drawn it; the two public maps did not, so a
+      // reader had to know where CDN-NDG ends to make sense of the pins.
+      void addBoroughOutline(L, map);
       layerRef.current = L.layerGroup().addTo(map);
 
       map.on("click", (event: { latlng: { lat: number; lng: number } }) => {
@@ -314,53 +328,95 @@ export function EventMap({
       const frame = containerRef.current?.clientWidth ?? 0;
       const popupMaxWidth = frame > 0 ? Math.min(300, frame - 32) : 300;
 
-      for (const event of mappable) {
-        const marker = L.marker([event.lat!, event.lon!], {
-          title: event.title,
-          icon: eventMarker(L, isOngoing(event, today), false),
-        });
+      const card = (event: (typeof mappable)[number]) => {
         const place = [event.venueName, event.address].filter(Boolean).join(" · ");
-        marker.bindPopup(
+        return (
           `<strong style="font-size:14px">${escapeHtml(event.title)}</strong>` +
-            `<br><span style="color:#6e6a72">${escapeHtml(formatDateRange(event.startsOn, event.endsOn, locale))}</span>` +
-            (place ? `<br><span style="color:#6e6a72">${escapeHtml(place)}</span>` : "") +
-            `<br><a href="${escapeHtml(event.sourceUrl)}" data-track-event="${escapeHtml(event.id)}" target="_blank" rel="noreferrer" style="color:#a3162c;font-weight:700">${escapeHtml(labels.details)}</a>`,
+          `<br><span style="color:#6e6a72">${escapeHtml(formatDateRange(event.startsOn, event.endsOn, locale))}</span>` +
+          (place ? `<br><span style="color:#6e6a72">${escapeHtml(place)}</span>` : "") +
+          `<br><a href="${escapeHtml(event.sourceUrl)}" data-track-event="${escapeHtml(event.id)}" target="_blank" rel="noreferrer" style="color:#a3162c;font-weight:700">${escapeHtml(labels.details)}</a>`
+        );
+      };
+
+      // Five decimal places is about a metre. Two events an actual metre apart
+      // are the same doorway as far as a 32px pin is concerned.
+      const groups = new Map<string, (typeof mappable)[number][]>();
+      for (const event of mappable) {
+        const key = `${event.lat!.toFixed(5)},${event.lon!.toFixed(5)}`;
+        const group = groups.get(key);
+        if (group) group.push(event);
+        else groups.set(key, [event]);
+      }
+
+      for (const group of groups.values()) {
+        const [first] = group;
+        const ongoing = group.some((event) => isOngoing(event, today));
+        const marker = L.marker([first.lat!, first.lon!], {
+          title: group.length === 1 ? first.title : `${group.length} ${labels.eventMany}`,
+          icon: eventMarker(L, ongoing, false, group.length),
+        });
+
+        marker.bindPopup(
+          group.length === 1
+            ? card(first)
+            : `<strong style="font-size:14px">${group.length} ${escapeHtml(labels.eventMany)}</strong>` +
+                // Scrolls rather than growing: a venue with a season of
+                // programming would otherwise open a popup taller than a phone.
+                `<div style="max-height:220px;overflow-y:auto;margin-top:8px">` +
+                group
+                  .map(
+                    (event, index) =>
+                      `<div style="${index ? "border-top:1px solid #e9e0d6;margin-top:10px;padding-top:10px" : ""}">${card(event)}</div>`,
+                  )
+                  .join("") +
+                `</div>`,
           { maxWidth: popupMaxWidth },
         );
-        marker.on("mouseover", () => setHovered(event.id));
+
+        marker.on("mouseover", () => setHovered(first.id));
         marker.on("mouseout", () => setHovered(null));
         marker.on("click", () => {
-          setSelected(event.id);
+          setSelected(first.id);
           if (sheetCollapsed) return;
-          const listIndex = filtered.findIndex((item) => item.id === event.id);
+          const listIndex = filtered.findIndex((item) => item.id === first.id);
           if (listIndex >= 0) setListLimit((current) => Math.max(current, listIndex + 1));
           requestAnimationFrame(() => {
             requestAnimationFrame(() => {
-              document.getElementById(`map-event-${event.id}`)?.scrollIntoView({
+              document.getElementById(`map-event-${first.id}`)?.scrollIntoView({
                 behavior: "smooth",
                 block: "nearest",
               });
             });
           });
         });
+
         marker.addTo(layer);
-        markers.set(event.id, marker);
+        for (const event of group) {
+          markers.set(event.id, { marker, count: group.length, ongoing });
+        }
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [filtered, labels.details, locale, mapReady, markers, mappable, sheetCollapsed, today]);
+  }, [filtered, labels.details, labels.eventMany, locale, mapReady, markers, mappable, sheetCollapsed, today]);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       const L = await import("leaflet");
       if (cancelled) return;
+      // One call per pin, not per event: a shared pin would otherwise be redrawn
+      // once for each event standing behind it.
+      const activeMarker = active ? (markers.get(active)?.marker ?? null) : null;
+      const drawn = new Set<Marker>();
       for (const event of mappable) {
-        markers
-          .get(event.id)
-          ?.setIcon(eventMarker(L, isOngoing(event, today), active === event.id));
+        const entry = markers.get(event.id);
+        if (!entry || drawn.has(entry.marker)) continue;
+        drawn.add(entry.marker);
+        entry.marker.setIcon(
+          eventMarker(L, entry.ongoing, entry.marker === activeMarker, entry.count),
+        );
       }
     })();
     return () => {
@@ -842,14 +898,31 @@ function FilterOption({
   );
 }
 
-function eventMarker(L: typeof import("leaflet"), ongoing: boolean, raised: boolean) {
+/**
+ * The pin, and how many events stand behind it.
+ *
+ * A count goes inside the white disc the pin already has rather than beside it
+ * on a badge of its own: the shape does not change, it just says a number where
+ * it used to say nothing.
+ */
+function eventMarker(
+  L: typeof import("leaflet"),
+  ongoing: boolean,
+  raised: boolean,
+  count = 1,
+) {
   const size = raised ? 40 : 32;
   const color = ongoing ? ACCENT_TODAY : ACCENT;
+  const disc =
+    count > 1
+      ? `<circle cx="16" cy="15" r="8" fill="#fff"/>
+      <text x="16" y="15.5" text-anchor="middle" dominant-baseline="central" font-family="Inter,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif" font-size="${count > 99 ? 8 : 10}" font-weight="700" fill="${color}">${count > 99 ? "99+" : count}</text>`
+      : `<circle cx="16" cy="15" r="4.25" fill="#fff"/>`;
   return L.divIcon({
     className: "",
     html: `<svg width="${size}" height="${size}" viewBox="0 0 32 40" style="filter:drop-shadow(0 2px 3px rgba(26,26,26,.28))">
       <path d="M16 1.5C8.4 1.5 2.5 7.4 2.5 15c0 9.6 13.5 23.5 13.5 23.5S29.5 24.6 29.5 15C29.5 7.4 23.6 1.5 16 1.5Z" fill="${color}" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
-      <circle cx="16" cy="15" r="4.25" fill="#fff"/>
+      ${disc}
     </svg>`,
     iconSize: [size, size],
     iconAnchor: [size / 2, size],

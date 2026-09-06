@@ -48,9 +48,15 @@ export async function GET() {
       .from("votes")
       .select("issue_id")
       .eq("user_id", user.id),
+    // `question` and `description` were dropped by migration 0036, when a poll
+    // became a ballot hanging off an ordinary topic. Asking for them here did
+    // not fail loudly: PostgREST refused the whole select, the `?? []` below
+    // turned that into an empty list, and every export since has told its
+    // reader they had created no polls. The wording now comes back with the
+    // topic, under `signalements`, and `sujet` is the link between the two.
     supabase
       .from("polls")
-      .select("id, question, description, total_vote_count, created_at")
+      .select("id, issue_id, kind, total_vote_count, map_response_count, created_at")
       .eq("author_id", user.id)
       .order("created_at", { ascending: true }),
     supabase
@@ -73,8 +79,38 @@ export async function GET() {
       .eq("cleared_by", user.id),
   ]);
 
+  /**
+   * A section that could not be read says so.
+   *
+   * Every list below ends in `?? []`, which cannot tell "you have none of
+   * these" apart from "this query failed". That is the wrong way round for an
+   * export a person is entitled to: a silent empty list reads as an answer, and
+   * this file is the answer. Naming the failures keeps the export honest and
+   * makes the next schema drift visible on the first download instead of never.
+   */
+  const failed = Object.entries({
+    profil: profile.error,
+    signalements: issues.error,
+    reponses: comments.error,
+    appuis: votes.error,
+    sondages_crees: polls.error,
+    votes_aux_sondages: pollVotes.error,
+    points_ajoutes_aux_sondages: mapResponses.error,
+    moderation_traitee_par_vous: flags.error,
+  })
+    .filter(([, error]) => error)
+    .map(([section, error]) => `${section}: ${error!.message}`);
+
   const body = {
     exported_at: new Date().toISOString(),
+    ...(failed.length > 0
+      ? {
+          sections_illisibles: failed,
+          avertissement:
+            "Une ou plusieurs sections n'ont pas pu être lues et sont vides ci-dessous." +
+            " Signalez-le : l'export est incomplet.",
+        }
+      : {}),
     about:
       "Renseignements détenus par le forum de Côte-des-Neiges–Notre-Dame-de-Grâce" +
       " sur le compte identifié ci-dessous. Voir /fr/confidentialite.",

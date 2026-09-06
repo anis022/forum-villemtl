@@ -13,7 +13,6 @@ import {
   LINK,
   MUTED,
   PAGE_HERO_INNER,
-  PAGE_INTRO,
   PAGE_MAIN,
   PAGE_SHELL,
   PAGE_TITLE,
@@ -46,7 +45,6 @@ export default async function OfficialsPage({ params }: { params: Promise<{ lang
           <h1 className={PAGE_TITLE}>
             {t.officials.title}
           </h1>
-          <p className={PAGE_INTRO}>{t.officials.intro}</p>
         </div>
       </div>
 
