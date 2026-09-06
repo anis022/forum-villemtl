@@ -38,16 +38,32 @@ export const isVideo = (file: File) =>
  * is not treated as a refusal: the size cap still applies, and refusing a file
  * because we could not measure it would turn "your browser cannot preview this"
  * into "you may not post this".
+ *
+ * The timeout is the important part. This was written expecting a browser to
+ * answer one way or the other, and it does not always: a WebM whose header
+ * carries no duration -- what a screen or camera recording made in the browser
+ * produces -- fires neither `loadedmetadata` nor `error` in Chrome. The promise
+ * then never settled, `uploadVideo` sat on the await forever, and the composer
+ * was left with its progress bar at zero and its publish button disabled for
+ * good, with nothing said. A file we cannot measure inside a few seconds is a
+ * file we do not know the length of, which is the answer this already had.
  */
+const DURATION_TIMEOUT_MS = 5000;
+
 export function videoDuration(file: File): Promise<number | null> {
   return new Promise((resolve) => {
     const url = URL.createObjectURL(file);
     const probe = document.createElement("video");
+    let settled = false;
     const done = (value: number | null) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
       URL.revokeObjectURL(url);
       probe.removeAttribute("src");
       resolve(value);
     };
+    const timer = setTimeout(() => done(null), DURATION_TIMEOUT_MS);
     probe.preload = "metadata";
     probe.onloadedmetadata = () =>
       done(Number.isFinite(probe.duration) ? probe.duration : null);
