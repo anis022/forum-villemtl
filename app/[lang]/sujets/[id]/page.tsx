@@ -43,6 +43,10 @@ import { siteOrigin } from "@/utils/site";
  */
 const loadIssue = cache(getIssue);
 
+/** The shape `/api/apercu` renders, told to the scrapers that lay out before they fetch. */
+const OG_IMAGE_WIDTH = 1200;
+const OG_IMAGE_HEIGHT = 630;
+
 /**
  * A topic is the thing people actually send each other, straight from the share
  * button on the card. Without this the link arrives as a bare URL and the person
@@ -63,6 +67,21 @@ export async function generateMetadata({
   const description = summary.length > 200 ? `${summary.slice(0, 200).trimEnd()}…` : summary;
   const url = `${siteOrigin()}/${lang}/sujets/${id}`;
 
+  /*
+   * The photograph the resident attached, so the link arrives showing the
+   * pothole rather than only a headline about one.
+   *
+   * Not the stored file: `/api/apercu` re-encodes it as the JPEG that every
+   * scraper draws, at the size every card is laid out for. Pointing at storage
+   * directly would hand WhatsApp and LinkedIn a WebP they render as nothing.
+   *
+   * A video topic gets no image at all. Nothing here holds a still frame of a
+   * video, and a stand-in would be a picture that lies about what is on the
+   * other end of the link.
+   */
+  const photo = issue.imageUrl ? `${siteOrigin()}/api/apercu/${id}` : null;
+  const t = getDictionary(lang);
+
   return {
     title: issue.title,
     description,
@@ -72,7 +91,22 @@ export async function generateMetadata({
       title: issue.title,
       description,
       url,
+      images: photo
+        ? [
+            {
+              url: photo,
+              width: OG_IMAGE_WIDTH,
+              height: OG_IMAGE_HEIGHT,
+              type: "image/jpeg",
+              alt: `${t.issue.photoAlt} : ${issue.title}`,
+            },
+          ]
+        : undefined,
     },
+    // The site-wide default is the small square thumbnail, which is right for a
+    // page with nothing but a logo to show. A topic carrying a photograph has
+    // earned the wide card; one without a photo would show an empty band.
+    twitter: { card: photo ? "summary_large_image" : "summary" },
   };
 }
 
