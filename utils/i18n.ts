@@ -304,7 +304,7 @@ const fr = {
     accessFailed: "La modification n’a pas pu être enregistrée.",
     membersTitle: "Ajout de membres",
     membersIntro:
-      "Autorisez l'accès d'une personne membre d'Ensemble Montréal qui ne figure pas encore dans le registre des membres. L'accès est effectif immédiatement.",
+      "Membres d'Ensemble Montréal absents du registre.",
     membersEmail: "Adresse courriel",
     membersFirstName: "Prénom",
     membersLastName: "Nom",
@@ -1120,7 +1120,7 @@ const en: Dictionary = {
     accessFailed: "The change could not be saved.",
     membersTitle: "Add members",
     membersIntro:
-      "Grant access to an Ensemble Montréal member who is not yet in the membership registry. Access takes effect immediately.",
+      "Ensemble Montréal members not yet in the registry.",
     membersEmail: "Email address",
     membersFirstName: "First name",
     membersLastName: "Last name",
