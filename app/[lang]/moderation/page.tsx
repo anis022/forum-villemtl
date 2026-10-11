@@ -3,8 +3,9 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { FlagCard } from "@/components/issues/flag-card";
 import { StaffAccessManager } from "@/components/moderation/staff-access-manager";
+import { MemberAccessManager } from "@/components/moderation/member-access-manager";
 import { getSessionUser } from "@/utils/supabase/auth";
-import { listOpenFlags, listStaffAccess } from "@/utils/supabase/moderation";
+import { listManualMembers, listOpenFlags, listStaffAccess } from "@/utils/supabase/moderation";
 import { getDictionary, isLocale } from "@/utils/i18n";
 import {
   CARD,
@@ -42,9 +43,9 @@ export default async function ModerationPage({
   const user = await getSessionUser();
   const isOfficial = user?.role === "official";
 
-  const [flags, staffAccess] = isOfficial
-    ? await Promise.all([listOpenFlags(), listStaffAccess()])
-    : [[], []];
+  const [flags, staffAccess, manualMembers] = isOfficial
+    ? await Promise.all([listOpenFlags(), listStaffAccess(), listManualMembers()])
+    : [[], [], []];
 
   return (
     <div className={PAGE_SHELL}>
@@ -66,6 +67,10 @@ export default async function ModerationPage({
         ) : (
           <>
             <StaffAccessManager entries={staffAccess} lang={lang} />
+
+            <div className="mt-12 border-t border-[#e9e0d6] pt-10">
+              <MemberAccessManager members={manualMembers} lang={lang} />
+            </div>
 
             <section className="mt-12 border-t border-[#e9e0d6] pt-10" aria-labelledby="flags-title">
               <div className="max-w-[760px]">

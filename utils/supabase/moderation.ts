@@ -146,3 +146,30 @@ export async function listStaffAccess(): Promise<StaffAccessEntry[]> {
     isSelf: row.is_self,
   }));
 }
+
+export type ManualMember = {
+  email: string;
+  firstName: string;
+  lastName: string;
+  hasAccount: boolean;
+};
+
+/** Members an administrator added by hand, ahead of the next roster export. */
+export async function listManualMembers(): Promise<ManualMember[]> {
+  const supabase = createClient(await cookies());
+  const { data, error } = await supabase.rpc("list_manual_members");
+
+  if (error || !data) {
+    if (error) console.error("[moderation] manual members:", error.message);
+    return [];
+  }
+
+  return (
+    data as { email: string; first_name: string; last_name: string; has_account: boolean }[]
+  ).map((row) => ({
+    email: row.email,
+    firstName: row.first_name,
+    lastName: row.last_name,
+    hasAccount: row.has_account,
+  }));
+}

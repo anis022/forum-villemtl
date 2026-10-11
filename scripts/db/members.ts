@@ -193,9 +193,11 @@ try {
 
   // Everything the export no longer lists goes, except the rows the demo seed
   // planted for its invented residents — those are marked `seeded` and belong
-  // to `supabase/demo-seed.sql`, which is also what deletes them.
+  // to `supabase/demo-seed.sql`, which is also what deletes them — and the
+  // rows an administrator added by hand from the moderation screen (0044),
+  // which the export has not caught up with yet.
   const removed = await client.query(
-    "delete from public.members where not seeded and email <> all($1) returning email",
+    "delete from public.members where not seeded and not manual and email <> all($1) returning email",
     [emails],
   );
 
@@ -222,7 +224,9 @@ try {
        -- An address the export lists is a real membership, whatever it was
        -- before. Left out, a demo row that happened to share an address would
        -- keep its marker and survive the next load as a ghost.
-       seeded     = false`,
+       seeded     = false,
+       -- Once the export lists a hand-added address, the export owns it.
+       manual     = false`,
     [
       emails,
       members.map((member) => member.memberId),

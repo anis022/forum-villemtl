@@ -44,9 +44,11 @@ export type ProjectActionState = {
  * rejects the malformed, that rejects the unfinished. A half-written project is
  * a normal thing to save; a milestone with no date is not a milestone.
  */
+// A paragraph is capped generously: staff paste whole press releases into
+// one box, and 4000 characters refused them with a field path nobody could read.
 const Localized = z.object({
-  fr: z.string().trim().max(4000),
-  en: z.string().trim().max(4000),
+  fr: z.string().trim().max(20000),
+  en: z.string().trim().max(20000),
 });
 
 const Content = z.object({
@@ -92,6 +94,30 @@ const Proposal = z.object({
   publish: z.boolean(),
 });
 
+const SECTIONS: Record<string, string> = {
+  title: "le titre",
+  summary: "le résumé",
+  address: "l'adresse",
+  description: "la description",
+  photos: "les photos",
+  milestones: "les étapes",
+  sources: "les sources",
+  councilTerm: "le mandat",
+};
+
+/** A sentence a staff member can act on, instead of `content.description.0.fr`. */
+function describeIssue(issue: z.core.$ZodIssue): string {
+  const path = issue.path.map(String);
+  if (path[0] === "slug") return "L'adresse de la page ne peut contenir que des minuscules, des chiffres et des traits d'union.";
+  const [, section, index] = path[0] === "content" ? path : [];
+  const lang = path.includes("en") ? " (anglais)" : path.includes("fr") ? " (français)" : "";
+  const where = `${SECTIONS[section] ?? "un champ"}${/^\d+$/.test(index ?? "") ? `, élément ${Number(index) + 1}` : ""}${lang}`;
+  if (issue.code === "too_big") return `Texte trop long dans ${where}. Séparez-le en plusieurs paragraphes.`;
+  if (issue.path.includes("url")) return `Lien invalide dans ${where}. Il doit commencer par https://.`;
+  if (issue.path.includes("on")) return `Date invalide dans ${where}. Format attendu : AAAA, AAAA-MM ou AAAA-MM-JJ.`;
+  return `Valeur invalide dans ${where}.`;
+}
+
 /**
  * Save a project, as a revision.
  *
@@ -110,8 +136,7 @@ export async function saveProject(
 
   const parsed = Proposal.safeParse(raw);
   if (!parsed.success) {
-    const first = parsed.error.issues[0];
-    return { error: `Champ invalide : ${first.path.join(".") || first.message}` };
+    return { error: describeIssue(parsed.error.issues[0]) };
   }
   const { projectId, slug, content, publish } = parsed.data;
 

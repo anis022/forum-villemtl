@@ -71,3 +71,61 @@ export async function setAdministratorAccess(
   revalidatePath(`/${locale}`, "layout");
   return { ok: true };
 }
+
+export type MemberAccessError =
+  | "notSignedIn"
+  | "forbidden"
+  | "invalidEmail"
+  | "alreadyMember"
+  | "memberNotFound"
+  | "accessFailed";
+
+export type MemberAccessResult = { ok: true } | { ok: false; error: MemberAccessError };
+
+/**
+ * Put an address on the member roster, or take a hand-added one off it.
+ *
+ * Same shape as `setAdministratorAccess`: the database functions check the
+ * caller and only touch rows marked `manual`, so a row from the export can
+ * never be removed from here.
+ */
+export async function setManualMember(
+  input: { email: string; firstName?: string; lastName?: string },
+  add: boolean,
+  lang: Locale,
+): Promise<MemberAccessResult> {
+  const normalized = input.email.trim().toLowerCase();
+  if (normalized.length > 320 || !EMAIL.test(normalized)) {
+    return { ok: false, error: "invalidEmail" };
+  }
+
+  const supabase = createClient(await cookies());
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "notSignedIn" };
+
+  const { error } = add
+    ? await supabase.rpc("add_manual_member", {
+        p_email: normalized,
+        p_first_name: input.firstName?.trim() ?? "",
+        p_last_name: input.lastName?.trim() ?? "",
+      })
+    : await supabase.rpc("remove_manual_member", { p_email: normalized });
+
+  if (error) {
+    const message = error.message.toLowerCase();
+    if (message.includes("invalid email")) return { ok: false, error: "invalidEmail" };
+    if (message.includes("already member")) return { ok: false, error: "alreadyMember" };
+    if (message.includes("member not found")) return { ok: false, error: "memberNotFound" };
+    if (message.includes("not authorized") || error.code === "42501") {
+      return { ok: false, error: "forbidden" };
+    }
+    console.error("[moderation] manual member:", error.message);
+    return { ok: false, error: "accessFailed" };
+  }
+
+  const locale = isLocale(lang) ? lang : "fr";
+  revalidatePath(`/${locale}/moderation`);
+  return { ok: true };
+}
